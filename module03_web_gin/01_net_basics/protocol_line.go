@@ -1,4 +1,4 @@
-package netbasics
+package main
 
 import (
     "bufio"

@@ -1,97 +1,53 @@
-# Module 03: Web 开发与 Gin 框架
+# Module 03: Gin Web 开发
 
-本模块包含 Go Web 开发的基础知识和 Gin 框架的使用，涵盖从基础 HTTP 到完整 API 开发的各个方面。
+本模块专注于使用 Gin 框架构建 Web 应用程序和 RESTful API。
 
 ## 目录结构
 
-### 01_http_net/
-- **main.go**: 标准库 net/http 基础
-- 学习内容：http.Handler、http.HandlerFunc、基本路由处理
-
 ### 01_net_basics/
-- **http_handlers.go**: HTTP 处理器和中间件
-- **protocol_line.go**: HTTP 协议基础
-- **server_test.go**: 服务器测试
-- 学习内容：中间件编写、HTTP 协议理解、测试编写
+- **udp_client.go**, **udp_server.go**: Socket 编程 (UDP/TCP)
+- **http_handlers.go**: HTTP 处理器
+- 学习内容：Socket 通信原理, net/http 标准库, Handler 接口
 
 ### 02_gin_intro/
 - **main.go**: Gin 框架入门
-- 学习内容：Gin 路由、中间件、JSON 响应
+- 学习内容：Gin 引擎初始化、基本路由定义、JSON 响应
 
 ### 03_binding_viper/
-- **main.go**: 数据绑定和配置管理
-- 学习内容：Gin 绑定、Viper 配置管理、环境变量
+- **main.go**: 数据绑定与配置
+- 学习内容：ShouldBindJSON, Viper 配置文件读取与管理
 
 ### 04_middleware_jwt/
-- **main.go**: 中间件和 JWT 认证
-- 学习内容：自定义中间件、JWT 令牌、认证流程
+- **main.go**: 中间件与认证
+- 学习内容：自定义中间件、JWT (JSON Web Token) 生成与解析
 
 ### 05_logging_zap/
-- **main.go**: 日志记录
-- 学习内容：Zap 日志库、结构化日志、日志级别
+- **main.go**: 日志系统
+- 学习内容：集成 Uber Zap 高性能日志库、结构化日志
 
 ### 06_api_design/
-- **main.go**: API 设计
-- 学习内容：RESTful API 设计、版本控制、错误处理
+- **main.go**: API 设计规范
+- 学习内容：RESTful API 设计原则、路由分组、版本控制
 
 ### 07_testing_httptest/
-- **handler.go**: HTTP 处理器
-- **handler_test.go**: HTTP 测试
-- 学习内容：httptest 包、集成测试、模拟请求
+- **handler.go**, **handler_test.go**: HTTP 测试
+- 学习内容：httptest 包使用、模拟 HTTP 请求与响应测试
 
 ### 08_perf_context/
-- **main.go**: 性能优化和上下文
-- 学习内容：性能分析、上下文传递、优化技巧
+- **main.go**: 性能与上下文
+- 学习内容：Gin Context 深入、性能优化技巧
 
 ### project_user_center/
-完整的用户中心项目，包含：
-- **internal/handler/user_handler.go**: 用户处理器
-- **internal/middleware/middleware.go**: 中间件
-- **internal/model/user.go**: 用户模型
-- **internal/repository/user_repo.go**: 数据存储
-- **internal/service/user_service.go**: 业务逻辑
-- **internal/service/user_service_test.go**: 服务测试
-- **pkg/utils/jwt.go**: JWT 工具
-- **main.go**: 主程序
+- **internal/**, **pkg/**, **main.go**: 用户中心微服务
+- 学习内容：综合项目实战，包含用户注册、登录、鉴权等完整功能，采用分层架构
 
 ## 学习目标
 
-1. 掌握标准库 net/http 的使用
-2. 熟练使用 Gin Web 框架
-3. 理解中间件设计和实现
-4. 掌握数据绑定和配置管理
-5. 实现 JWT 认证和授权
-6. 使用结构化日志记录
-7. 设计良好的 RESTful API
-8. 编写全面的测试用例
-9. 完成一个完整的用户管理系统
-
-## 运行方式
-
-每个目录下的程序都可以通过以下命令运行：
-```bash
-cd 目录名
-go run main.go
-```
-
-对于项目运行：
-```bash
-cd project_user_center/
-go run main.go
-```
-
-运行测试：
-```bash
-cd 07_testing_httptest/
-go test -v
-
-cd project_user_center/internal/service/
-go test -v
-```
-
-## 依赖安装
-
-需要安装 Gin 和其他依赖：
-```bash
-go mod tidy
-```
+1. 理解 Socket 与 HTTP 协议基础
+2. 熟练掌握 Gin 框架的核心功能
+3. 能够处理请求数据绑定与验证
+4. 掌握中间件机制与 JWT 认证
+5. 学会使用结构化日志与配置管理
+6. 能够设计符合 RESTful 规范的 API
+7. 掌握 Web 服务的单元测试方法
+8. 具备构建完整 Web 微服务的能力
