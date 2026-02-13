@@ -5,6 +5,9 @@ import "fmt"
 func main() {
 	// 1. Arrays (Fixed size, Value type)
 	var arr [3]int = [3]int{1, 2, 3}
+	var arr2 = [...]int{1, 2, 3}
+	var arr3 = [...]int{1: 2, 2: 3} // [0 2 3]
+	fmt.Printf("arr2: %v\narr3: %v\n", arr2, arr3)
 	// Copy happens here!
 	arrCopy := arr
 	arrCopy[0] = 100
@@ -12,7 +15,6 @@ func main() {
 	fmt.Println("Copy Array:", arrCopy) // [100 2 3]
 
 	// 2. Slices (Dynamic size, Reference-like)
-	// Java: ArrayList<Integer> list = new ArrayList<>();
 	slice := []int{1, 2, 3}
 	fmt.Printf("Slice: %v, Len: %d, Cap: %d\n", slice, len(slice), cap(slice))
 
