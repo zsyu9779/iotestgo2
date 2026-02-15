@@ -7,12 +7,10 @@ import (
 
 func main() {
 	// 1. Variable Declaration
-	// Java: int age = 30;
 	var age int = 30
 	fmt.Println("Age:", age)
 
 	// Type Inference
-	// Java: var name = "Gopher"; (Java 10+)
 	name := "Gopher" // Short declaration (only inside functions)
 	fmt.Printf("Name: %s, Type: %T\n", name, name)
 
@@ -35,8 +33,6 @@ func main() {
 	fmt.Println("Overflow example (be careful):", overflow)
 
 	// 4. Type Conversion (Explicit only!)
-	// Java: double d = 10; (Implicit)
-	// Go:
 	var i int = 42
 	var f float64 = float64(i)
 	fmt.Println("Float:", f)
