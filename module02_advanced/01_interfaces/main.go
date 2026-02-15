@@ -3,13 +3,11 @@ package main
 import "fmt"
 
 // 1. Interface Definition
-// Java: interface Animal { void speak(); }
 type Animal interface {
 	Speak() string
 }
 
 // 2. Implementation (Implicit)
-// Java: class Dog implements Animal { ... }
 type Dog struct {
 	Name string
 }
@@ -42,7 +40,6 @@ func main() {
 	var any interface{} = "I am a string"
 
 	// Type Assertion
-	// Java: if (obj instanceof String) { String s = (String) obj; }
 	str, ok := any.(string)
 	if ok {
 		fmt.Println("It's a string:", str)
