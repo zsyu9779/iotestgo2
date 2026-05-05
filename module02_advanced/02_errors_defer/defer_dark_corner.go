@@ -3,7 +3,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"time"
 )
 
@@ -76,7 +75,7 @@ func showLogFatal() {
 	fmt.Println("  - 替代方案：用 panic + recover，或先 log 后 return")
 }
 
-func main() {
+func RunDeferDarkCornerDemo() {
 	fmt.Println("=== Defer/Panic 黑暗角落 ===")
 	fmt.Println()
 

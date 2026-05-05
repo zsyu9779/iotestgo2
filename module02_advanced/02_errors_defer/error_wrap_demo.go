@@ -38,7 +38,7 @@ func findUser(name string) error {
 	return fmt.Errorf("findUser(%s): %w", name, ErrNotFound)
 }
 
-func main() {
+func RunErrorWrapDemo() {
 	fmt.Println("=== Error Wrapping 深入 ===")
 	fmt.Println()
 

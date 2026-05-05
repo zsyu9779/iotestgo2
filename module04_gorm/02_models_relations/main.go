@@ -64,7 +64,7 @@ func main() {
 
 	// 查不到（被自动过滤）
 	var result Article
-	err := db.First(&result, article.ID).Error
+	err = db.First(&result, article.ID).Error
 	println("After delete, found:", err == nil) // false
 
 	// 使用 Unscoped() 可以查到已删除记录

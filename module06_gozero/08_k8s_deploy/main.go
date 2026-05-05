@@ -1,46 +1,87 @@
-// 08 K8s 部署入门：Dockerfile 编写 + K8s Deployment/Service
+// 08 K8s 部署入门：可部署的健康检查 HTTP 服务 + 部署说明
+//
+// 启动：go run main.go
+//
+// Docker 构建与 K8s 部署步骤（见输出）
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+)
 
 func main() {
-	fmt.Println("=== 08 K8s 部署入门 ===")
-	fmt.Println()
+	// 简单的 HTTP Server
+	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"status":"healthy"}`))
+	})
 
-	fmt.Println("--- goctl 生成部署文件 ---")
-	fmt.Println("  goctl docker -go user-api.go          # 生成 Dockerfile")
-	fmt.Println("  goctl kube deploy -name user-api \\")
-	fmt.Println("       -namespace default \\")
-	fmt.Println("       -image user-api:latest \\")
-	fmt.Println("       -o deployment.yaml              # 生成 K8s 部署清单")
-	fmt.Println()
+	http.HandleFunc("/ready", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"status":"ready"}`))
+	})
 
-	fmt.Println("--- 容器化流程 ---")
-	fmt.Println("  1. goctl docker → 生成多阶段构建 Dockerfile")
-	fmt.Println("  2. docker build -t user-api:latest .")
-	fmt.Println("  3. docker push registry.example.com/user-api:latest")
-	fmt.Println()
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`{"service":"user-api","version":"1.0.0"}`))
+	})
 
-	fmt.Println("--- K8s 部署流程 ---")
-	fmt.Println("  1. goctl kube deploy → 生成 deployment.yaml")
-	fmt.Println("  2. kubectl apply -f deployment.yaml")
-	fmt.Println("  3. kubectl get pods    # 查看 Pod 运行状态")
-	fmt.Println("  4. kubectl logs -f <pod-name>  # 查看日志")
-	fmt.Println("  5. kubectl scale deployment user-api --replicas=5  # 扩缩容")
-	fmt.Println()
+	// 优雅退出
+	go func() {
+		sigCh := make(chan os.Signal, 1)
+		signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+		<-sigCh
+		fmt.Println("\nShutting down...")
+		os.Exit(0)
+	}()
 
-	fmt.Println("--- K8s 核心概念与 Java 对比 ---")
-	fmt.Println("  Deployment:  管理 Pod 副本数、滚动更新（类似 Spring Cloud + K8s Operator）")
-	fmt.Println("  Service:     负载均衡到 Pod（类似 Spring Cloud LoadBalancer）")
-	fmt.Println("  ConfigMap:   配置管理（类似 Spring Cloud Config）")
-	fmt.Println("  Secret:      密钥管理（类似 Vault / 加密的 Config）")
-	fmt.Println("  Ingress:     HTTP 路由（类似 Spring Cloud Gateway）")
-	fmt.Println()
+	port := "8080"
+	if p := os.Getenv("PORT"); p != "" {
+		port = p
+	}
 
-	fmt.Println("--- Go 应用在 K8s 中的优势 ---")
-	fmt.Println("  1. 单二进制文件 → 镜像体积小（~10MB vs Java 200MB+）")
-	fmt.Println("  2. 启动快（毫秒级 vs JVM 秒级）")
-	fmt.Println("  3. 内存占用低（~50MB vs JVM 256MB+）")
-	fmt.Println("  4. 无需单独 JVM → 更少的 Pod 资源请求")
-	fmt.Println("  5. 天然适合 K8s 的不可变基础设施理念")
+	fmt.Println("=== K8s 部署示例服务 ===")
+	fmt.Println("  端口:", port)
+	fmt.Println()
+	fmt.Println("  健康检查:")
+	fmt.Println("    curl http://localhost:" + port + "/health")
+	fmt.Println("    curl http://localhost:" + port + "/ready")
+	fmt.Println()
+	fmt.Println("--- 容器化部署流程 ---")
+	fmt.Println()
+	fmt.Println("1. 构建 Docker 镜像（使用已有 Dockerfile）：")
+	fmt.Println("   docker build -t user-api:latest .")
+	fmt.Println()
+	fmt.Println("2. 本地测试容器：")
+	fmt.Println("   docker run -p 8080:8080 user-api:latest")
+	fmt.Println()
+	fmt.Println("3. 推送镜像到仓库：")
+	fmt.Println("   docker tag user-api:latest myrepo/user-api:latest")
+	fmt.Println("   docker push myrepo/user-api:latest")
+	fmt.Println()
+	fmt.Println("4. 部署到 K8s：")
+	fmt.Println("   kubectl apply -f deployment.yaml")
+	fmt.Println("   kubectl get pods")
+	fmt.Println("   kubectl logs -f <pod-name>")
+	fmt.Println()
+	fmt.Println("5. 扩缩容：")
+	fmt.Println("   kubectl scale deployment user-api --replicas=5")
+	fmt.Println()
+	fmt.Println("--- K8s 核心概念 ---")
+	fmt.Println("  Deployment:  管理 Pod 副本、滚动更新、回滚")
+	fmt.Println("  Service:     Pod 的负载均衡器（ClusterIP/NodePort/LoadBalancer）")
+	fmt.Println("  ConfigMap:   非敏感配置（环境变量、配置文件）")
+	fmt.Println("  Secret:      敏感数据（密码、证书、Token）")
+	fmt.Println("  Ingress:     HTTP 路由规则 → Service")
+	fmt.Println()
+	fmt.Println("--- Go 在 K8s 中的优势 ---")
+	fmt.Println("  1. 单二进制 → 镜像体积 ~10MB（Java 200MB+）")
+	fmt.Println("  2. 毫秒级启动（JVM 需要秒级预热）")
+	fmt.Println("  3. 内存占用 ~50MB（JVM 256MB+）")
+	fmt.Println("  4. 无需 JVM → Pod 资源请求更少 → 更高密度部署")
+
+	http.ListenAndServe(":"+port, nil)
 }

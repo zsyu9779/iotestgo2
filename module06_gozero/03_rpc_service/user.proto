@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package user;
 
-option go_package = "iotestgo2/module06_gozero/03_rpc_service/userrpc/userpb";
+option go_package = "iotestgo/module06_gozero/03_rpc_service/userpb";
 
 // 用户信息
 message User {
@@ -22,7 +22,6 @@ message GetUserResponse {
   User user = 1;
 }
 
-// 用户 RPC 服务
 service UserRpc {
   rpc GetUser(GetUserRequest) returns (GetUserResponse);
 }

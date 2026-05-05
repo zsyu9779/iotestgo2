@@ -1,56 +1,83 @@
-// 01 go-zero 全景：架构设计理念、goctl 安装与项目初始化
+// 01 go-zero 架构全景：用 go-zero rest 包构建最小 HTTP 服务
+//
+// 启动：go run main.go
+// 测试：curl http://localhost:8888/ping
+//       curl http://localhost:8888/hello?name=Gopher
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+
+	"github.com/zeromicro/go-zero/core/logx"
+	"github.com/zeromicro/go-zero/rest"
+)
 
 func main() {
-	fmt.Println("=== 01 go-zero 架构全景 ===")
+	// 1. 创建 go-zero HTTP Server（无需 goctl，直接使用 rest 包）
+	server := rest.MustNewServer(rest.RestConf{
+		Host: "0.0.0.0",
+		Port: 8888,
+	})
+
+	// 2. 注册路由
+	server.AddRoute(rest.Route{
+		Method: http.MethodGet,
+		Path:   "/ping",
+		Handler: func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.Write([]byte(`{"message":"pong","framework":"go-zero"}`))
+		},
+	})
+
+	server.AddRoute(rest.Route{
+		Method: http.MethodGet,
+		Path:   "/hello",
+		Handler: func(w http.ResponseWriter, r *http.Request) {
+			name := r.URL.Query().Get("name")
+			if name == "" {
+				name = "Gopher"
+			}
+			logx.WithContext(r.Context()).Infof("received hello request for: %s", name)
+			w.Header().Set("Content-Type", "application/json")
+			w.Write([]byte(fmt.Sprintf(`{"message":"Hello, %s!","framework":"go-zero"}`, name)))
+		},
+	})
+
+	// 3. 添加 go-zero 内置中间件（自动记录请求日志、指标、超时控制）
+	server.Use(func(next http.HandlerFunc) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			logx.Infof("[%s] %s", r.Method, r.URL.Path)
+			next(w, r)
+		}
+	})
+
+	// 4. 优雅退出
+	go func() {
+		sigCh := make(chan os.Signal, 1)
+		signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+		<-sigCh
+		logx.Info("Shutting down...")
+		server.Stop()
+	}()
+
+	fmt.Println("=== go-zero HTTP Server 已启动 ===")
+	fmt.Println("  架构：API Gateway → API Service(HTTP) → RPC Service(gRPC) → MySQL/Redis/Etcd")
+	fmt.Println()
+	fmt.Println("  测试：")
+	fmt.Println("    curl http://localhost:8888/ping")
+	fmt.Println("    curl http://localhost:8888/hello?name=Gopher")
+	fmt.Println()
+	fmt.Println("  go-zero 核心概念：")
+	fmt.Println("    1. .api 文件定义 HTTP 服务 → goctl 自动生成代码")
+	fmt.Println("    2. .proto 文件定义 RPC 服务 → goctl 生成 zRPC 代码")
+	fmt.Println("    3. Etcd 做服务注册与发现（替代 Eureka/Nacos）")
+	fmt.Println("    4. 内置熔断(breaker)、限流(limiter)、超时控制")
+	fmt.Println("    5. 默认集成 Prometheus 指标暴露")
 	fmt.Println()
 
-	fmt.Println("--- go-zero 核心理念 ---")
-	fmt.Println("1. 极简依赖：不依赖 Spring Cloud 那样的庞大生态")
-	fmt.Println("2. 代码生成优先：goctl 生成 80% 模板代码，聚焦 20% 业务逻辑")
-	fmt.Println("3. 并发安全：内置熔断、限流、降级，保护微服务雪崩")
-	fmt.Println("4. 可观测性：默认集成 Prometheus + 链路追踪")
-	fmt.Println()
-
-	fmt.Println("--- 架构分层 ---")
-	fmt.Println("  ┌─────────────────────────────────────┐")
-	fmt.Println("  │            API Gateway              │  ← 网关层（路由、限流、鉴权）")
-	fmt.Println("  ├─────────────────────────────────────┤")
-	fmt.Println("  │          API Service (HTTP)         │  ← 对外接口层（.api 定义）")
-	fmt.Println("  ├─────────────────────────────────────┤")
-	fmt.Println("  │          RPC Service (gRPC)         │  ← 内部服务层（.proto 定义）")
-	fmt.Println("  ├──────────┬──────────┬───────────────┤")
-	fmt.Println("  │  MySQL   │  Redis   │     Etcd       │  ← 数据与基础设施层")
-	fmt.Println("  └──────────┴──────────┴───────────────┘")
-	fmt.Println()
-
-	fmt.Println("--- goctl 安装 ---")
-	fmt.Println("  go install github.com/zeromicro/go-zero/tools/goctl@latest")
-	fmt.Println()
-
-	fmt.Println("--- goctl 常用命令 ---")
-	fmt.Println("  goctl api new <name>          # 创建 API 项目")
-	fmt.Println("  goctl api go -api <file>.api  # 从 .api 文件生成 Go 代码")
-	fmt.Println("  goctl rpc new <name>          # 创建 RPC 项目")
-	fmt.Println("  goctl rpc protoc <file>.proto # 从 .proto 生成 RPC 代码")
-	fmt.Println("  goctl model mysql ddl -src <sql> -dir <dir> # 从 DDL 生成 Model")
-	fmt.Println("  goctl docker -go <go-file>    # 生成 Dockerfile")
-	fmt.Println("  goctl kube deploy -name <name> # 生成 K8s 部署 YAML")
-	fmt.Println()
-
-	fmt.Println("--- 项目结构（goctl 生成） ---")
-	fmt.Println("  service/")
-	fmt.Println("  ├── etc/")
-	fmt.Println("  │   └── service.yaml       # 配置文件")
-	fmt.Println("  ├── internal/")
-	fmt.Println("  │   ├── config/            # 配置结构体")
-	fmt.Println("  │   ├── handler/           # HTTP Handler（路由层）")
-	fmt.Println("  │   ├── logic/             # 业务逻辑（核心）")
-	fmt.Println("  │   ├── svc/               # ServiceContext（依赖注入容器）")
-	fmt.Println("  │   └── types/             # 请求/响应类型")
-	fmt.Println("  └── service.go             # 入口文件")
-
-	_ = fmt.Sprint
+	server.Start()
 }

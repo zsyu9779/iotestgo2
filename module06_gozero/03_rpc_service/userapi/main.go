@@ -1,41 +1,96 @@
-// API 调用 RPC 的客户端侧代码（通常在 API 服务中）
+// 03 RPC 服务 - UserApi 客户端（HTTP API 调用 gRPC RPC）
+//
+// 启动（先启动 userrpc）：go run userapi/main.go
+//
+// 本示例演示第一个微服务拆分：
+//   用户 → userapi (HTTP :8882) → userrpc (gRPC :9091) → 数据
 package main
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+	"log"
+	"net/http"
+	"strconv"
+	"time"
+
+	pb "iotestgo/module06_gozero/03_rpc_service/userpb"
+
+	"github.com/zeromicro/go-zero/rest"
+	"github.com/zeromicro/go-zero/rest/httpx"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
+)
+
+// ServiceContext（装载 RPC 客户端等依赖）
+type ServiceContext struct {
+	UserRpc pb.UserRpcClient
+}
+
+// Handler
+func UserInfoHandler(svcCtx *ServiceContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userIDStr := r.URL.Query().Get("user_id")
+		userID, _ := strconv.ParseInt(userIDStr, 10, 64)
+
+		// 调用 UserRpc 服务（gRPC）
+		ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+		defer cancel()
+
+		userResp, err := svcCtx.UserRpc.GetUser(ctx, &pb.GetUserRequest{UserId: userID})
+		if err != nil {
+			st := status.Convert(err)
+			httpx.Error(w, fmt.Errorf("[%s] %s", st.Code(), st.Message()))
+			return
+		}
+
+		user := userResp.GetUser()
+		httpx.OkJson(w, map[string]interface{}{
+			"user_id":  user.GetId(),
+			"username": user.GetUsername(),
+			"email":    user.GetEmail(),
+			"status":   user.GetStatus(),
+			"source":   "from UserRpc (gRPC service)",
+		})
+	}
+}
 
 func main() {
-	fmt.Println("=== API 调用 RPC - 客户端视角 ===")
-	fmt.Println()
-	fmt.Println("在 go-zero 微服务拆分中：")
-	fmt.Println()
-	fmt.Println("  用户请求:")
-	fmt.Println("   Browser → API Gateway → user-api (HTTP)")
-	fmt.Println("                              │")
-	fmt.Println("                              └─→ user-rpc (gRPC + Etcd)")
-	fmt.Println("                                     │")
-	fmt.Println("                                     └─→ MySQL")
-	fmt.Println()
-	fmt.Println("  API 服务职责：")
-	fmt.Println("  1. 接收 HTTP 请求，参数校验")
-	fmt.Println("  2. 调用 RPC 服务完成业务")
-	fmt.Println("  3. 组装 HTTP 响应返回")
-	fmt.Println()
-	fmt.Println("  RPC 服务职责：")
-	fmt.Println("  1. 数据访问（CRUD）")
-	fmt.Println("  2. 核心业务逻辑")
-	fmt.Println("  3. 缓存储存管理")
-	fmt.Println()
-	fmt.Println("  分层的好处：")
-	fmt.Println("  - API 层可以水平扩展，不涉及数据库")
-	fmt.Println("  - RPC 层可以独立扩缩容")
-	fmt.Println("  - 各服务独立部署，互不阻塞")
-	fmt.Println()
-	fmt.Println("配置文件 etc/user-api.yaml：")
-	fmt.Println("  UserRpc:")
-	fmt.Println("    Etcd:")
-	fmt.Println("      Hosts:")
-	fmt.Println("        - localhost:2379")
-	fmt.Println("      Key: user.rpc    # 通过此 Key 在 Etcd 中找到 RPC 服务地址")
+	// 依赖注入：创建 RPC 客户端连接
+	conn, err := grpc.NewClient("localhost:9091",
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		log.Fatalf("连接 RPC 服务失败: %v", err)
+	}
+	defer conn.Close()
 
-	_ = fmt.Sprint
+	svcCtx := &ServiceContext{
+		UserRpc: pb.NewUserRpcClient(conn),
+	}
+
+	server := rest.MustNewServer(rest.RestConf{Host: "0.0.0.0", Port: 8882})
+
+	server.AddRoute(rest.Route{
+		Method:  http.MethodGet,
+		Path:    "/api/v1/user/info",
+		Handler: UserInfoHandler(svcCtx),
+	})
+
+	fmt.Println("=== UserApi 服务已启动（API 调用 RPC） ===")
+	fmt.Println("  HTTP 端口: 8882")
+	fmt.Println("  调用链: curl → userapi (HTTP) → userrpc (gRPC :9091)")
+	fmt.Println()
+	fmt.Println("  测试:")
+	fmt.Println("    curl http://localhost:8882/api/v1/user/info?user_id=1")
+	fmt.Println("    curl http://localhost:8882/api/v1/user/info?user_id=2")
+	fmt.Println("    curl http://localhost:8882/api/v1/user/info?user_id=99  # 不存在")
+	fmt.Println()
+	fmt.Println("  go-zero 微服务拆分原则：")
+	fmt.Println("    API 服务：接收 HTTP，参数校验，调用 RPC，组装响应")
+	fmt.Println("    RPC 服务：数据访问，核心业务逻辑，独立部署")
+	fmt.Println()
+
+	server.Start()
 }

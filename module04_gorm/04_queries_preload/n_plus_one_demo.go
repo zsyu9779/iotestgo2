@@ -23,7 +23,7 @@ type ProductN struct {
 	Category   CategoryN
 }
 
-func main() {
+func RunNPlusOneDemo() {
 	dsn := os.Getenv("MYSQL_DSN")
 	if dsn == "" {
 		dsn = "root:password@tcp(127.0.0.1:3306)/gorm_demo?charset=utf8mb4&parseTime=True&loc=Local"

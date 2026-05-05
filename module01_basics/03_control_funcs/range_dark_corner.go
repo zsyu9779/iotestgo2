@@ -63,7 +63,7 @@ func showRangeSingleVar() {
 	fmt.Printf("  (单变量 range 返回的是索引，不是值)\n")
 }
 
-func main() {
+func RunRangeDarkCornerDemo() {
 	fmt.Println("=== Range 黑暗角落 ===")
 	fmt.Println()
 	fmt.Print("陷阱 1 (取地址): ")

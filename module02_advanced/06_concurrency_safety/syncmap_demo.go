@@ -6,7 +6,7 @@ import (
 )
 
 // 演示 sync.Map：适合读多写少、不同 goroutine 读写不同键的场景
-func main() {
+func RunSyncMapDemo() {
 	fmt.Println("=== sync.Map 演示 ===")
 	fmt.Println()
 	fmt.Println("sync.Map vs map+Mutex：")

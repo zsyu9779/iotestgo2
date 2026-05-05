@@ -35,7 +35,7 @@ func main() {
 
 	// --- 1. 普通事务 ---
 	fmt.Println("--- 1. 普通事务（转账 30） ---")
-	err := db.Transaction(func(tx *gorm.DB) error {
+	err = db.Transaction(func(tx *gorm.DB) error {
 		var alice Wallet
 		var bob Wallet
 		tx.First(&alice, "owner = ?", "Alice")

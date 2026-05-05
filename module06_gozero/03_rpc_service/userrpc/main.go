@@ -1,89 +1,69 @@
-// 03 RPC 服务：使用 zRPC（go-zero 对 gRPC 的封装）开发 RPC 服务
+// 03 RPC 服务 - UserRpc 服务端（gRPC）
 //
-// 生成命令：goctl rpc protoc user.proto --go_out=. --go-grpc_out=. --zrpc_out=.
+// 启动：go run userrpc/main.go
 package main
 
 import (
 	"context"
 	"fmt"
+	"log"
+	"net"
+	"os"
+	"os/signal"
+	"syscall"
+
+	pb "iotestgo/module06_gozero/03_rpc_service/userpb"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/reflection"
+	"google.golang.org/grpc/status"
 )
 
+// 内存用户数据
+var users = map[int64]*pb.User{
+	1: {Id: 1, Username: "gopher", Email: "gopher@example.com", Status: 1},
+	2: {Id: 2, Username: "alice", Email: "alice@example.com", Status: 1},
+	3: {Id: 3, Username: "bob", Email: "bob@example.com", Status: 2},
+}
+
+type server struct {
+	pb.UnimplementedUserRpcServer
+}
+
+func (s *server) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.GetUserResponse, error) {
+	user, ok := users[req.GetUserId()]
+	if !ok {
+		return nil, status.Errorf(codes.NotFound, "user %d not found", req.GetUserId())
+	}
+	log.Printf("[UserRpc] GetUser: userId=%d → username=%s", req.GetUserId(), user.GetUsername())
+	return &pb.GetUserResponse{User: user}, nil
+}
+
 func main() {
-	fmt.Println("=== 03 RPC 服务开发 (zRPC) ===")
+	lis, err := net.Listen("tcp", ":9091")
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
+
+	s := grpc.NewServer()
+	pb.RegisterUserRpcServer(s, &server{})
+	reflection.Register(s)
+
+	go func() {
+		sigCh := make(chan os.Signal, 1)
+		signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+		<-sigCh
+		log.Println("Shutting down...")
+		s.GracefulStop()
+	}()
+
+	fmt.Println("=== UserRpc 服务已启动 ===")
+	fmt.Println("  监听端口: :9091 (gRPC)")
+	fmt.Println("  测试: go run userapi/main.go")
 	fmt.Println()
 
-	fmt.Println("--- zRPC vs 原生 gRPC ---")
-	fmt.Println("  go-zero 的 zRPC 在 gRPC 基础上增加了：")
-	fmt.Println("  1. 自动服务注册到 Etcd（无需手动写注册代码）")
-	fmt.Println("  2. 内置拦截器（熔断、限流、超时控制、日志）")
-	fmt.Println("  3. 配置文件驱动（.yaml 配置而非硬编码）")
-	fmt.Println("  4. 与 API 服务无缝集成")
-	fmt.Println()
-
-	fmt.Println("--- 服务端实现（logic 层） ---")
-	fmt.Println(`  func (l *GetUserLogic) GetUser(in *userpb.GetUserRequest) (*userpb.GetUserResponse, error) {
-      // 从数据库查询用户
-      user, err := l.svcCtx.UserModel.FindOne(l.ctx, in.UserId)
-      if err != nil {
-          return nil, status.Error(codes.NotFound, "user not found")
-      }
-      return &userpb.GetUserResponse{
-          User: &userpb.User{
-              Id:       user.Id,
-              Username: user.Username,
-              Email:    user.Email,
-              Status:   int32(user.Status),
-          },
-      }, nil
-  }`)
-	fmt.Println()
-
-	fmt.Println("--- 客户端调用 RPC ---")
-	fmt.Println(`  // API 服务的 ServiceContext 中注入 RPC Client：
-  type ServiceContext struct {
-      Config      config.Config
-      UserRpc     userpb.UserRpcClient     // RPC 客户端
-  }
-
-  func NewServiceContext(c config.Config) *ServiceContext {
-      // 通过 Etcd 发现 RPC 服务
-      conn := zrpc.MustNewClient(zrpc.RpcClientConf{
-          Etcd: discov.EtcdConf{
-              Hosts: []string{"localhost:2379"},
-              Key:   "user.rpc",
-          },
-      })
-      return &ServiceContext{
-          Config:  c,
-          UserRpc: userpb.NewUserRpcClient(conn.Conn()),
-      }
-  }`)
-	fmt.Println()
-
-	fmt.Println("--- API 调用 RPC（首个微服务拆分） ---")
-	fmt.Println(`  func (l *UserInfoLogic) UserInfo(req *types.UserInfoRequest) (*types.UserInfoResponse, error) {
-      userId := l.ctx.Value("userId").(int64)  // 从 JWT 提取
-
-      // 调用 UserRpc 服务获取用户信息
-      userResp, err := l.svcCtx.UserRpc.GetUser(l.ctx, &userpb.GetUserRequest{UserId: userId})
-      if err != nil {
-          return nil, err
-      }
-
-      return &types.UserInfoResponse{
-          UserId:   userResp.User.Id,
-          Username: userResp.User.Username,
-          Email:    userResp.User.Email,
-          Status:   int(userResp.User.Status),
-      }, nil
-  }`)
-	fmt.Println()
-
-	fmt.Println("=== Java 对比 ===")
-	fmt.Println("  Java: @FeignClient(name=\"user-service\") + Eureka")
-	fmt.Println("  go-zero: zRPC Client + Etcd")
-	fmt.Println("  go-zero 的 RPC 调用不依赖注解，通过 ServiceContext 注入，更显式")
-
-	_ = context.Background
-	_ = fmt.Sprint
+	if err := s.Serve(lis); err != nil {
+		log.Fatalf("failed to serve: %v", err)
+	}
 }

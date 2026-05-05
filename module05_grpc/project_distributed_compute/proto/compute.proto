@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package compute;
 
-option go_package = "iotestgo2/module05_grpc/project_distributed_compute/proto/computepb";
+option go_package = "iotestgo/module05_grpc/project_distributed_compute/proto/computepb";
 
 // 计算任务
 message ComputeTask {

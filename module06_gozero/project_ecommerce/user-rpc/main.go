@@ -1,78 +1,146 @@
-// 电商项目 - User RPC 服务（用户服务）
+// 电商项目 - User RPC 服务
+// 职责：管理用户数据，提供 GetUser、CheckUserStatus 接口
 //
-// 职责：用户信息查询、校验
+// 启动：go run user-rpc/main.go
 package main
 
 import (
+	"context"
 	"fmt"
+	"log"
+	"net"
+	"os"
+	"os/signal"
+	"sync"
+	"syscall"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/reflection"
+	"google.golang.org/grpc/status"
 )
 
+// 简化版 proto message 定义（实际项目用 protoc + goctl 生成）
+
+type GetUserRequest struct {
+	UserId int64
+}
+type GetUserResponse struct {
+	UserId   int64
+	Username string
+	Email    string
+	Status   int32
+}
+
+type CheckUserRequest struct {
+	UserId int64
+}
+type CheckUserResponse struct {
+	Valid  bool
+	Status int32
+	Reason string
+}
+
+// UserServiceServer 接口
+type UserServiceServer interface {
+	GetUser(context.Context, *GetUserRequest) (*GetUserResponse, error)
+	CheckUserStatus(context.Context, *CheckUserRequest) (*CheckUserResponse, error)
+}
+
+type userServer struct {
+	mu    sync.RWMutex
+	users map[int64]*GetUserResponse
+}
+
+func newUserServer() *userServer {
+	return &userServer{
+		users: map[int64]*GetUserResponse{
+			1: {UserId: 1, Username: "gopher", Email: "gopher@example.com", Status: 1},
+			2: {UserId: 2, Username: "alice", Email: "alice@example.com", Status: 1},
+			3: {UserId: 3, Username: "bob", Email: "bob@example.com", Status: 2}, // 禁用
+		},
+	}
+}
+
+func (s *userServer) GetUser(ctx context.Context, req *GetUserRequest) (*GetUserResponse, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	user, ok := s.users[req.UserId]
+	if !ok {
+		return nil, status.Errorf(codes.NotFound, "user %d not found", req.UserId)
+	}
+	log.Printf("[UserRpc] GetUser: userId=%d → username=%s", req.UserId, user.Username)
+	return user, nil
+}
+
+func (s *userServer) CheckUserStatus(ctx context.Context, req *CheckUserRequest) (*CheckUserResponse, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	user, ok := s.users[req.UserId]
+	if !ok {
+		return &CheckUserResponse{Valid: false, Reason: "user not found"}, nil
+	}
+	if user.Status == 2 {
+		return &CheckUserResponse{Valid: false, Status: user.Status, Reason: "user disabled"}, nil
+	}
+	return &CheckUserResponse{Valid: true, Status: user.Status}, nil
+}
+
+// ========== gRPC Service Descriptor (简化，不用 proto 生成) ==========
+
+var UserService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "ecommerce.UserService",
+	HandlerType: (*UserServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetUser",
+			Handler: func(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+				req := &GetUserRequest{}
+				if err := dec(req); err != nil {
+					return nil, err
+				}
+				return srv.(UserServiceServer).GetUser(ctx, req)
+			},
+		},
+		{
+			MethodName: "CheckUserStatus",
+			Handler: func(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+				req := &CheckUserRequest{}
+				if err := dec(req); err != nil {
+					return nil, err
+				}
+				return srv.(UserServiceServer).CheckUserStatus(ctx, req)
+			},
+		},
+	},
+}
+
 func main() {
-	fmt.Println("=== 电商项目：User RPC 服务 ===")
+	lis, err := net.Listen("tcp", ":9091")
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
+
+	s := grpc.NewServer()
+	s.RegisterService(&UserService_ServiceDesc, newUserServer())
+	reflection.Register(s)
+
+	go func() {
+		sigCh := make(chan os.Signal, 1)
+		signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+		<-sigCh
+		log.Println("Shutting down UserRpc...")
+		s.GracefulStop()
+	}()
+
+	fmt.Println("=== User RPC 服务 已启动 ===")
+	fmt.Println("  gRPC 端口: :9091")
+	fmt.Println("  接口: GetUser, CheckUserStatus")
+	fmt.Println()
+	fmt.Println("  用户数据：ID=1 gopher(正常) ID=2 alice(正常) ID=3 bob(禁用)")
 	fmt.Println()
 
-	fmt.Println("--- 服务职责 ---")
-	fmt.Println("  1. 提供用户信息查询（GetUser）")
-	fmt.Println("  2. 用户状态校验（是否激活、是否被禁用）")
-	fmt.Println("  3. 被 Order API 调用：校验下单用户是否合法")
-	fmt.Println()
-
-	fmt.Println("--- .proto 定义 ---")
-	fmt.Println(`  service UserRpc {
-      rpc GetUser(GetUserRequest) returns (GetUserResponse);
-      rpc CheckUserStatus(CheckUserStatusRequest) returns (CheckUserStatusResponse);
-  }`)
-	fmt.Println()
-
-	fmt.Println("--- Logic 层实现要点 ---")
-	fmt.Println(`  func (l *GetUserLogic) GetUser(in *userpb.GetUserRequest) (*userpb.GetUserResponse, error) {
-      user, err := l.svcCtx.UserModel.FindOne(l.ctx, in.UserId)
-      if err != nil {
-          if err == model.ErrNotFound {
-              return nil, status.Error(codes.NotFound, "user not found")
-          }
-          return nil, status.Error(codes.Internal, err.Error())
-      }
-
-      return &userpb.GetUserResponse{
-          User: &userpb.User{
-              Id:       user.Id,
-              Username: user.Username,
-              Email:    user.Email,
-              Status:   int32(user.Status),
-          },
-      }, nil
-  }`)
-	fmt.Println()
-
-	fmt.Println("--- 微服务调用关系 ---")
-	fmt.Println()
-	fmt.Println("  ┌─────────────────────────────────────────────┐")
-	fmt.Println("  │  用户请求 POST /api/v1/orders               │")
-	fmt.Println("  │       │                                     │")
-	fmt.Println("  │       ▼                                     │")
-	fmt.Println("  │  [Order API]  (:8888 HTTP)                  │")
-	fmt.Println("  │       │              │                      │")
-	fmt.Println("  │       ▼              ▼                      │")
-	fmt.Println("  │  [Order RPC]     [User RPC]                  │")
-	fmt.Println("  │  (:9090 gRPC)    (:9091 gRPC)               │")
-	fmt.Println("  │       │              │                      │")
-	fmt.Println("  │       ▼              ▼                      │")
-	fmt.Println("  │    MySQL           MySQL                    │")
-	fmt.Println("  │  (orders 表)     (users 表)                  │")
-	fmt.Println("  │                                              │")
-	fmt.Println("  │  注册中心: Etcd (:2379)                      │")
-	fmt.Println("  │  缓存:     Redis (:6379)                     │")
-	fmt.Println("  │  消息队列: Kafka (:9092)                     │")
-	fmt.Println("  └─────────────────────────────────────────────┘")
-	fmt.Println()
-
-	fmt.Println("--- 电商系统服务拆分总结 ---")
-	fmt.Println("  Order API   → 对外 HTTP 接口，编排调用")
-	fmt.Println("  Order RPC   → 订单核心业务 + 数据持久化")
-	fmt.Println("  User RPC    → 用户信息查询")
-	fmt.Println("  Product RPC → 商品信息查询（可扩展）")
-	fmt.Println("  Inventory RPC → 库存管理（可扩展）")
-
-	_ = fmt.Sprint
+	if err := s.Serve(lis); err != nil {
+		log.Fatalf("failed to serve: %v", err)
+	}
 }

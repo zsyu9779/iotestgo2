@@ -1,182 +1,133 @@
-// 分布式计算服务端：接收客户端流式数据，实时计算，流式返回结果
+// 分布式计算项目 - 服务端
+// 接收客户端流式数据，goroutine 池并发计算，流式返回结果
 //
-// 教学要点：
-// - Bidirectional streaming 实战
-// - 并发安全的计算引擎
-// - Context 取消处理
-// - goroutine + channel 协作
+// 启动：go run server/main.go
 package main
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"log"
 	"math"
+	"net"
+	"os"
+	"os/signal"
 	"sort"
 	"sync"
+	"syscall"
+
+	pb "iotestgo/module05_grpc/project_distributed_compute/proto/computepb"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/reflection"
+	"google.golang.org/grpc/status"
 )
 
-func main() {
-	fmt.Println("=== 分布式计算项目 - 服务端 ===")
-	fmt.Println()
-	fmt.Println("项目描述：客户端批量流式发送计算任务 → 服务端流式返回计算结果")
-	fmt.Println()
-
-	fmt.Println("--- 架构设计 ---")
-	fmt.Println("  客户端                          服务端")
-	fmt.Println("  ┌──────────┐                   ┌──────────────────┐")
-	fmt.Println("  │  发送 Task1 │ ──────────────▶ │ Process()        │")
-	fmt.Println("  │  发送 Task2 │ ──────────────▶ │   ├─ 解析任务       │")
-	fmt.Println("  │  发送 Task3 │ ──────────────▶ │   ├─ 并发计算       │")
-	fmt.Println("  │  ← 结果1   │ ◀────────────── │   └─ Send(result)  │")
-	fmt.Println("  │  ← 结果2   │ ◀────────────── │                   │")
-	fmt.Println("  │  ← 结果3   │ ◀────────────── │                   │")
-	fmt.Println("  │  关闭发送    │ ──────────────▶ │  return nil       │")
-	fmt.Println("  └──────────┘                   └──────────────────┘")
-	fmt.Println()
-
-	fmt.Println("--- 核心伪代码 ---")
-	fmt.Println()
-	fmt.Println(`func (s *Server) Process(stream DistributedCompute_ProcessServer) error {
-    // 接收 goroutine：从客户端读任务，放入 channel
-    tasksCh := make(chan *ComputeTask, 100)
-    go func() {
-        defer close(tasksCh)
-        for {
-            task, err := stream.Recv()
-            if err == io.EOF { return }
-            if err != nil { return }
-            tasksCh <- task
-        }
-    }()
-
-    // 处理逻辑：从 channel 读任务，计算结果，发送回客户端
-    for task := range tasksCh {
-        result := compute(task)
-        if err := stream.Send(result); err != nil {
-            return err
-        }
-    }
-    return nil
-}`)
-	fmt.Println()
-
-	// 演示计算引擎
-	showComputeEngine()
+type server struct {
+	pb.UnimplementedDistributedComputeServer
+	workerCount int
 }
 
-// showComputeEngine 演示计算逻辑
-func showComputeEngine() {
-	fmt.Println("--- 计算引擎 ---")
-	fmt.Println()
-
-	tasks := []ComputeTask{
-		{TaskId: "t1", Numbers: []int64{1, 2, 3, 4, 5}, Operation: "sum"},
-		{TaskId: "t2", Numbers: []int64{1, 2, 3, 4, 5}, Operation: "avg"},
-		{TaskId: "t3", Numbers: []int64{3, 1, 4, 1, 5, 9, 2, 6}, Operation: "max"},
-		{TaskId: "t4", Numbers: []int64{3, 1, 4, 1, 5, 9, 2, 6}, Operation: "min"},
-		{TaskId: "t5", Numbers: []int64{1, 2, 3, 4, 5}, Operation: "stddev"},
-	}
-
-	// 模拟并发处理
+// Process 实现双向流 RPC：接收任务 → 并发计算 → 返回结果
+func (s *server) Process(stream pb.DistributedCompute_ProcessServer) error {
+	tasksCh := make(chan *pb.ComputeTask, 100)
 	var wg sync.WaitGroup
-	results := make(chan ComputeResult, len(tasks))
 
-	for _, t := range tasks {
+	// 启动 worker 池并发处理任务
+	for i := 0; i < s.workerCount; i++ {
 		wg.Add(1)
-		go func(t ComputeTask) {
+		go func(workerID int) {
 			defer wg.Done()
-			results <- compute(t)
-		}(t)
+			for task := range tasksCh {
+				result := compute(task)
+				log.Printf("[Worker-%d] 完成: task=%s op=%s status=%s", workerID, task.GetTaskId(), task.GetOperation(), result.GetStatus())
+				if err := stream.Send(result); err != nil {
+					log.Printf("[Worker-%d] 发送结果失败: %v", workerID, err)
+				}
+			}
+		}(i)
 	}
 
-	wg.Wait()
-	close(results)
-
-	for r := range results {
-		fmt.Printf("  Task[%s] %s(%v) = %.2f [%s]\n",
-			r.TaskID, r.Operation, r.TaskID, r.Value, r.Status)
+	// 接收 goroutine：读取客户端发送的任务
+	log.Println("服务端开始接收任务...")
+	for {
+		task, err := stream.Recv()
+		if err == io.EOF {
+			log.Println("客户端发送完毕 (EOF)，等待所有任务处理完成...")
+			close(tasksCh)
+			wg.Wait()
+			log.Println("所有任务处理完成，流正常结束")
+			return nil // return nil 表示流正常结束
+		}
+		if err != nil {
+			log.Printf("接收错误: %v", err)
+			close(tasksCh)
+			return err
+		}
+		log.Printf("收到任务: id=%s op=%s numbers=%v", task.GetTaskId(), task.GetOperation(), task.GetNumbers())
+		tasksCh <- task
 	}
-
-	_ = io.EOF
-	_ = context.Canceled
-	_ = log.Println
 }
 
-// ========== 计算引擎实现 ==========
-
-type ComputeTask struct {
-	TaskID    string
-	Numbers   []int64
-	Operation string
-}
-
-type ComputeResult struct {
-	TaskID    string
-	Operation string
-	Value     float64
-	Status    string
-	Message   string
-}
-
-func compute(task ComputeTask) ComputeResult {
-	r := ComputeResult{
-		TaskID:    task.TaskID,
-		Operation: task.Operation,
+// compute 计算引擎
+func compute(task *pb.ComputeTask) *pb.ComputeResult {
+	r := &pb.ComputeResult{
+		TaskId:    task.GetTaskId(),
+		Operation: task.GetOperation(),
 		Status:    "done",
 	}
 
-	if len(task.Numbers) == 0 {
+	numbers := task.GetNumbers()
+	if len(numbers) == 0 {
 		r.Status = "error"
 		r.Message = "no numbers provided"
 		return r
 	}
 
-	switch task.Operation {
+	switch task.GetOperation() {
 	case "sum":
 		var sum int64
-		for _, n := range task.Numbers {
+		for _, n := range numbers {
 			sum += n
 		}
 		r.Value = float64(sum)
 	case "avg":
 		var sum int64
-		for _, n := range task.Numbers {
+		for _, n := range numbers {
 			sum += n
 		}
-		r.Value = float64(sum) / float64(len(task.Numbers))
+		r.Value = float64(sum) / float64(len(numbers))
 	case "max":
-		r.Value = float64(task.Numbers[0])
-		for _, n := range task.Numbers[1:] {
+		r.Value = float64(numbers[0])
+		for _, n := range numbers[1:] {
 			if float64(n) > r.Value {
 				r.Value = float64(n)
 			}
 		}
 	case "min":
-		r.Value = float64(task.Numbers[0])
-		for _, n := range task.Numbers[1:] {
+		r.Value = float64(numbers[0])
+		for _, n := range numbers[1:] {
 			if float64(n) < r.Value {
 				r.Value = float64(n)
 			}
 		}
 	case "stddev":
 		mean := float64(0)
-		for _, n := range task.Numbers {
+		for _, n := range numbers {
 			mean += float64(n)
 		}
-		mean /= float64(len(task.Numbers))
-
+		mean /= float64(len(numbers))
 		variance := float64(0)
-		for _, n := range task.Numbers {
+		for _, n := range numbers {
 			diff := float64(n) - mean
 			variance += diff * diff
 		}
-		variance /= float64(len(task.Numbers))
+		variance /= float64(len(numbers))
 		r.Value = math.Sqrt(variance)
 	case "median":
-		sorted := make([]int64, len(task.Numbers))
-		copy(sorted, task.Numbers)
+		sorted := make([]int64, len(numbers))
+		copy(sorted, numbers)
 		sort.Slice(sorted, func(i, j int) bool { return sorted[i] < sorted[j] })
 		mid := len(sorted) / 2
 		if len(sorted)%2 == 0 {
@@ -186,10 +137,41 @@ func compute(task ComputeTask) ComputeResult {
 		}
 	default:
 		r.Status = "error"
-		r.Message = fmt.Sprintf("unknown operation: %s", task.Operation)
+		r.Message = fmt.Sprintf("unknown operation: %s", task.GetOperation())
 	}
 
 	return r
 }
 
-_ = math.Sqrt // 确保 math 被引用
+func main() {
+	lis, err := net.Listen("tcp", ":50056")
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
+
+	s := grpc.NewServer()
+	pb.RegisterDistributedComputeServer(s, &server{workerCount: 4})
+	reflection.Register(s)
+
+	go func() {
+		sigCh := make(chan os.Signal, 1)
+		signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+		<-sigCh
+		log.Println("Shutting down...")
+		s.GracefulStop()
+	}()
+
+	log.Println("=== 分布式计算服务 已启动 ===")
+	log.Println("  监听端口: :50056")
+	log.Println("  Worker 数量: 4")
+	log.Println("  支持操作: sum, avg, max, min, stddev, median")
+	log.Println("  测试: go run client/main.go")
+	log.Println()
+
+	if err := s.Serve(lis); err != nil {
+		log.Fatalf("failed to serve: %v", err)
+	}
+
+	_ = status.New
+	_ = codes.OK
+}

@@ -58,4 +58,11 @@ func main() {
 	// go func() { x++ }()
 	// fmt.Println(x)
 	time.Sleep(100 * time.Millisecond)
+
+	fmt.Println()
+	RunRWMutexDemo()
+	fmt.Println()
+	RunSyncMapDemo()
+	fmt.Println()
+	RunMapConcurrentDemo()
 }

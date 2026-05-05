@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package chat;
 
-option go_package = "iotestgo2/module05_grpc/04_streaming_rpc/proto/chatpb";
+option go_package = "iotestgo/module05_grpc/04_streaming_rpc/proto/chatpb";
 
 message ChatMessage {
   string user = 1;

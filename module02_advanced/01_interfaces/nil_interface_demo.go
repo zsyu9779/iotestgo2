@@ -65,7 +65,7 @@ func showBestPractice() {
 	//       不要 return 一个带类型的 nil 指针
 }
 
-func main() {
+func RunNilInterfaceDemo() {
 	fmt.Println("=== Interface Typed-Nil 黑暗角落 ===")
 	fmt.Println()
 

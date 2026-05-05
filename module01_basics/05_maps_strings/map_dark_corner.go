@@ -88,7 +88,7 @@ func showMapPassByValue() {
 	fmt.Println("替换后:", m) // 还是 {1:1, 2:2}，不是 {3:3}
 }
 
-func main() {
+func RunMapDarkCornerDemo() {
 	fmt.Println("=== Map 黑暗角落 ===")
 	fmt.Println()
 	showMapIterationOrder()

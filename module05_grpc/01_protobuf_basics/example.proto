@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package example;
 
-option go_package = "iotestgo2/module05_grpc/01_protobuf_basics/examplepb";
+option go_package = "iotestgo/module05_grpc/01_protobuf_basics/examplepb";
 
 // 枚举定义
 enum Gender {

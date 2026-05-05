@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package hello;
 
-option go_package = "iotestgo2/module05_grpc/02_codegen/hellopb";
+option go_package = "iotestgo/module05_grpc/02_codegen/hellopb";
 
 message HelloRequest {
   string name = 1;

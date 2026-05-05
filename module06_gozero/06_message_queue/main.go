@@ -1,91 +1,119 @@
-// 06 消息队列：go-queue 抽象 + Kafka 集成
+// 06 消息队列：用 Go Channel 模拟 Producer/Consumer 模式
+//
+// 启动：go run main.go
+//
+// 消息队列核心概念：
+//   Producer（生产者） → Broker（消息队列/Channel） → Consumer（消费者）
+//   - 解耦：订单服务不需要直接调用库存服务
+//   - 削峰：高峰期消息堆积，消费者按自己速度处理
+//   - 异步：发送后立即返回，不等待处理
 package main
 
 import (
 	"fmt"
+	"sync"
 	"time"
 )
 
+// Message 消息结构
+type Message struct {
+	ID        string
+	Topic     string
+	Data      interface{}
+	Timestamp time.Time
+}
+
+// Producer 生产者
+type Producer struct {
+	name  string
+	queue chan<- Message
+}
+
+func (p *Producer) Send(topic string, data interface{}) {
+	msg := Message{
+		ID:        fmt.Sprintf("%s-%d", p.name, time.Now().UnixNano()),
+		Topic:     topic,
+		Data:      data,
+		Timestamp: time.Now(),
+	}
+	p.queue <- msg
+	fmt.Printf("  [%s] 生产消息 → topic=%s, id=%s, data=%v\n", p.name, topic, msg.ID, data)
+}
+
+// Consumer 消费者
+type Consumer struct {
+	name  string
+	queue <-chan Message
+	wg    *sync.WaitGroup
+}
+
+func (c *Consumer) Start() {
+	c.wg.Add(1)
+	go func() {
+		defer c.wg.Done()
+		for msg := range c.queue {
+			fmt.Printf("  [%s] 消费消息 ← topic=%s, id=%s, data=%v\n", c.name, msg.Topic, msg.ID, msg.Data)
+			// 模拟处理耗时
+			time.Sleep(500 * time.Millisecond)
+		}
+		fmt.Printf("  [%s] 消费完成\n", c.name)
+	}()
+}
+
 func main() {
-	fmt.Println("=== 06 消息队列 ===")
+	fmt.Println("=== 消息队列演示（Go Channel 版） ===")
 	fmt.Println()
 
-	fmt.Println("--- go-queue 设计理念 ---")
-	fmt.Println("  go-queue 是 go-zero 的消息队列抽象层：")
-	fmt.Println("  1. 统一接口：Producer / Consumer 接口不绑定具体 MQ")
-	fmt.Println("  2. 支持多种 MQ：Kafka、Beanstalk、NSQ、RabbitMQ")
-	fmt.Println("  3. 内置重试、死信队列、消息去重")
+	// 创建消息队列（缓冲 channel，容量 10）
+	queue := make(chan Message, 10)
+	var wg sync.WaitGroup
+
+	// ========== 1. 单生产者 → 单消费者 ==========
+	fmt.Println("--- 1. 单生产者 → 单消费者 ---")
+	p1 := &Producer{name: "order-service", queue: queue}
+	c1 := &Consumer{name: "inventory-consumer", queue: queue, wg: &wg}
+	c1.Start()
+
+	p1.Send("order.created", "订单 #1001 已创建")
+	p1.Send("order.created", "订单 #1002 已创建")
+	p1.Send("order.created", "订单 #1003 已创建")
+
+	time.Sleep(2 * time.Second)
+
+	// ========== 2. 演示新的消费者 — 每个消息被一个消费者消费 ==========
+	fmt.Println()
+	fmt.Println("--- 2. 多消费者竞争消费 ---")
+	// 注意：Channel 模式是点对点，消息被消费后其他消费者无法再消费
+	// 实际 Kafka 是按 partition 分配消费者，每个 group 消费一次
+	// 这里演示多个 goroutine 竞争消费同一个 channel
+
+	queue2 := make(chan Message, 10)
+	c2a := &Consumer{name: "consumer-a", queue: queue2, wg: &wg}
+	c2b := &Consumer{name: "consumer-b", queue: queue2, wg: &wg}
+	p2 := &Producer{name: "order-service", queue: queue2}
+
+	c2a.Start()
+	c2b.Start()
+
+	for i := 1; i <= 4; i++ {
+		p2.Send("order.created", fmt.Sprintf("订单 #%d", 2000+i))
+	}
+	close(queue2)
+	wg.Wait()
 	fmt.Println()
 
-	fmt.Println("--- Kafka 集成示例 ---")
+	fmt.Println("=== 消息队列的作用 ===")
+	fmt.Println("  1. 解耦：订单服务不需要知道库存服务的存在")
+	fmt.Println("  2. 削峰：消息缓冲在 Queue 中，消费者按自己速度处理")
+	fmt.Println("  3. 异步：生产者发送后立即返回，不等待消费结果")
+	fmt.Println("  4. 可靠性：Kafka 多副本 + ISR 保证消息不丢")
 	fmt.Println()
-	fmt.Println("配置文件 etc/order-api.yaml：")
-	fmt.Println(`  Kafka:
-    Addrs:
-      - localhost:9092
-    Topic: order.created`)
+	fmt.Println("=== go-zero 的 go-queue 抽象 ===")
+	fmt.Println("  go-queue 封装了 Producer / Consumer 接口")
+	fmt.Println("  支持 Kafka、Beanstalk、NSQ、RabbitMQ")
+	fmt.Println("  内置重试、死信队列、消息去重")
 	fmt.Println()
-
-	fmt.Println("生产者（订单创建后发送消息）：")
-	fmt.Println(`  func (l *CreateOrderLogic) CreateOrder(req *types.CreateOrderRequest) (*types.CreateOrderResponse, error) {
-      // 1. 创建订单（写数据库）
-      order, err := l.svcCtx.OrderModel.Insert(l.ctx, &model.Order{...})
-      if err != nil { return nil, err }
-
-      // 2. 发送消息到 Kafka
-      msg := map[string]interface{}{
-          "order_id": order.Id,
-          "user_id":  req.UserId,
-          "amount":   req.Amount,
-          "time":     time.Now().Unix(),
-      }
-      msgBytes, _ := json.Marshal(msg)
-      if err := l.svcCtx.KafkaPusher.Push(string(msgBytes)); err != nil {
-          logx.Errorf("kafka push error: %v", err)
-          // 消息发送失败不影响主流程（异步补偿）
-      }
-
-      return &types.CreateOrderResponse{OrderId: order.Id}, nil
-  }`)
-	fmt.Println()
-
-	fmt.Println("消费者（库存服务消费订单消息）：")
-	fmt.Println(`  func ConsumeOrderCreated(ctx context.Context, svcCtx *svc.ServiceContext) error {
-      for {
-          msg, err := svcCtx.KafkaConsumer.Consume(ctx)
-          if err != nil { return err }
-
-          var orderMsg OrderMessage
-          json.Unmarshal(msg, &orderMsg)
-
-          // 扣减库存
-          if err := svcCtx.InventoryModel.Deduct(ctx, orderMsg.ProductId, orderMsg.Quantity); err != nil {
-              // 处理失败：重试 or 死信队列 or 人工补偿
-              logx.Errorf("deduct inventory failed: %v", err)
-          }
-
-          msg.Ack()  // 确认消费
-      }
-  }`)
-	fmt.Println()
-
-	fmt.Println("--- 消息队列在微服务中的作用 ---")
-	fmt.Println("  1. 解耦：订单服务不需要直接调用库存服务")
-	fmt.Println("  2. 削峰：高峰期消息堆积在 Kafka，消费者按自己速度处理")
-	fmt.Println("  3. 异步：订单创建后立即返回，后续流程异步完成")
-	fmt.Println("  4. 最终一致性：通过消息 + 本地事务表保证")
-	fmt.Println()
-
-	fmt.Println("--- 消息可靠性保证 ---")
-	fmt.Println("  1. 生产端：本地事务表 + 定时任务补偿（Outbox 模式）")
-	fmt.Println("  2. Broker 端：Kafka 多副本 + ISR 机制")
-	fmt.Println("  3. 消费端：手动 Ack + 幂等消费（唯一 ID 去重）")
-	fmt.Println()
-
 	fmt.Println("=== Java 对比 ===")
-	fmt.Println("  Java: Spring Kafka / RocketMQTemplate")
-	fmt.Println("  go-zero: go-queue 抽象 + Kafka 插件")
-	fmt.Println("  go-zero 的 go-queue 接口更简洁，不依赖 Spring 的自动配置")
-
-	_ = time.Now
+	fmt.Println("  Java: Spring Kafka / RocketMQTemplate + @KafkaListener")
+	fmt.Println("  go-zero: go-queue + goctl 生成 Consumer/Producer 模板")
 }

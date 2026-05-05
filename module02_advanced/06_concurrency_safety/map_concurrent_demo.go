@@ -86,7 +86,7 @@ func showSyncMapUsage() {
 	})
 }
 
-func main() {
+func RunMapConcurrentDemo() {
 	fmt.Println("=== 并发 Map 黑暗角落 ===")
 	fmt.Println()
 

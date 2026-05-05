@@ -28,7 +28,7 @@ func (c *SafeCache) Set(key, value string) {
 	c.data[key] = value
 }
 
-func main() {
+func RunRWMutexDemo() {
 	fmt.Println("=== RWMutex 读写锁演示 ===")
 	fmt.Println()
 	fmt.Println("特性：")

@@ -77,7 +77,7 @@ type ErrorResponse struct {
 	Error string `json:"error" example:"invalid credentials"`
 }
 
-func main() {
+func RunSwaggerDemo() {
 	fmt.Println("=== Swagger 文档集成 ===")
 	fmt.Println()
 	fmt.Println("1. 安装 swag: go install github.com/swaggo/swag/cmd/swag@latest")

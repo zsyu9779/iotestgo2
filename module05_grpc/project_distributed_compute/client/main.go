@@ -1,4 +1,7 @@
-// 分布式计算客户端：流式发送计算任务，流式接收结果
+// 分布式计算项目 - 客户端
+// 批量流式发送计算任务，实时接收计算结果
+//
+// 用法：go run client/main.go
 package main
 
 import (
@@ -6,72 +9,94 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"sync"
 	"time"
+
+	pb "iotestgo/module05_grpc/project_distributed_compute/proto/computepb"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 func main() {
-	fmt.Println("=== 分布式计算项目 - 客户端 ===")
-	fmt.Println()
-	fmt.Println("客户端流程：")
-	fmt.Println("1. 建立连接 → 创建 Process stream")
-	fmt.Println("2. 启动接收 goroutine（接收结果并打印）")
-	fmt.Println("3. 逐个发送计算任务")
-	fmt.Println("4. CloseSend() 通知服务端不再发送")
-	fmt.Println("5. 等待结果接收完毕")
-	fmt.Println()
+	conn, err := grpc.NewClient("localhost:50056",
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		log.Fatalf("连接失败: %v", err)
+	}
+	defer conn.Close()
 
-	fmt.Println("--- 核心伪代码 ---")
-	fmt.Println()
-	fmt.Println(`func runClient() {
-    conn, _ := grpc.Dial("localhost:50051", ...)
-    client := pb.NewDistributedComputeClient(conn)
+	client := pb.NewDistributedComputeClient(conn)
 
-    ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-    defer cancel()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
-    stream, err := client.Process(ctx)
-    if err != nil { log.Fatal(err) }
+	stream, err := client.Process(ctx)
+	if err != nil {
+		log.Fatalf("创建 Process stream 失败: %v", err)
+	}
 
-    // 接收 goroutine
-    var wg sync.WaitGroup
-    wg.Add(1)
-    go func() {
-        defer wg.Done()
-        for {
-            result, err := stream.Recv()
-            if err == io.EOF { return }
-            if err != nil { log.Fatal(err) }
-            fmt.Printf("Result: task=%s op=%s value=%.2f status=%s\n",
-                result.TaskId, result.Operation, result.Value, result.Status)
-        }
-    }()
-
-    // 发送任务
-    tasks := []*pb.ComputeTask{
-        {TaskId: "t1", Numbers: []int64{1,2,3,4,5}, Operation: "sum"},
-        {TaskId: "t2", Numbers: []int64{1,2,3,4,5}, Operation: "avg"},
-        {TaskId: "t3", Numbers: []int64{3,1,4,1,5,9,2,6}, Operation: "max"},
-    }
-    for _, task := range tasks {
-        if err := stream.Send(task); err != nil {
-            log.Printf("send error: %v", err)
-        }
-    }
-
-    stream.CloseSend()  // 告知服务端：发送完毕
-    wg.Wait()           // 等待接收完成
-}`)
+	fmt.Println("=== 分布式计算客户端 ===")
 	fmt.Println()
 
-	fmt.Println("--- 关键技术点 ---")
-	fmt.Println("1. Bidirectional stream: Send() 和 Recv() 独立，不互相阻塞")
-	fmt.Println("2. CloseSend() 关闭发送端（客户端无法再发送，但可以继续接收）")
-	fmt.Println("3. 服务端处理完所有任务后 return nil，客户端 Recv() 收到 io.EOF")
-	fmt.Println("4. Context 超时控制整个 stream 的生命周期")
-	fmt.Println("5. 生产环境建议：处理 backpressure（服务端慢时客户端不要发太快）")
+	// 准备测试任务
+	tasks := []*pb.ComputeTask{
+		{TaskId: "t1-sum", Numbers: []int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, Operation: "sum"},
+		{TaskId: "t2-avg", Numbers: []int64{10, 20, 30, 40, 50}, Operation: "avg"},
+		{TaskId: "t3-max", Numbers: []int64{3, 1, 4, 1, 5, 9, 2, 6, 5, 3}, Operation: "max"},
+		{TaskId: "t4-min", Numbers: []int64{8, 3, 2, 7, 0, 4}, Operation: "min"},
+		{TaskId: "t5-stddev", Numbers: []int64{2, 4, 4, 4, 5, 5, 7, 9}, Operation: "stddev"},
+		{TaskId: "t6-median", Numbers: []int64{3, 5, 1, 4, 2, 6}, Operation: "median"},
+		{TaskId: "t7-avg", Numbers: []int64{100, 200, 300}, Operation: "avg"},
+	}
 
-	_ = context.Background
-	_ = io.EOF
-	_ = log.Println
-	_ = time.Now
+	var wg sync.WaitGroup
+	start := time.Now()
+
+	// 接收 goroutine：实时打印计算结果
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for {
+			result, err := stream.Recv()
+			if err == io.EOF {
+				fmt.Println()
+				fmt.Println("  流接收完成 (EOF)")
+				return
+			}
+			if err != nil {
+				log.Printf("接收错误: %v", err)
+				return
+			}
+			fmt.Printf("  ✓ %-10s | %-8s | %.4f | %s\n",
+				result.GetTaskId(), result.GetOperation(), result.GetValue(), result.GetStatus())
+		}
+	}()
+
+	// 发送任务
+	fmt.Printf("发送 %d 个计算任务...\n\n", len(tasks))
+	fmt.Println("  Task ID    | 操作     | 结果")
+	fmt.Println("  -----------|----------|-----------")
+
+	for _, task := range tasks {
+		if err := stream.Send(task); err != nil {
+			log.Printf("发送失败: %v", err)
+			break
+		}
+	}
+
+	// 通知服务端：客户端不再发送
+	stream.CloseSend()
+	wg.Wait()
+
+	elapsed := time.Since(start)
+	fmt.Println()
+	fmt.Printf("=== 完成：%d 个任务，耗时 %v ===\n", len(tasks), elapsed)
+	fmt.Println()
+	fmt.Println("关键技术点：")
+	fmt.Println("  1. Bidirectional streaming: Send() 和 Recv() 独立不阻塞")
+	fmt.Println("  2. Worker 池：4 个 goroutine 并发处理计算任务")
+	fmt.Println("  3. CloseSend() 关闭发送端 → 服务端 Recv() 收到 io.EOF")
+	fmt.Println("  4. 服务端处理完所有任务后 return nil → 客户端收到 io.EOF")
 }

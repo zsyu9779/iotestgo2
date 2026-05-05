@@ -1,9 +1,7 @@
-// 服务端：实现 Greeter 服务，监听 50051 端口
+// 03 Unary RPC 服务端：实现 GreeterServer 接口，启动 gRPC 服务
 //
-// 运行前需先生成 proto 代码：
-//   cd module05_grpc/03_unary_rpc/proto
-//   protoc --go_out=. --go_opt=paths=source_relative \
-//          --go-grpc_out=. --go-grpc_opt=paths=source_relative hello.proto
+// 启动：go run server/main.go
+// 测试：grpcurl -plaintext -d '{"name":"Gopher"}' localhost:50051 hello.Greeter/SayHello
 package main
 
 import (
@@ -11,83 +9,78 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
+
+	pb "iotestgo/module05_grpc/03_unary_rpc/proto/hellopb"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
 
-// 实际项目中 import 路径类似：
-// pb "iotestgo2/module05_grpc/03_unary_rpc/proto/hellopb"
-// 这里为教学演示使用伪代码结构
-
 // server 实现 GreeterServer 接口
 type server struct {
-	// pb.UnimplementedGreeterServer  // 实际项目中嵌入此结构体以保证向前兼容
+	pb.UnimplementedGreeterServer
 }
 
-// SayHello 实现一元 RPC 方法
-// ctx 携带截止时间、取消信号、metadata 等
-func (s *server) SayHello(ctx context.Context, req *HelloRequest) (*HelloResponse, error) {
-	// 检查 ctx 是否已超时或取消
-	if ctx.Err() != nil {
-		return nil, ctx.Err()
+// SayHello 实现 Unary RPC 方法
+// 客户端发一个请求 → 服务端返回一个响应
+func (s *server) SayHello(ctx context.Context, req *pb.HelloRequest) (*pb.HelloResponse, error) {
+	// 1. 检查 context 是否已取消（客户端超时/主动取消）
+	if err := ctx.Err(); err != nil {
+		return nil, err
 	}
 
+	// 2. 提取请求参数
 	name := req.GetName()
 	if name == "" {
 		name = "World"
 	}
 
-	// 模拟业务处理耗时
+	// 3. 模拟业务处理
 	time.Sleep(10 * time.Millisecond)
 
-	return &HelloResponse{
+	// 4. 构造响应
+	return &pb.HelloResponse{
 		Message: fmt.Sprintf("Hello, %s! (from gRPC server)", name),
 	}, nil
 }
 
-// ========== 以下是伪代码演示结构，实际需配合 proto 生成代码运行 ==========
-
 func main() {
-	fmt.Println("=== 03 Unary RPC 服务端 ===")
-	fmt.Println()
-	fmt.Println("步骤：")
-	fmt.Println("1. 定义 .proto 文件 -> protoc 生成 .pb.go + _grpc.pb.go")
-	fmt.Println("2. 实现 GreeterServer 接口（SayHello 方法）")
-	fmt.Println("3. 创建 gRPC Server -> 注册服务 -> net.Listen + Serve")
-	fmt.Println()
+	// 1. 监听 TCP 端口
+	lis, err := net.Listen("tcp", ":50051")
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
 
-	// 实际运行代码：
-	// lis, err := net.Listen("tcp", ":50051")
-	// if err != nil {
-	// 	log.Fatalf("failed to listen: %v", err)
-	// }
-	//
-	// s := grpc.NewServer()
-	// pb.RegisterGreeterServer(s, &server{})
-	// reflection.Register(s) // 可选：允许 grpcurl 等工具发现服务
-	//
-	// log.Println("gRPC server listening on :50051")
-	// if err := s.Serve(lis); err != nil {
-	// 	log.Fatalf("failed to serve: %v", err)
-	// }
+	// 2. 创建 gRPC Server
+	s := grpc.NewServer()
 
-	// 确保编译通过（防止 import 未使用报错）
-	_ = net.Listen
-	_ = grpc.NewServer
-	_ = reflection.Register
-	_ = context.Canceled
-	_ = log.Println
-}
+	// 3. 注册 Greeter 服务
+	pb.RegisterGreeterServer(s, &server{})
 
-// 占位结构体（实际由 protoc 生成）
-type HelloRequest struct {
-	Name string
-}
+	// 4. 注册反射服务（方便 grpcurl 等工具调试）
+	reflection.Register(s)
 
-func (r *HelloRequest) GetName() string { return r.Name }
+	// 5. 优雅退出：捕获信号后停止接受新请求
+	go func() {
+		sigCh := make(chan os.Signal, 1)
+		signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+		sig := <-sigCh
+		log.Printf("Received signal %v, shutting down...", sig)
+		s.GracefulStop()
+	}()
 
-type HelloResponse struct {
-	Message string
+	// 6. 启动服务
+	log.Println("=== gRPC Server 已启动 ===")
+	log.Println("  监听端口: :50051")
+	log.Println("  测试命令: grpcurl -plaintext -d '{\"name\":\"Gopher\"}' localhost:50051 hello.Greeter/SayHello")
+	log.Println("  或运行: go run client/main.go")
+	log.Println()
+
+	if err := s.Serve(lis); err != nil {
+		log.Fatalf("failed to serve: %v", err)
+	}
 }

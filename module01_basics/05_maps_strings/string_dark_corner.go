@@ -49,7 +49,7 @@ func showStringImmutability() {
 	fmt.Println("修改后:", s)
 }
 
-func main() {
+func RunStringDarkCornerDemo() {
 	showStringZeroValue()
 	showUTF8Behavior()
 	showStringImmutability()

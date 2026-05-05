@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package auth;
 
-option go_package = "iotestgo2/module05_grpc/06_metadata_auth/proto/authpb";
+option go_package = "iotestgo/module05_grpc/06_metadata_auth/proto/authpb";
 
 message HelloRequest {
   string name = 1;

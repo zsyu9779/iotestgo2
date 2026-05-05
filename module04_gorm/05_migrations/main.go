@@ -64,4 +64,3 @@ func main() {
 	println("    Flyway 是命令式迁移（每个变更写一个 SQL 文件）")
 }
 
-_ = dsn // 避免 unused variable
