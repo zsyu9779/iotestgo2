@@ -24,8 +24,13 @@ func main() {
 	if dsn == "" {
 		dsn = "root:password@tcp(127.0.0.1:3306)/gorm_demo?charset=utf8mb4&parseTime=True&loc=Local"
 	}
-	db, _ := gorm.Open(mysql.Open(dsn), &gorm.Config{})
-	db.AutoMigrate(&Category{}, &Product{})
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	if err != nil {
+		panic("db connection failed: " + err.Error())
+	}
+	if err := db.AutoMigrate(&Category{}, &Product{}); err != nil {
+		panic("migration failed: " + err.Error())
+	}
 
 	c := Category{Name: "Tech", Products: []Product{{Name: "Laptop"}, {Name: "Phone"}}}
 	db.Create(&c)

@@ -1,0 +1,87 @@
+// .api 定义语言：go-zero 的 API 描述语言（类似 OpenAPI / Swagger）
+//
+// 文件名：user.api
+// 生成命令：goctl api go -api user.api -dir .
+
+syntax = "v1"
+
+info(
+	title:   "用户服务 API"
+	desc:    "用户注册、登录、信息查询"
+	version: "1.0"
+)
+
+// JWT 认证
+type JwtAuth struct {
+	Token string `json:"token"`
+}
+
+// 注册请求
+type RegisterRequest {
+	Username string `json:"username"`
+	Password string `json:"password"`
+	Email    string `json:"email,optional"`
+}
+
+// 注册响应
+type RegisterResponse {
+	UserId   int64  `json:"user_id"`
+	Username string `json:"username"`
+	Token    string `json:"token"`
+}
+
+// 登录请求
+type LoginRequest {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+// 登录响应
+type LoginResponse {
+	Token    string `json:"token"`
+	UserId   int64  `json:"user_id"`
+	Username string `json:"username"`
+}
+
+// 用户信息响应
+type UserInfoResponse {
+	UserId   int64  `json:"user_id"`
+	Username string `json:"username"`
+	Email    string `json:"email"`
+	Status   int    `json:"status"`
+}
+
+// 用户服务 API 路由
+@server(
+	prefix: /api/v1
+	group:  user
+)
+service user-api {
+	@doc "用户注册"
+	@handler UserRegister
+	post /register (RegisterRequest) returns (RegisterResponse)
+
+	@doc "用户登录"
+	@handler UserLogin
+	post /login (LoginRequest) returns (LoginResponse)
+}
+
+@server(
+	prefix:   /api/v1
+	group:    user
+	jwt:      JwtAuth       // 该组需要 JWT 认证
+)
+service user-api {
+	@doc "获取用户信息"
+	@handler UserInfo
+	get /info returns (UserInfoResponse)
+}
+
+// .api 语法要点：
+// 1. type 定义请求/响应结构体
+// 2. @server 块定义一组路由的前缀、中间件
+// 3. service 定义服务名
+// 4. @handler 指定 Handler 名称（生成的函数名）
+// 5. @doc 用于生成 API 文档
+// 6. jwt: AuthType 自动集成 JWT 中间件
+// 7. optional 标签表示可选字段

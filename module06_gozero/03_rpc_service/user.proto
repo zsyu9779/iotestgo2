@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package user;
+
+option go_package = "iotestgo2/module06_gozero/03_rpc_service/userrpc/userpb";
+
+// 用户信息
+message User {
+  int64  id       = 1;
+  string username = 2;
+  string email    = 3;
+  int32  status   = 4;
+}
+
+// 获取用户请求
+message GetUserRequest {
+  int64 user_id = 1;
+}
+
+// 获取用户响应
+message GetUserResponse {
+  User user = 1;
+}
+
+// 用户 RPC 服务
+service UserRpc {
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+}

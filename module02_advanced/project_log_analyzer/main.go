@@ -95,7 +95,6 @@ func RunPipeline(numProcessors int, logCount int) int {
 }
 
 func main() {
-	rand.Seed(time.Now().UnixNano())
 	start := time.Now()
 	errs := RunPipeline(3, 100)
 	fmt.Printf("Processed 100 logs, found %d errors in %v\n", errs, time.Since(start))

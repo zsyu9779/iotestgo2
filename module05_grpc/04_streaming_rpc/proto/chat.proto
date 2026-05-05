@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package chat;
+
+option go_package = "iotestgo2/module05_grpc/04_streaming_rpc/proto/chatpb";
+
+message ChatMessage {
+  string user = 1;
+  string text = 2;
+  int64 timestamp = 3;
+}
+
+// 聊天室服务——演示三种流式 RPC
+service ChatRoom {
+  // 服务端流：客户端发一次请求，服务端持续推送消息
+  rpc Subscribe(SubscribeRequest) returns (stream ChatMessage);
+
+  // 客户端流：客户端持续发送消息，服务端最后返回确认
+  rpc SendMessages(stream ChatMessage) returns (SendSummary);
+
+  // 双向流：双方独立读写，全双工通信
+  rpc Chat(stream ChatMessage) returns (stream ChatMessage);
+}
+
+message SubscribeRequest {
+  string room_id = 1;
+}
+
+message SendSummary {
+  int32 message_count = 1;
+  string status = 2;
+}

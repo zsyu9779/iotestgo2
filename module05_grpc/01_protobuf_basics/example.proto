@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package example;
+
+option go_package = "iotestgo2/module05_grpc/01_protobuf_basics/examplepb";
+
+// 枚举定义
+enum Gender {
+  UNKNOWN = 0;
+  MALE = 1;
+  FEMALE = 2;
+}
+
+// 嵌套 message
+message Address {
+  string street = 1;
+  string city = 2;
+  string zip_code = 3;
+}
+
+// 用户信息
+message User {
+  int32 id = 1;
+  string name = 2;
+  int32 age = 3;
+  Gender gender = 4;
+  repeated string tags = 5;          // 数组/列表
+  Address address = 6;               // 嵌套类型
+  map<string, string> metadata = 7;  // map 类型
+}
+
+// 请求
+message GetUserRequest {
+  int32 user_id = 1;
+}
+
+// 响应
+message GetUserResponse {
+  User user = 1;
+}
+
+// 服务定义
+service UserService {
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+}

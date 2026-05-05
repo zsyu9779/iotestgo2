@@ -1,0 +1,62 @@
+# go-zero 微服务 K8s 部署清单
+# 生成命令：goctl kube deploy -name user-api -namespace default -image user-api:latest -o deployment.yaml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-api
+  labels:
+    app: user-api
+spec:
+  replicas: 3  # 3 个副本
+  selector:
+    matchLabels:
+      app: user-api
+  template:
+    metadata:
+      labels:
+        app: user-api
+    spec:
+      containers:
+        - name: user-api
+          image: user-api:latest
+          ports:
+            - containerPort: 8888
+          env:
+            - name: MYSQL_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: dsn
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          livenessProbe:   # 存活探针
+            httpGet:
+              path: /health
+              port: 8888
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          readinessProbe:  # 就绪探针
+            httpGet:
+              path: /ready
+              port: 8888
+            initialDelaySeconds: 5
+            periodSeconds: 3
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-api-svc
+spec:
+  selector:
+    app: user-api
+  ports:
+    - port: 8888
+      targetPort: 8888
+  type: ClusterIP

@@ -21,9 +21,11 @@ func main() {
 	}
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
-		panic(err)
+		panic("db connection failed: " + err.Error())
 	}
-	db.AutoMigrate(&Product{})
+	if err := db.AutoMigrate(&Product{}); err != nil {
+		panic("migration failed: " + err.Error())
+	}
 
 	db.Create(&Product{Code: "A001", Price: 100})
 

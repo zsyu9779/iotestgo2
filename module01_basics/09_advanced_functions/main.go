@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	fmt.Println("=== Go 语言高级函数特性完整演示 ===\n")
+	fmt.Println("=== Go 语言高级函数特性完整演示 ===")
 
 	// 1. 函数作为一等公民（函数变量）
 	fmt.Println("1. 函数变量:")

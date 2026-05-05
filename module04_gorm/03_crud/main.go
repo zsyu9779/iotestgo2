@@ -19,9 +19,15 @@ func main() {
 	if dsn == "" {
 		dsn = "root:password@tcp(127.0.0.1:3306)/gorm_demo?charset=utf8mb4&parseTime=True&loc=Local"
 	}
-	db, _ := gorm.Open(mysql.Open(dsn), &gorm.Config{})
-	db.AutoMigrate(&Item{})
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	if err != nil {
+		panic("db connection failed: " + err.Error())
+	}
+	if err := db.AutoMigrate(&Item{}); err != nil {
+		panic("migration failed: " + err.Error())
+	}
 
+	// 教学简化：CRUD 操作错误在教学中省略处理，生产环境应检查 error
 	db.Create(&Item{Name: "Book", Stock: 10})
 	db.Create(&Item{Name: "Pen", Stock: 100})
 

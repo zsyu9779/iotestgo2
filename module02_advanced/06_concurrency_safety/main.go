@@ -42,14 +42,15 @@ func main() {
 
 	// 2. Atomic
 	var ops uint64
+	var wg2 sync.WaitGroup
 	for i := 0; i < 1000; i++ {
-		wg.Add(1)
+		wg2.Add(1)
 		go func() {
-			defer wg.Done()
+			defer wg2.Done()
 			atomic.AddUint64(&ops, 1)
 		}()
 	}
-	wg.Wait()
+	wg2.Wait()
 	fmt.Println("Ops Value (Atomic):", ops)
 
 	// Race condition example (if run with go run -race)
