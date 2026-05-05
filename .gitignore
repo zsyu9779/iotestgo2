@@ -6,3 +6,9 @@
 .claude
 docs
 *_verify_test.go
+
+# Go compiled binaries
+iotestgo
+server
+client
+*.exe
