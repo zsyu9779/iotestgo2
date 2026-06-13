@@ -26,3 +26,18 @@ func TestTaskManager(t *testing.T) {
 		t.Errorf("expected 0 tasks, got %d", len(tm.tasks))
 	}
 }
+
+func TestTaskManagerSnapshotIsCopy(t *testing.T) {
+	tm := NewTaskManager()
+	tm.Add("read grpc chapter")
+
+	snapshot := tm.Snapshot()
+	if len(snapshot) != 1 {
+		t.Fatalf("expected 1 task, got %d", len(snapshot))
+	}
+	snapshot[0].Completed = true
+
+	if tm.tasks[0].Completed {
+		t.Fatal("snapshot mutation changed internal task state")
+	}
+}

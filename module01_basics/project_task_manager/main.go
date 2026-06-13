@@ -53,6 +53,14 @@ func (tm *TaskManager) List() {
 	}
 }
 
+func (tm *TaskManager) Snapshot() []Task {
+	result := make([]Task, 0, len(tm.tasks))
+	for _, task := range tm.tasks {
+		result = append(result, *task)
+	}
+	return result
+}
+
 func (tm *TaskManager) Complete(id int) {
 	for _, t := range tm.tasks {
 		if t.ID == id {

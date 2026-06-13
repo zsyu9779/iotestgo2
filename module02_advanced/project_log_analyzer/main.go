@@ -56,6 +56,30 @@ func LogProcessor(id int, in <-chan LogEntry, errorsCh chan<- LogEntry, wg *sync
 	}
 }
 
+func CountErrors(entries []LogEntry, numProcessors int) int {
+	logsCh := make(chan LogEntry, len(entries))
+	errorsCh := make(chan LogEntry, len(entries))
+
+	var wg sync.WaitGroup
+	for i := 1; i <= numProcessors; i++ {
+		wg.Add(1)
+		go LogProcessor(i, logsCh, errorsCh, &wg)
+	}
+
+	for _, entry := range entries {
+		logsCh <- entry
+	}
+	close(logsCh)
+	wg.Wait()
+	close(errorsCh)
+
+	count := 0
+	for range errorsCh {
+		count++
+	}
+	return count
+}
+
 func RunPipeline(numProcessors int, logCount int) int {
 	// Channels
 	logsCh := make(chan LogEntry, 100)

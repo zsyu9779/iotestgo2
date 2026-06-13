@@ -1,16 +1,16 @@
 module iotestgo
 
-go 1.25
-
-toolchain go1.25.0
+go 1.25.0
 
 require (
+	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/gin-gonic/gin v1.11.0
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/google/uuid v1.6.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.29.0
 	github.com/spf13/viper v1.21.0
 	github.com/zeromicro/go-zero v1.10.1
+	go.etcd.io/etcd/client/v3 v3.6.11
 	go.uber.org/zap v1.27.1
 	google.golang.org/grpc v1.81.0
 	google.golang.org/protobuf v1.36.11
@@ -77,7 +77,6 @@ require (
 	github.com/ugorji/go/codec v1.3.0 // indirect
 	go.etcd.io/etcd/api/v3 v3.6.11 // indirect
 	go.etcd.io/etcd/client/pkg/v3 v3.6.11 // indirect
-	go.etcd.io/etcd/client/v3 v3.6.11 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/otel v1.43.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.40.0 // indirect
