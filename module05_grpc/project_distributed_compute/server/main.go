@@ -5,86 +5,18 @@
 package main
 
 import (
-	"io"
 	"log"
 	"net"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 
-	"iotestgo/module05_grpc/project_distributed_compute/internal/engine"
+	computeServer "iotestgo/module05_grpc/project_distributed_compute/internal/server"
 	pb "iotestgo/module05_grpc/project_distributed_compute/proto/computepb"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/reflection"
-	"google.golang.org/grpc/status"
 )
-
-type server struct {
-	pb.UnimplementedDistributedComputeServer
-	workerCount int
-}
-
-// Process 实现双向流 RPC：接收任务 → 并发计算 → 返回结果
-func (s *server) Process(stream pb.DistributedCompute_ProcessServer) error {
-	tasksCh := make(chan *pb.ComputeTask, 100)
-	var wg sync.WaitGroup
-
-	// 启动 worker 池并发处理任务
-	for i := 0; i < s.workerCount; i++ {
-		wg.Add(1)
-		go func(workerID int) {
-			defer wg.Done()
-			for task := range tasksCh {
-				result := compute(task)
-				log.Printf("[Worker-%d] 完成: task=%s op=%s status=%s", workerID, task.GetTaskId(), task.GetOperation(), result.GetStatus())
-				if err := stream.Send(result); err != nil {
-					log.Printf("[Worker-%d] 发送结果失败: %v", workerID, err)
-				}
-			}
-		}(i)
-	}
-
-	// 接收 goroutine：读取客户端发送的任务
-	log.Println("服务端开始接收任务...")
-	for {
-		task, err := stream.Recv()
-		if err == io.EOF {
-			log.Println("客户端发送完毕 (EOF)，等待所有任务处理完成...")
-			close(tasksCh)
-			wg.Wait()
-			log.Println("所有任务处理完成，流正常结束")
-			return nil // return nil 表示流正常结束
-		}
-		if err != nil {
-			log.Printf("接收错误: %v", err)
-			close(tasksCh)
-			return err
-		}
-		log.Printf("收到任务: id=%s op=%s numbers=%v", task.GetTaskId(), task.GetOperation(), task.GetNumbers())
-		tasksCh <- task
-	}
-}
-
-// compute 计算引擎
-func compute(task *pb.ComputeTask) *pb.ComputeResult {
-	r := &pb.ComputeResult{
-		TaskId:    task.GetTaskId(),
-		Operation: task.GetOperation(),
-		Status:    "done",
-	}
-
-	value, err := engine.Compute(engine.ParseOperation(task.GetOperation()), task.GetNumbers())
-	if err != nil {
-		r.Status = "error"
-		r.Message = err.Error()
-		return r
-	}
-	r.Value = value
-	return r
-}
 
 func main() {
 	lis, err := net.Listen("tcp", ":50056")
@@ -93,7 +25,7 @@ func main() {
 	}
 
 	s := grpc.NewServer()
-	pb.RegisterDistributedComputeServer(s, &server{workerCount: 4})
+	pb.RegisterDistributedComputeServer(s, computeServer.NewService(4))
 	reflection.Register(s)
 
 	go func() {
@@ -114,7 +46,4 @@ func main() {
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
-
-	_ = status.New
-	_ = codes.OK
 }
