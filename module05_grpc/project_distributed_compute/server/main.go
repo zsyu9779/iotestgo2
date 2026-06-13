@@ -5,17 +5,15 @@
 package main
 
 import (
-	"fmt"
 	"io"
 	"log"
-	"math"
 	"net"
 	"os"
 	"os/signal"
-	"sort"
 	"sync"
 	"syscall"
 
+	"iotestgo/module05_grpc/project_distributed_compute/internal/engine"
 	pb "iotestgo/module05_grpc/project_distributed_compute/proto/computepb"
 
 	"google.golang.org/grpc"
@@ -78,68 +76,13 @@ func compute(task *pb.ComputeTask) *pb.ComputeResult {
 		Status:    "done",
 	}
 
-	numbers := task.GetNumbers()
-	if len(numbers) == 0 {
+	value, err := engine.Compute(engine.ParseOperation(task.GetOperation()), task.GetNumbers())
+	if err != nil {
 		r.Status = "error"
-		r.Message = "no numbers provided"
+		r.Message = err.Error()
 		return r
 	}
-
-	switch task.GetOperation() {
-	case "sum":
-		var sum int64
-		for _, n := range numbers {
-			sum += n
-		}
-		r.Value = float64(sum)
-	case "avg":
-		var sum int64
-		for _, n := range numbers {
-			sum += n
-		}
-		r.Value = float64(sum) / float64(len(numbers))
-	case "max":
-		r.Value = float64(numbers[0])
-		for _, n := range numbers[1:] {
-			if float64(n) > r.Value {
-				r.Value = float64(n)
-			}
-		}
-	case "min":
-		r.Value = float64(numbers[0])
-		for _, n := range numbers[1:] {
-			if float64(n) < r.Value {
-				r.Value = float64(n)
-			}
-		}
-	case "stddev":
-		mean := float64(0)
-		for _, n := range numbers {
-			mean += float64(n)
-		}
-		mean /= float64(len(numbers))
-		variance := float64(0)
-		for _, n := range numbers {
-			diff := float64(n) - mean
-			variance += diff * diff
-		}
-		variance /= float64(len(numbers))
-		r.Value = math.Sqrt(variance)
-	case "median":
-		sorted := make([]int64, len(numbers))
-		copy(sorted, numbers)
-		sort.Slice(sorted, func(i, j int) bool { return sorted[i] < sorted[j] })
-		mid := len(sorted) / 2
-		if len(sorted)%2 == 0 {
-			r.Value = float64(sorted[mid-1]+sorted[mid]) / 2
-		} else {
-			r.Value = float64(sorted[mid])
-		}
-	default:
-		r.Status = "error"
-		r.Message = fmt.Sprintf("unknown operation: %s", task.GetOperation())
-	}
-
+	r.Value = value
 	return r
 }
 
