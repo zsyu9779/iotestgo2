@@ -1,0 +1,19 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: "order-api"
+    static_configs:
+      - targets: ["host.docker.internal:8890"]
+
+  - job_name: "user-rpc"
+    static_configs:
+      - targets: ["host.docker.internal:9101"]
+
+  - job_name: "product-rpc"
+    static_configs:
+      - targets: ["host.docker.internal:9102"]
+
+  - job_name: "order-rpc"
+    static_configs:
+      - targets: ["host.docker.internal:9103"]
