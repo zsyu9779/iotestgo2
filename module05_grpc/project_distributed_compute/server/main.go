@@ -11,6 +11,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"iotestgo/module05_grpc/project_distributed_compute/internal/auth"
 	computeServer "iotestgo/module05_grpc/project_distributed_compute/internal/server"
 	pb "iotestgo/module05_grpc/project_distributed_compute/proto/computepb"
 
@@ -24,7 +25,9 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	s := grpc.NewServer()
+	s := grpc.NewServer(
+		grpc.StreamInterceptor(auth.StreamInterceptor(auth.DefaultToken)),
+	)
 	pb.RegisterDistributedComputeServer(s, computeServer.NewService(4))
 	reflection.Register(s)
 

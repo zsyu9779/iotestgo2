@@ -12,10 +12,12 @@ import (
 	"sync"
 	"time"
 
+	"iotestgo/module05_grpc/project_distributed_compute/internal/auth"
 	pb "iotestgo/module05_grpc/project_distributed_compute/proto/computepb"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 )
 
 func main() {
@@ -29,7 +31,8 @@ func main() {
 
 	client := pb.NewDistributedComputeClient(conn)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx := metadata.AppendToOutgoingContext(context.Background(), "authorization", "Bearer "+auth.DefaultToken)
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
 	stream, err := client.Process(ctx)
