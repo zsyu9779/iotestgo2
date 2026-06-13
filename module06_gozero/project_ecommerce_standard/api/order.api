@@ -1,0 +1,42 @@
+syntax = "v1"
+
+info(
+	title: "Ecommerce Order API"
+	desc: "本科后端课程 go-zero 标准项目：订单 API 调用订单 RPC"
+	author: "iotestgo2"
+)
+
+type CreateOrderReq {
+	UserId int64 `json:"user_id"`
+	Items []OrderItemReq `json:"items"`
+}
+
+type OrderItemReq {
+	ProductId int64 `json:"product_id"`
+	Quantity int64 `json:"quantity"`
+}
+
+type CreateOrderResp {
+	OrderId string `json:"order_id"`
+	Status string `json:"status"`
+	TotalAmount float64 `json:"total_amount"`
+}
+
+type GetOrderReq {
+	OrderId string `path:"order_id"`
+}
+
+type GetOrderResp {
+	OrderId string `json:"order_id"`
+	UserId int64 `json:"user_id"`
+	Status string `json:"status"`
+	TotalAmount float64 `json:"total_amount"`
+}
+
+service order-api {
+	@handler CreateOrder
+	post /api/v1/orders (CreateOrderReq) returns (CreateOrderResp)
+
+	@handler GetOrder
+	get /api/v1/orders/:order_id (GetOrderReq) returns (GetOrderResp)
+}
