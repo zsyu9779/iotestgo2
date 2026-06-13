@@ -38,16 +38,16 @@ func main() {
 func demoFunctionVariables() {
 	// 函数类型声明
 	type MathFunc func(int, int) int
-	
+
 	var operation MathFunc
-	
+
 	// 函数赋值
 	operation = add
 	fmt.Printf("加法: %d\n", operation(10, 5))
-	
+
 	operation = multiply
 	fmt.Printf("乘法: %d\n", operation(10, 5))
-	
+
 	operation = func(a, b int) int {
 		return a*a + b*b
 	}
@@ -80,13 +80,13 @@ func demoAnonymousFunctions() {
 			fmt.Printf("[%s] %s: %s\n", time.Now().Format("15:04:05"), prefix, message)
 		}
 	}
-	
+
 	infoLog := createLogger("INFO")
 	errorLog := createLogger("ERROR")
-	
+
 	infoLog("应用程序启动")
 	errorLog("发生了一个错误")
-	
+
 	// 闭包：状态保持
 	bankAccount := createBankAccount(1000)
 	fmt.Printf("余额: $%d\n", bankAccount())
@@ -115,25 +115,25 @@ func createBankAccount(initialBalance int) func(...int) int {
 // ================== 高阶函数示例 ==================
 func demoHigherOrderFunctions() {
 	numbers := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
-	
+
 	// Map: 转换每个元素
 	doubled := mapSlice(numbers, func(n int) int {
 		return n * 2
 	})
 	fmt.Printf("Map 加倍: %v\n", doubled)
-	
+
 	// Filter: 过滤元素
 	evens := filterSlice(numbers, func(n int) bool {
 		return n%2 == 0
 	})
 	fmt.Printf("Filter 偶数: %v\n", evens)
-	
+
 	// Reduce: 聚合计算
 	sum := reduceSlice(numbers, 0, func(acc, n int) int {
 		return acc + n
 	})
 	fmt.Printf("Reduce 求和: %d\n", sum)
-	
+
 	// 函数组合: Map + Filter
 	result := mapSlice(
 		filterSlice(numbers, func(n int) bool { return n > 5 }),
@@ -173,12 +173,12 @@ func demoDeferAndErrorHandling() {
 	// 资源清理模式
 	fmt.Println("打开资源...")
 	defer fmt.Println("资源清理完成")
-	
+
 	// 多个 defer，LIFO 顺序执行
 	defer fmt.Println("第三个 defer")
 	defer fmt.Println("第二个 defer")
 	defer fmt.Println("第一个 defer")
-	
+
 	// 错误处理函数
 	result, err := safeDivide(10, 0)
 	if err != nil {
@@ -186,7 +186,7 @@ func demoDeferAndErrorHandling() {
 	} else {
 		fmt.Printf("结果: %d\n", result)
 	}
-	
+
 	// 带参数的 defer
 	value := "初始值"
 	defer func(val string) {
@@ -208,10 +208,10 @@ func demoFunctionComposition() {
 	// 函数柯里化
 	add := curryAdd(5)
 	fmt.Printf("柯里化加法: %d\n", add(10))
-	
+
 	multiply := curryMultiply(3)
 	fmt.Printf("柯里化乘法: %d\n", multiply(4))
-	
+
 	// 函数组合
 	processor := compose(
 		func(s string) string { return strings.ToUpper(s) },
@@ -219,7 +219,7 @@ func demoFunctionComposition() {
 		func(s string) string { return s + "!" },
 	)
 	fmt.Printf("函数组合: %s\n", processor("hello world"))
-	
+
 	// 管道模式
 	pipeline := createPipeline(
 		func(n int) int { return n * 2 },
@@ -268,7 +268,7 @@ func demoConcurrentFunctions() {
 		time.Sleep(100 * time.Millisecond)
 		fmt.Println("来自 Goroutine 的消息")
 	}()
-	
+
 	// 带参数的 Goroutine
 	for i := 0; i < 3; i++ {
 		go func(id int) {
@@ -276,19 +276,19 @@ func demoConcurrentFunctions() {
 			fmt.Printf("Goroutine %d 完成\n", id)
 		}(i)
 	}
-	
+
 	// 函数作为通信消息
 	ch := make(chan func() string)
-	
+
 	go func() {
 		ch <- func() string { return "消息1" }
 		ch <- func() string { return "消息2" }
 		close(ch)
 	}()
-	
+
 	for fn := range ch {
 		fmt.Printf("接收到: %s\n", fn())
 	}
-	
+
 	time.Sleep(500 * time.Millisecond) // 等待 Goroutine 完成
 }

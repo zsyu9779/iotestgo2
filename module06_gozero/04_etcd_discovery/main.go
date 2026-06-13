@@ -1,8 +1,9 @@
 // 04 Etcd 服务注册与发现
 //
 // 启动 Etcd（如果本地没有运行）：
-//   docker run -d --name etcd-demo -p 2379:2379 quay.io/coreos/etcd:v3.5.9
-//   --listen-client-urls http://0.0.0.0:2379 --advertise-client-urls http://localhost:2379
+//
+//	docker run -d --name etcd-demo -p 2379:2379 quay.io/coreos/etcd:v3.5.9
+//	--listen-client-urls http://0.0.0.0:2379 --advertise-client-urls http://localhost:2379
 //
 // 启动本程序：go run main.go
 package main

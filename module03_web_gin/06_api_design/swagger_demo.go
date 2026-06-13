@@ -1,13 +1,16 @@
 // Swagger 文档生成演示
 //
 // 安装 swag：
-//   go install github.com/swaggo/swag/cmd/swag@latest
+//
+//	go install github.com/swaggo/swag/cmd/swag@latest
 //
 // 生成文档：
-//   swag init
+//
+//	swag init
 //
 // 访问文档：
-//   http://localhost:8080/swagger/index.html
+//
+//	http://localhost:8080/swagger/index.html
 package main
 
 // @title           iotestgo2 API

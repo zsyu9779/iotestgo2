@@ -36,23 +36,23 @@ func demoExec() {
 	// 3. 管道操作 (Grep)
 	// 模拟: echo "hello grep\ngoodbye grep" | grep "hello"
 	grepCmd := exec.Command("grep", "hello")
-	
+
 	// 获取 stdin 和 stdout 管道
 	grepIn, _ := grepCmd.StdinPipe()
 	grepOut, _ := grepCmd.StdoutPipe()
-	
+
 	grepCmd.Start() // 开始执行
-	
+
 	// 写入数据到 grep 的 stdin
 	grepIn.Write([]byte("hello grep\ngoodbye grep"))
 	grepIn.Close() // 必须关闭 stdin，告诉 grep 输入结束
-	
+
 	// 读取 grep 的输出
 	var outBuf bytes.Buffer
 	outBuf.ReadFrom(grepOut)
-	
+
 	grepCmd.Wait() // 等待命令结束
-	
+
 	fmt.Printf("> grep hello\n%s", outBuf.String())
 }
 
@@ -63,7 +63,7 @@ func demoSignals() {
 
 	// 创建一个接收信号的通道
 	sigs := make(chan os.Signal, 1)
-	
+
 	// 注册要接收的信号
 	// syscall.SIGINT: Ctrl+C
 	// syscall.SIGTERM: 终止信号 (kill)

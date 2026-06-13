@@ -2,7 +2,8 @@
 //
 // 启动：go run main.go
 // 测试：curl http://localhost:8888/ping
-//       curl http://localhost:8888/hello?name=Gopher
+//
+//	curl http://localhost:8888/hello?name=Gopher
 package main
 
 import (

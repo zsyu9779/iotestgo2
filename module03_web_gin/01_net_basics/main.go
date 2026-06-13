@@ -9,9 +9,9 @@ import (
 )
 
 /*
-	go run . -mode=server -proto=http
-	go run . -mode=server -proto=udp
-	go run . -mode=client -proto=udp
+go run . -mode=server -proto=http
+go run . -mode=server -proto=udp
+go run . -mode=client -proto=udp
 */
 func main() {
 	mode := flag.String("mode", "server", "Mode: server or client")

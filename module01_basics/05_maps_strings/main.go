@@ -27,7 +27,7 @@ func main() {
 	// Strings are immutable byte slices
 	str := "Hello, 世界"
 	fmt.Println("Length (bytes):", len(str)) // 13 (Hello, = 7 + 世界 = 6)
-	
+
 	// Rune (Unicode Code Point)
 	runes := []rune(str)
 	fmt.Println("Length (runes):", len(runes)) // 9

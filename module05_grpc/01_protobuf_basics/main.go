@@ -58,8 +58,8 @@ func main() {
 		Gender: pb.Gender_MALE,
 		Tags:   []string{"go", "grpc", "protobuf"},
 		Address: &pb.Address{
-			Street: "中关村大街1号",
-			City:   "北京",
+			Street:  "中关村大街1号",
+			City:    "北京",
 			ZipCode: "100080",
 		},
 		Metadata: map[string]string{

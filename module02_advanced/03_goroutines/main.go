@@ -17,7 +17,7 @@ func worker(id int, wg *sync.WaitGroup) {
 func main() {
 	// GOMAXPROCS
 	fmt.Println("CPUs:", runtime.NumCPU())
-	
+
 	// 1. Goroutine
 	// Java: new Thread(() -> { ... }).start();
 	go func() {

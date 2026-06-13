@@ -1,11 +1,13 @@
 // go-sqlmock 演示：不依赖真实 MySQL 的 Service 层单元测试
 //
 // 安装：
-//   go get github.com/DATA-DOG/go-sqlmock
+//
+//	go get github.com/DATA-DOG/go-sqlmock
 //
 // 原理：
-//   sqlmock 模拟 MySQL 驱动，拦截 SQL 语句，返回预设结果
-//   适合测试 Service/Logic 层的数据库操作逻辑
+//
+//	sqlmock 模拟 MySQL 驱动，拦截 SQL 语句，返回预设结果
+//	适合测试 Service/Logic 层的数据库操作逻辑
 package main
 
 import (

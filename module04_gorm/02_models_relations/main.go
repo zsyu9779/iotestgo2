@@ -20,15 +20,15 @@ type Article struct {
 
 type Author struct {
 	gorm.Model
-	Name    string
-	Posts   []Post
+	Name      string
+	Posts     []Post
 	DeletedAt gorm.DeletedAt
 }
 
 type Tag struct {
 	gorm.Model
-	Name    string
-	Posts   []Post `gorm:"many2many:post_tags"`
+	Name      string
+	Posts     []Post `gorm:"many2many:post_tags"`
 	DeletedAt gorm.DeletedAt
 }
 

@@ -3,7 +3,8 @@
 // 启动（先启动 userrpc）：go run userapi/main.go
 //
 // 本示例演示第一个微服务拆分：
-//   用户 → userapi (HTTP :8882) → userrpc (gRPC :9091) → 数据
+//
+//	用户 → userapi (HTTP :8882) → userrpc (gRPC :9091) → 数据
 package main
 
 import (

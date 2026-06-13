@@ -61,7 +61,7 @@ func inspectStruct(i interface{}) {
 
 func modifyValue(ptr interface{}, newValue int) {
 	v := reflect.ValueOf(ptr)
-	
+
 	// Check if it's a pointer
 	if v.Kind() != reflect.Ptr {
 		fmt.Println("Expected a pointer")
@@ -70,7 +70,7 @@ func modifyValue(ptr interface{}, newValue int) {
 
 	// Get the element pointed to
 	elem := v.Elem()
-	
+
 	// Check if it's settable
 	if elem.CanSet() && elem.Kind() == reflect.Int {
 		elem.SetInt(int64(newValue))
@@ -80,7 +80,7 @@ func modifyValue(ptr interface{}, newValue int) {
 func callMethod(i interface{}, methodName string) {
 	v := reflect.ValueOf(i)
 	method := v.MethodByName(methodName)
-	
+
 	if method.IsValid() {
 		method.Call(nil) // Call with no arguments
 	} else {

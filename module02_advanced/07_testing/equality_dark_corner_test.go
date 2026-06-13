@@ -20,8 +20,8 @@ func showSliceNotComparable() {
 
 // 演示：bytes.Equal vs DeepEqual 的语义差异（nil vs empty）
 func showNilVsEmptyByteSlice() {
-	var a []byte   // nil
-	b := []byte{}  // empty
+	var a []byte                                                        // nil
+	b := []byte{}                                                       // empty
 	fmt.Printf("bytes.Equal(nil, empty) = %v\n", bytes.Equal(a, b))     // true
 	fmt.Printf("DeepEqual(nil, empty) = %v\n", reflect.DeepEqual(a, b)) // false!
 	fmt.Println("→ bytes.Equal 认为 nil 和 empty 相等，DeepEqual 认为不等")

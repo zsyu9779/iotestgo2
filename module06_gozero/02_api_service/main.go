@@ -1,15 +1,17 @@
 // 02 API 服务开发：模仿 goctl 生成的 API 服务结构
 //
 // goctl 生成命令（可选安装 goctl 后运行）：
-//   goctl api go -api user.api -dir .
+//
+//	goctl api go -api user.api -dir .
 //
 // 生成后文件结构：
-//   etc/user-api.yaml       配置文件
-//   internal/config/config.go
-//   internal/handler/        路由 Handler（自动生成，勿改）
-//   internal/logic/          业务逻辑（核心，手写）
-//   internal/svc/servicecontext.go 依赖注入容器
-//   internal/types/types.go
+//
+//	etc/user-api.yaml       配置文件
+//	internal/config/config.go
+//	internal/handler/        路由 Handler（自动生成，勿改）
+//	internal/logic/          业务逻辑（核心，手写）
+//	internal/svc/servicecontext.go 依赖注入容器
+//	internal/types/types.go
 //
 // 启动：go run main.go
 package main

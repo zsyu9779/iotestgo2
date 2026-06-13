@@ -43,11 +43,11 @@ func Auth() gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
 			return
 		}
-		
+
 		// Set username in context if needed
 		// claims := token.Claims.(jwt.MapClaims)
 		// c.Set("username", claims["sub"])
-		
+
 		c.Next()
 	}
 }

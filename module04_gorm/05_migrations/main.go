@@ -63,4 +63,3 @@ func main() {
 	println("    GORM 的 AutoMigrate 是声明式迁移")
 	println("    Flyway 是命令式迁移（每个变更写一个 SQL 文件）")
 }
-

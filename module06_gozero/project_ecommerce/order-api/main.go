@@ -2,10 +2,12 @@
 // 职责：接收用户订单请求 → 调用 OrderRpc → 返回响应
 //
 // 启动（需先启动 user-rpc 和 order-rpc）：
-//   go run order-api/main.go
+//
+//	go run order-api/main.go
 //
 // 完整调用链：
-//   curl → order-api (HTTP :8889) → order-rpc (gRPC :9092) → user-rpc (gRPC :9091)
+//
+//	curl → order-api (HTTP :8889) → order-rpc (gRPC :9092) → user-rpc (gRPC :9091)
 package main
 
 import (

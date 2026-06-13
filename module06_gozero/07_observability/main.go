@@ -2,10 +2,11 @@
 //
 // 启动：go run main.go
 // 测试：
-//   curl http://localhost:8883/ping
-//   curl http://localhost:8883/slow
-//   curl http://localhost:8883/error
-//   curl http://localhost:8883/metrics
+//
+//	curl http://localhost:8883/ping
+//	curl http://localhost:8883/slow
+//	curl http://localhost:8883/error
+//	curl http://localhost:8883/metrics
 package main
 
 import (
