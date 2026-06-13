@@ -22,4 +22,13 @@ docker compose up -d
 curl http://localhost:9090/targets
 ```
 
-本目录的 compose 文件只启动 Etcd、MySQL、Redis、Prometheus。四个 Go 服务仍在宿主机启动，Prometheus 通过 `host.docker.internal` 抓取 `8890`、`9101`、`9102`、`9103`。
+本目录的 compose 文件只启动 Etcd、MySQL、Redis、Prometheus。四个 Go 服务仍在宿主机启动，Prometheus 通过 `host.docker.internal` 抓取各服务的 metrics 端口。
+
+业务端口和观测端口是分开的：
+
+| 服务 | 业务端口 | Metrics 端口 |
+|------|----------|--------------|
+| order-api | 8890 | 19100 |
+| user-rpc | 9101 | 19101 |
+| product-rpc | 9102 | 19102 |
+| order-rpc | 9103 | 19103 |

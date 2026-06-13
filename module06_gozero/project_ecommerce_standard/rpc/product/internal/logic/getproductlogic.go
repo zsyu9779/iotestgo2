@@ -26,11 +26,7 @@ func NewGetProductLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetPro
 }
 
 func (l *GetProductLogic) GetProduct(in *productpb.GetProductRequest) (*productpb.GetProductResponse, error) {
-	products := map[int64]*productpb.GetProductResponse{
-		101: {ProductId: 101, Name: "Go Backend Book", Stock: 10, Price: 59.9},
-		102: {ProductId: 102, Name: "Cloud Native Notebook", Stock: 5, Price: 29.9},
-	}
-	product, ok := products[in.GetProductId()]
+	product, ok := l.svcCtx.GetProduct(in.GetProductId())
 	if !ok {
 		return nil, status.Error(codes.NotFound, "product not found")
 	}

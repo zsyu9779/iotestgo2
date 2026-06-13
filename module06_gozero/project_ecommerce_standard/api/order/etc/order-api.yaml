@@ -1,6 +1,10 @@
 Name: order-api
 Host: 0.0.0.0
 Port: 8890
+Prometheus:
+  Host: 0.0.0.0
+  Port: 19100
+  Path: /metrics
 OrderRpc:
   Etcd:
     Hosts:

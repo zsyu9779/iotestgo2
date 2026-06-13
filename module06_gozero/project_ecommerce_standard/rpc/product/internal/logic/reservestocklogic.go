@@ -24,19 +24,9 @@ func NewReserveStockLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Rese
 }
 
 func (l *ReserveStockLogic) ReserveStock(in *productpb.ReserveStockRequest) (*productpb.ReserveStockResponse, error) {
-	products := map[int64]*productpb.GetProductResponse{
-		101: {ProductId: 101, Name: "Go Backend Book", Stock: 10, Price: 59.9},
-		102: {ProductId: 102, Name: "Cloud Native Notebook", Stock: 5, Price: 29.9},
-	}
-	product, ok := products[in.GetProductId()]
+	reason, ok := l.svcCtx.ReserveStock(in.GetProductId(), in.GetQuantity())
 	if !ok {
-		return &productpb.ReserveStockResponse{Success: false, Reason: "product not found"}, nil
-	}
-	if in.GetQuantity() <= 0 {
-		return &productpb.ReserveStockResponse{Success: false, Reason: "quantity must be positive"}, nil
-	}
-	if in.GetQuantity() > product.GetStock() {
-		return &productpb.ReserveStockResponse{Success: false, Reason: "insufficient stock"}, nil
+		return &productpb.ReserveStockResponse{Success: false, Reason: reason}, nil
 	}
 	return &productpb.ReserveStockResponse{Success: true}, nil
 }

@@ -1,5 +1,9 @@
 Name: product.rpc
 ListenOn: 0.0.0.0:9102
+Prometheus:
+  Host: 0.0.0.0
+  Port: 19102
+  Path: /metrics
 Etcd:
   Hosts:
     - 127.0.0.1:2379

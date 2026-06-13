@@ -1,5 +1,9 @@
 Name: order.rpc
 ListenOn: 0.0.0.0:9103
+Prometheus:
+  Host: 0.0.0.0
+  Port: 19103
+  Path: /metrics
 Etcd:
   Hosts:
     - 127.0.0.1:2379
