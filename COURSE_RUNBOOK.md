@@ -8,9 +8,9 @@ make fmt-check
 make test-basic
 ```
 
-Makefile targets are introduced by the next course-improvement task. Until then, use the per-module `go run` / `go test` commands from module READMEs.
+The root `Makefile` is the preferred classroom entry point. Use module READMEs for deeper per-lesson commands.
 
-Go 1.25.x is required for full verification. The recommended lab baseline is toolchain go1.25.0 or a newer patch in the 1.25 series. If a local machine still has Go 1.20.6, older Go may fail before downloading the requested toolchain if that Go version does not support the `toolchain` directive.
+Go 1.25.x is required for full verification. The current `go.mod` records `go 1.25.0`, which is the format produced by Go 1.25.11 after `go mod tidy`. If a local machine still has Go 1.20.6, upgrade Go before full verification.
 
 ## 本机验证记录
 
@@ -40,7 +40,7 @@ go1.25.11
 
 ## 现场故障处理
 
-- `invalid go version`: 检查 Go 版本是否符合 `go.mod` 与 `toolchain`。本课程完整验证要求 Go 1.25.x；推荐课堂基线是 toolchain go1.25.0 或 1.25 系列更新补丁版本。如果本机仍是 Go 1.20.6，旧版本可能在下载 toolchain 前失败，需要先升级 Go。
+- `invalid go version`: 检查 Go 版本是否符合 `go.mod`。本课程完整验证要求 Go 1.25.x；如果本机仍是 Go 1.20.6，需要先升级 Go。
 - `connection refused`: 先确认对应 server 是否启动，端口是否被占用。
 - `protoc: command not found`: 使用课程安装页安装 `protoc` 和 Go 插件。
 - MySQL 连接失败：检查 Docker 容器、端口、DSN。

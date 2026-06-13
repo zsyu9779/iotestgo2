@@ -25,7 +25,7 @@ make test-basic
 make run-user-center
 ```
 
-Makefile targets are introduced by the next course-improvement task. Until then, use the per-module `go run` / `go test` commands from module READMEs.
+The root `Makefile` is the preferred classroom entry point. Use module READMEs for deeper per-lesson `go run` / `go test` commands.
 
 When running DB/cache/RPC demos, copy `.env.example` to `.env` as shared classroom defaults. These defaults are not a guaranteed central config consumed by every lesson.
 
