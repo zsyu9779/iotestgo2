@@ -1,14 +1,37 @@
-.idea
+# IDE / local tooling
+.idea/
 .vscode
-.trae
+.trae/
 .cursor
 .DS_Store
 .claude
-docs
 *_verify_test.go
+
+# Build outputs
+bin/
+*.test
+*.out
+coverage.out
 
 # Go compiled binaries
 iotestgo
-server
-client
+/server
+/client
 *.exe
+
+# Local compiled demo binaries. Source directories should contain .go/.proto/.md only.
+module05_grpc/08_grpc_gateway/proto/client
+module05_grpc/08_grpc_gateway/proto/server
+module05_grpc/08_grpc_gateway/proto/userapi
+module05_grpc/08_grpc_gateway/proto/userrpc
+module05_grpc/08_grpc_gateway/proto/user-rpc
+module05_grpc/08_grpc_gateway/proto/order-api
+module05_grpc/08_grpc_gateway/proto/order-rpc
+module05_grpc/08_grpc_gateway/proto/04_etcd_discovery
+module05_grpc/08_grpc_gateway/proto/05_mysql_cache
+module05_grpc/08_grpc_gateway/proto/06_message_queue
+module05_grpc/08_grpc_gateway/proto/07_observability
+module05_grpc/08_grpc_gateway/proto/08_k8s_deploy
+
+# Local environment
+.env

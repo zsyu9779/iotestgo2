@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>iotestgo2 项目调研报告</title>
+  <style>
+    :root {
+      --bg: #f7f8fb;
+      --paper: #ffffff;
+      --ink: #1f2937;
+      --muted: #667085;
+      --line: #d9dee8;
+      --accent: #0f766e;
+      --accent-2: #b42318;
+      --soft: #eef6f5;
+      --warn: #fff7ed;
+      --code: #111827;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font: 16px/1.72 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    }
+
+    .page {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 40px 24px 72px;
+    }
+
+    .report-header {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 34px 36px;
+      margin-bottom: 24px;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: 34px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .meta {
+      color: var(--muted);
+      margin: 0;
+    }
+
+    .summary {
+      margin-top: 20px;
+      padding: 18px 20px;
+      border-left: 4px solid var(--accent);
+      background: var(--soft);
+      border-radius: 4px;
+    }
+
+    .toc {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 20px 24px;
+      margin-bottom: 24px;
+    }
+
+    .toc h2 {
+      margin-top: 0;
+    }
+
+    .toc a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .toc a:hover {
+      text-decoration: underline;
+    }
+
+    .report-main {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 34px 36px;
+    }
+
+    h2 {
+      margin: 36px 0 14px;
+      font-size: 24px;
+      line-height: 1.35;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 28px 0 10px;
+      font-size: 19px;
+      line-height: 1.4;
+      letter-spacing: 0;
+    }
+
+    p {
+      margin: 10px 0;
+    }
+
+    ul,
+    ol {
+      padding-left: 1.35em;
+    }
+
+    li {
+      margin: 4px 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0 22px;
+      font-size: 15px;
+    }
+
+    th,
+    td {
+      border: 1px solid var(--line);
+      padding: 10px 12px;
+      vertical-align: top;
+      text-align: left;
+    }
+
+    th {
+      background: #f2f4f7;
+      font-weight: 650;
+    }
+
+    code {
+      background: #f2f4f7;
+      border: 1px solid #e4e7ec;
+      border-radius: 4px;
+      padding: 1px 5px;
+      color: var(--code);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 0.93em;
+    }
+
+    pre {
+      overflow-x: auto;
+      background: #101828;
+      color: #f9fafb;
+      border-radius: 8px;
+      padding: 16px 18px;
+      line-height: 1.55;
+    }
+
+    pre code {
+      background: transparent;
+      border: 0;
+      color: inherit;
+      padding: 0;
+    }
+
+    .risk {
+      background: var(--warn);
+      border: 1px solid #fed7aa;
+      border-radius: 8px;
+      padding: 16px 18px;
+      margin: 16px 0;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--soft);
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    .score {
+      font-weight: 700;
+      color: var(--accent-2);
+    }
+
+    @media (max-width: 720px) {
+      .page {
+        padding: 18px 12px 40px;
+      }
+
+      .report-header,
+      .report-main,
+      .toc {
+        padding: 20px 18px;
+      }
+
+      h1 {
+        font-size: 28px;
+      }
+
+      table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="report-header">
+      <p class="badge">计算机本科生 Go 后端讲课演示项目</p>
+      <h1>iotestgo2 项目调研报告</h1>
+      <p class="meta">生成日期：2026-06-13 · 项目路径：<code>/Users/zhangshiyu/iotestgo2</code></p>
+      <div class="summary">
+        <strong>核心结论：</strong>项目已经具备本科 Go 后端课程演示项目的主体骨架，课程主线完整、示例丰富，Java 对比可作为学生已有语言经验的辅助桥梁；但当前工具链配置会阻断全量运行，Module 05/06 综合项目完成度不足，需要在正式授课前补齐运行闭环和教学边界说明。
+      </div>
+    </div>
+
+    <div class="toc">
+      <h2>目录</h2>
+      <ol>
+        <li><a href="#summary">执行摘要</a></li>
+        <li><a href="#scale">项目规模与结构</a></li>
+        <li><a href="#course">课程设计分析</a></li>
+        <li><a href="#modules">模块深度分析</a></li>
+        <li><a href="#quality">架构与代码质量</a></li>
+        <li><a href="#runtime">可运行性验证</a></li>
+        <li><a href="#maturity">教学交付成熟度</a></li>
+        <li><a href="#roadmap">优先改进路线</a></li>
+        <li><a href="#teaching">讲课使用方式</a></li>
+      </ol>
+    </div>
+
+    <div class="report-main">
+      <div id="summary">
+        <h2>1. 执行摘要</h2>
+        <p><code>iotestgo2</code> 是一个面向计算机专业本科生的 Go 后端课程演示项目。项目按课程模块组织，从 Go 语言基础、并发与工程化、Gin Web、GORM、gRPC 到 go-zero 微服务，形成一条较完整的后端学习路径。</p>
+        <p>整体定位更接近“课堂演示材料库”，而不是生产级应用仓库。它的主要价值在于教学主线完整、适合本科课堂逐步演示、示例颗粒度细，并且有一定工程化意识。Java 对比主要用于连接学生已有课程经验，不是课程主轴。</p>
+        <div class="risk">
+          <strong>优先风险：</strong>
+          <ol>
+            <li><code>go.mod</code> 写的是 <code>go 1.25.0</code>，本机 <code>go1.20.6</code> 无法解析，导致 <code>go test ./...</code> 在解析阶段失败。</li>
+            <li>Module 05 的 <code>project_distributed_compute</code> 只有 proto 和生成代码，缺少服务端/客户端主程序。</li>
+            <li>Module 06 电商微服务项目大量使用教学简化和本地模拟 RPC，与完整 go-zero 微服务目标存在差距。</li>
+            <li>GORM 和 Web 项目适合教学演示，但明文密码、硬编码 DSN、内存存储等需要明确标注“非生产写法”。</li>
+          </ol>
+        </div>
+      </div>
+
+      <div id="scale">
+        <h2>2. 项目规模与结构</h2>
+        <h3>2.1 文件规模</h3>
+        <table>
+          <thead>
+            <tr><th>指标</th><th>数量</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>仓库总文件数</td><td>222</td></tr>
+            <tr><td>Go 源码文件</td><td>133</td></tr>
+            <tr><td>Proto 文件</td><td>10</td></tr>
+            <tr><td>Markdown 文档</td><td>13</td></tr>
+            <tr><td>测试文件</td><td>15</td></tr>
+          </tbody>
+        </table>
+
+        <h3>2.2 模块分布</h3>
+        <table>
+          <thead>
+            <tr><th>模块</th><th>文件数</th><th>主要内容</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>module01_basics</code></td><td>20</td><td>基础语法、集合、指针、结构体、泛型、任务管理器</td></tr>
+            <tr><td><code>module02_advanced</code></td><td>29</td><td>接口、错误、并发、context、测试、文件 IO、反射、runtime</td></tr>
+            <tr><td><code>module03_web_gin</code></td><td>25</td><td>net/http、Gin、JWT、中间件、Zap、httptest、用户中心</td></tr>
+            <tr><td><code>module04_gorm</code></td><td>17</td><td>GORM 连接、模型关系、CRUD、事务、raw SQL、博客 API</td></tr>
+            <tr><td><code>module05_grpc</code></td><td>65</td><td>Protobuf、代码生成、RPC、拦截器、Metadata、Gateway</td></tr>
+            <tr><td><code>module06_gozero</code></td><td>21</td><td>go-zero API/RPC/Etcd/缓存/MQ/观测/K8s、电商项目</td></tr>
+          </tbody>
+        </table>
+
+        <p>文档体系目前对 Module 01/02 支撑最强，Module 03-06 主要依赖 README 和代码注释，缺少同等详细的教师教案。</p>
+      </div>
+
+      <div id="course">
+        <h2>3. 课程设计分析</h2>
+        <p>总纲文件标题中使用了“Golang 后端工程师速成培训大纲”和“针对 Java 开发者”的表述，但结合补充背景，本项目更准确的定位是：面向计算机专业本科生的 Go 后端课程演示项目。Java 对比不是课程主轴，而是利用学生在校内 Java 课程中已有的语言经验做迁移参照。课程安排 46 课时，每节 1-1.5 小时，采用高密度、快节奏、对比提示、重实战的方式。</p>
+        <p>课程路径是典型的“语言基础 -> 工程能力 -> Web API -> 数据持久化 -> RPC -> 微服务”：</p>
+        <ol>
+          <li>Module 01 建立 Go 的类型、内存、指针、结构体、集合基础。</li>
+          <li>Module 02 引入接口、错误处理、并发、context、测试和系统能力。</li>
+          <li>Module 03 进入 HTTP 和 Gin，开始构建 REST API。</li>
+          <li>Module 04 连接数据库和 ORM，补齐持久化能力。</li>
+          <li>Module 05 引入 Protobuf/gRPC，讲服务间强类型通信。</li>
+          <li>Module 06 用 go-zero 串联微服务、注册发现、缓存、消息队列、可观测性和部署。</li>
+        </ol>
+        <p>项目中有不少 Java 对比点，例如 Thread vs Goroutine、Spring MVC vs Gin Router、Hibernate/MyBatis vs GORM、Spring Cloud vs go-zero。它们更适合作为辅助教学脚手架，而不是课程定位本身。建议课堂中把“类比”和“差异边界”分开讲，避免学生把 Go 概念误解为 Java 概念的等价替代。</p>
+      </div>
+
+      <div id="modules">
+        <h2>4. 模块深度分析</h2>
+
+        <h3>4.1 Module 01：Go 语言基础</h3>
+        <p>该模块覆盖最小程序、变量类型、流程控制、数组切片、map 字符串、指针、结构体方法、高级函数、泛型和 CLI Task Manager。</p>
+        <p><strong>优势：</strong>目录粒度清晰；任务管理器能串联指针、slice、方法和输入解析；已有测试和 benchmark。</p>
+        <p><strong>不足：</strong><code>TaskManager</code> 方法直接打印结果，业务逻辑与 IO 混在一起；CLI 错误处理基础；README 没有提到实际存在的 <code>10_generics_intro</code>。</p>
+        <p><strong>建议：</strong>在任务管理器项目中做一次小型重构，把状态修改和输出打印拆开，用它引出可测试设计。</p>
+
+        <h3>4.2 Module 02：高级特性与工程化</h3>
+        <p>该模块覆盖接口、error、panic/recover、defer、goroutine、channel、context、锁、testing、benchmark、系统交互、文件 IO、反射、runtime、embed、generate。</p>
+        <p><strong>优势：</strong>Go 核心差异点覆盖完整；暗角补充文档质量较高；日志分析器能清晰展示 generator、processor、collector 流水线。</p>
+        <p><strong>不足：</strong>日志分析器目前是随机日志模拟，不是真正读取大文件；随机数让测试结果不可完全复现。</p>
+        <p><strong>建议：</strong>拆成课堂模拟版和作业真实文件版，并增加 race detector 演示脚本。</p>
+
+        <h3>4.3 Module 03：Web 开发与 Gin</h3>
+        <p>该模块覆盖 TCP/UDP、net/http、Gin 路由、Binding、JWT、中间件、Zap、RESTful API、httptest 和用户中心。</p>
+        <p><strong>优势：</strong>从标准库过渡到 Gin 的路径合理；用户中心采用 <code>handler/service/repository/model/pkg</code> 分层；服务层有单元测试。</p>
+        <p><strong>不足：</strong>内存仓库刷新即丢；密码明文存储；JWT key 硬编码；<code>Me</code> 接口没有真正读取用户上下文；README 中头像上传、Swagger 等目标没有完全实现。</p>
+        <p><strong>建议：</strong>把用户中心定位为“Web 分层 + 认证流程演示项目”，综合作业版再补密码 hash、配置化 secret、上下文用户和持久化。</p>
+
+        <h3>4.4 Module 04：GORM 数据持久化</h3>
+        <p>该模块覆盖 GORM 连接、模型关系、CRUD、Preload、Hooks、Migration、Transaction、Raw SQL、MySQL 测试和博客 API。</p>
+        <p><strong>优势：</strong>GORM 主题覆盖完整；博客项目有分层；事务示例清晰；N+1 与 Hooks 示例教学价值较高。</p>
+        <p><strong>不足：</strong>多个示例使用硬编码 MySQL DSN；博客项目当前只有 Post 和 Comment，没有总纲提到的 Tag 多对多；sqlmock 示例更像讲义打印，不是真正 SQL mock 断言。</p>
+        <p><strong>建议：</strong>提供统一数据库环境和 <code>.env.example</code>，把博客项目升级为 Post-Comment-Tag 三类模型。</p>
+
+        <h3>4.5 Module 05：gRPC 与 RPC</h3>
+        <p>该模块覆盖 Protobuf、代码生成、Unary RPC、Streaming RPC、Interceptor、Metadata、错误处理、Gateway 和分布式计算 proto。</p>
+        <p><strong>优势：</strong>章节结构标准；每个子目录有 proto、gen.sh 和生成代码；Gateway 收尾课程价值高。</p>
+        <p><strong>不足：</strong><code>project_distributed_compute</code> 缺少服务端、客户端和流式处理主程序；生成代码较多，README 没有区分手写和生成代码。</p>
+        <p><strong>建议：</strong>补齐双向流计算项目，并增加“不要手改生成代码”的说明和 <code>grpcurl</code> 测试脚本。</p>
+
+        <h3>4.6 Module 06：go-zero 微服务</h3>
+        <p>该模块覆盖 go-zero intro、API/RPC、Etcd、MySQL cache、消息队列、可观测性、K8s 和电商微服务项目。</p>
+        <p><strong>优势：</strong>主题选择符合工业级微服务课程；电商项目提供 Docker Compose 基础设施；README 有 go-zero 与 Spring Cloud 对照表。</p>
+        <p><strong>不足：</strong>电商项目没有真正使用 goctl 生成结构；RPC 服务手写 ServiceDesc；Order API 的 RPC 调用是本地模拟；Product-RPC、MySQL、Redis、限流熔断目标未完整落地。</p>
+        <p><strong>建议：</strong>拆成“概念演示版”和“goctl 生成版”，至少打通一次真实 HTTP Order API -> zRPC Order RPC -> zRPC User RPC。</p>
+      </div>
+
+      <div id="quality">
+        <h2>5. 架构与代码质量</h2>
+        <p>项目采用课程模块即代码模块的组织方式，而不是业务域或 Go workspace 多模块方式。对讲课来说这是合理的：学员可以进入每个目录独立运行，边界清晰，代码体量小。</p>
+        <p>分层较好的项目是 <code>module03_web_gin/project_user_center</code> 和 <code>module04_gorm/project_blog_api</code>，二者都能支持“handler -> service -> repository -> model”的工程化讲解。</p>
+        <p>测试目标目前偏“展示 testing 用法”，还未达到“保证课程代码可持续演进”的程度。建议为每个综合项目增加最小验收测试。</p>
+        <div class="risk">
+          <strong>生产边界提醒：</strong>项目中存在明文密码、硬编码 secret、硬编码 DSN、内存存储、fatal/panic 等教学简化。这些不是演示项目的方向性问题，但必须在课堂中明确说明。
+        </div>
+      </div>
+
+      <div id="runtime">
+        <h2>6. 可运行性验证</h2>
+        <p>本次执行的验证命令：</p>
+        <pre><code>go version
+go env GOVERSION GOMOD GOPATH GOCACHE
+go test ./...</code></pre>
+        <p>本机 Go 版本：</p>
+        <pre><code>go version go1.20.6 darwin/arm64</code></pre>
+        <p><code>go test ./...</code> 失败，失败点在 <code>go.mod</code> 解析：</p>
+        <pre><code>go: errors parsing go.mod:
+/Users/zhangshiyu/iotestgo2/go.mod:3: invalid go version '1.25.0': must match format 1.23</code></pre>
+        <p>这会直接影响授课前环境准备、IDE 加载和学员自助运行。建议统一 Go 版本，或将 <code>go.mod</code> 调整为当前课程指定且可被目标工具链解析的版本格式。</p>
+      </div>
+
+      <div id="maturity">
+        <h2>7. 教学交付成熟度</h2>
+        <table>
+          <thead>
+            <tr><th>维度</th><th>评分</th><th>说明</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>课程主线完整度</td><td>8/10</td><td>6 大模块覆盖完整，路径合理</td></tr>
+            <tr><td>本科生课堂适配度</td><td>8/10</td><td>示例颗粒度小，Java 对比可作为辅助桥梁，但后续模块教案可继续补强</td></tr>
+            <tr><td>示例可读性</td><td>8/10</td><td>小目录、小示例、多注释，适合讲课</td></tr>
+            <tr><td>工程化一致性</td><td>6/10</td><td>前半部分清晰，后半部分项目简化较多</td></tr>
+            <tr><td>可运行性</td><td>4/10</td><td><code>go.mod</code> 阻断全量测试，外部依赖未统一脚本化</td></tr>
+            <tr><td>测试覆盖</td><td>5/10</td><td>有 testing/benchmark 示例，但综合项目验收不足</td></tr>
+            <tr><td>生产实践边界</td><td>5/10</td><td>明文密码、硬编码配置需要更明确标注</td></tr>
+            <tr><td>文档完备度</td><td>7/10</td><td>Module 01/02 文档强，Module 03-06 需要补教案</td></tr>
+          </tbody>
+        </table>
+        <p>综合成熟度：<span class="score">6.4/10</span>。适合课堂现场代码演示、计算机本科生 Go 后端课程、Go 后端学习路径展示；暂不适合直接作为生产项目模板或企业级微服务脚手架。</p>
+      </div>
+
+      <div id="roadmap">
+        <h2>8. 优先改进路线</h2>
+        <h3>P0：授课前必须处理</h3>
+        <ol>
+          <li>修复或统一 Go 工具链版本。</li>
+          <li>增加顶层运行指南，说明每个模块如何运行、哪些示例依赖 MySQL/Redis/Etcd/protoc/Docker。</li>
+          <li>标注教学简化边界，尤其是明文密码、硬编码 secret、内存存储和模拟 RPC。</li>
+        </ol>
+
+        <h3>P1：正式课程应补齐</h3>
+        <ol>
+          <li>补全 Module 03-06 教师教案。</li>
+          <li>补齐 gRPC 分布式计算综合项目。</li>
+          <li>升级 go-zero 电商项目为 goctl 生成结构，并打通真实 API -> RPC -> RPC 链路。</li>
+          <li>统一数据库环境，提供 Docker Compose 和 <code>.env.example</code>。</li>
+        </ol>
+
+        <h3>P2：长期维护质量</h3>
+        <ol>
+          <li>增加 CI，至少跑 <code>go test</code>、<code>go vet</code>、<code>gofmt</code>。</li>
+          <li>增加 Makefile 或 taskfile。</li>
+          <li>给每个综合项目增加验收清单和扩展作业。</li>
+        </ol>
+      </div>
+
+      <div id="teaching">
+        <h2>9. 建议的讲课使用方式</h2>
+        <p>推荐每节课固定四段：概念定位、代码演示、暗角提醒、小练习。</p>
+        <ul>
+          <li>Module 01/02：可以按目录顺序完整讲，辅以已有教案。</li>
+          <li>Module 03：重点讲 Web 分层、JWT、中间件、httptest。</li>
+          <li>Module 04：重点讲 GORM 查询、事务、Preload 和测试隔离。</li>
+          <li>Module 05：重点讲 proto -> generated code -> service/client 的生成链路。</li>
+          <li>Module 06：重点讲微服务概念和生态组件；当前电商项目应定位为“架构演示”。</li>
+        </ul>
+        <p>最终结论：项目方向正确、覆盖面广，短板集中在交付闭环。按 P0/P1 路线整理后，可以从“可讲的代码集合”提升为“可复用的本科 Go 后端课程材料”。</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
