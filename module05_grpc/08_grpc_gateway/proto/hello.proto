@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package hello;
 
+import "google/api/annotations.proto";
+
 option go_package = "iotestgo/module05_grpc/08_grpc_gateway/proto/hellopb";
 
 message HelloRequest {
@@ -13,5 +15,10 @@ message HelloResponse {
 }
 
 service Greeter {
-  rpc SayHello(HelloRequest) returns (HelloResponse);
+  rpc SayHello(HelloRequest) returns (HelloResponse) {
+    option (google.api.http) = {
+      post: "/v1/hello"
+      body: "*"
+    };
+  }
 }

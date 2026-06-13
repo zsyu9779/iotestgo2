@@ -8,14 +8,12 @@ package main
 import (
 	"context"
 	"fmt"
-	"io"
 	"log"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	pb "iotestgo/module05_grpc/08_grpc_gateway/proto/hellopb"
 
@@ -59,6 +57,8 @@ func main() {
 	}()
 
 	// ========== 2. 启动 HTTP Gateway（gRPC → HTTP/JSON 转换） ==========
+	ctx := context.Background()
+
 	// 建立到 gRPC server 的连接（同进程内通过 localhost 通信）
 	conn, err := grpc.NewClient("localhost:50051",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -76,40 +76,10 @@ func main() {
 		}),
 	)
 
-	// 手动注册 HTTP 路由 → gRPC proxy
-	// 效果：POST /v1/hello → gRPC SayHello
-	err = gwmux.HandlePath("POST", "/v1/hello", func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
-		// 1. 读取 HTTP Body → Proto Message
-		body, err := io.ReadAll(r.Body)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		req := &pb.HelloRequest{}
-		if err := protojson.Unmarshal(body, req); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		// 2. 调用 gRPC 服务
-		client := pb.NewGreeterClient(conn)
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
-
-		resp, err := client.SayHello(ctx, req)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		// 3. Proto Message → JSON → HTTP Response
-		respJSON, _ := protojson.Marshal(resp)
-		w.Header().Set("Content-Type", "application/json")
-		w.Write(respJSON)
-	})
-	if err != nil {
-		log.Fatalf("register path failed: %v", err)
+	// 由 hello.proto 中的 google.api.http 注解生成：
+	// POST /v1/hello → hello.Greeter/SayHello
+	if err := pb.RegisterGreeterHandler(ctx, gwmux, conn); err != nil {
+		log.Fatalf("register gateway failed: %v", err)
 	}
 
 	httpSrv := &http.Server{Addr: ":8080", Handler: gwmux}
