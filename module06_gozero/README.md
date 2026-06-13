@@ -33,6 +33,19 @@
 ### project_ecommerce/
 - 电商微服务实战：Order-API → Order-RPC → User-RPC / Product-RPC
 
+### project_ecommerce_standard/
+- goctl 风格标准工程：Order-API → Order-RPC → User-RPC + Product-RPC
+
+## 两条教学线
+
+### Track A: 概念演示
+
+`01_gozero_intro` 到 `08_k8s_deploy` 使用小文件解释概念，适合第一遍课堂讲解。
+
+### Track B: 标准工程
+
+`project_ecommerce_standard` 使用 goctl 风格目录和真实 API -> RPC -> RPC 调用链，适合作为综合实践或期末项目基础。
+
 ## 前置条件
 
 需要准备 Docker-Compose 环境包（MySQL + Redis + Etcd + Prometheus），学员一键启动：

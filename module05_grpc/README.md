@@ -33,6 +33,22 @@
 ### project_distributed_compute/
 - 分布式计算实战：客户端流式发数据 → 服务端实时计算 → 流式返回结果
 
+## 建议讲课顺序
+
+1. `01_protobuf_basics`: 只讲 IDL 和 message。
+2. `02_codegen`: 讲 `protoc` 到 `*.pb.go` / `*_grpc.pb.go`。
+3. `03_unary_rpc`: 讲最小 request/response。
+4. `04_streaming_rpc`: 讲三种 stream。
+5. `05_interceptors`: 讲横切能力。
+6. `06_metadata_auth`: 讲 metadata 和认证。
+7. `07_error_handling`: 讲 status code。
+8. `08_grpc_gateway`: 讲 annotation-based HTTP bridge。
+9. `project_distributed_compute`: 讲综合项目，重点是双向流 + worker pool + auth interceptor + testable engine。
+
+## 生成代码规则
+
+不要手改 `*.pb.go`、`*_grpc.pb.go`、`*.gw.pb.go`。修改 `.proto` 后运行对应 `gen.sh`。
+
 ## 学习目标
 
 1. 掌握 Protobuf3 语法与代码生成流程
