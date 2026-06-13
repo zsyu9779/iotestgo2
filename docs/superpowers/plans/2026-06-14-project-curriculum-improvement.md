@@ -144,7 +144,7 @@ git commit -m "chore: clean course docs and generated artifacts"
 
 - [ ] **Step 1: Decide and encode the course Go version**
 
-For a 2026 undergraduate classroom, use the installed lab-machine version consistently. If the teaching machines can install current Go, set:
+For a 2026 undergraduate classroom, use the installed lab-machine version consistently. If the teaching machines can install current Go, the original target was:
 
 ```go
 module iotestgo
@@ -155,6 +155,8 @@ toolchain go1.25.0
 ```
 
 If the school lab machines are pinned below Go 1.25, set `go 1.23` and downgrade dependencies only after testing. Do not leave `go 1.25.0` without a matching `toolchain` directive, because older Go versions fail before they can explain the required upgrade.
+
+Implementation note after verification on Go 1.25.11: `go mod tidy` normalizes this repository to `go 1.25.0` and removes `toolchain go1.25.0`. The final project guidance therefore treats Go 1.25.x as the classroom requirement and records the exact `go.mod` shape produced by the current Go toolchain.
 
 - [ ] **Step 2: Add `.env.example`**
 
