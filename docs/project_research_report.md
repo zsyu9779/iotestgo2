@@ -1,6 +1,6 @@
 # iotestgo2 项目调研报告
 
-生成日期：2026-06-13
+生成日期：2026-06-14
 项目路径：`/Users/zhangshiyu/iotestgo2`
 调研对象：计算机专业本科生 Go 后端讲课演示项目
 
@@ -8,532 +8,293 @@
 
 ## 1. 执行摘要
 
-`iotestgo2` 是一个面向计算机专业本科生的 Go 后端课程演示项目。项目按课程模块组织，从 Go 语言基础、并发与工程化、Gin Web、GORM、gRPC 到 go-zero 微服务，形成一条较完整的后端学习路径。仓库内既有课程大纲、模块 README、教师教案，也有可运行示例、综合项目、测试示例、benchmark、proto 文件和部署配置。
+`iotestgo2` 现在已经从“Go 后端示例集合”提升为一套较完整的本科课堂演示项目。项目主线覆盖 Go 语言基础、并发与工程化、Gin Web、GORM、gRPC、go-zero 微服务，并新增了企业级后端视野拓展专题。它不适合作为生产项目模板，但非常适合作为课堂讲解、课后练习、综合实践和期末项目选题的材料库。
 
-整体定位更接近“课堂演示材料库”，而不是生产级应用仓库。它的主要价值在于：
+本轮改造后，项目的主要变化是：
 
-- 教学主线完整：从语法、内存、并发、Web、ORM、RPC 到微服务，符合 Go 后端成长路径。
-- 适合本科课堂：示例颗粒度较小，适合在课上逐步演示；Java 对比主要用于连接学生已有课程经验。
-- 示例颗粒度细：每个知识点基本对应独立目录，便于课堂逐节演示。
-- 有一定工程化意识：包含分层项目、测试、benchmark、JWT、中间件、GORM 事务、gRPC 生成代码、Docker Compose 和 K8s YAML。
+- 明确课程对象是计算机专业本科生，Java 对比只作为连接已有知识的辅助脚手架。
+- 增加统一课程入口、运行手册、Makefile 验证目标和 Module 03-06 教案。
+- 补齐 gRPC 综合项目的 testable engine、stream service、auth interceptor 和 annotation-based grpc-gateway。
+- 增加标准 go-zero 电商工程，形成真实 `order-api -> order-rpc -> user-rpc + product-rpc` 调用链。
+- 增加 go-zero 标准工程的 Docker Compose、Prometheus metrics 配置和教学路线说明。
+- 增加 12 个企业级后端拓展专题和 3 个可选 Module 07 小 demo。
 
-当前最需要优先处理的交付风险是：
-
-1. `go.mod` 写的是 `go 1.25.0`，本机 `go1.20.6` 无法解析，导致 `go test ./...` 在解析阶段失败。
-2. Module 05 的综合项目 `project_distributed_compute` 只有 proto 和生成代码，缺少服务端/客户端主程序。
-3. Module 06 电商微服务项目大量使用教学简化和本地模拟 RPC，与 README 中“goctl 生成、Order-API -> Order-RPC -> User-RPC / Product-RPC”的完整目标存在差距。
-4. GORM 和 Web 项目适合教学演示，但默认明文密码、硬编码 DSN、内存存储等实现需要在课堂中明确标注“非生产写法”。
-5. 测试覆盖主要集中在前半部分和少量专题，后半部分微服务链路缺少自动化验证。
-
-结论：这个项目已经适合作为 Go 后端课程的演示骨架，但若用于正式授课或学员自学交付，应先完成“工具链修正、核心项目补全、运行脚本统一、风险注释强化、测试最小闭环”五项整理。
+总体判断：项目已经适合正式授课试运行。剩余风险主要不在“能不能讲”，而在“课堂环境是否统一”和“哪些内容应该选讲”。建议第一次正式授课时采用主线必讲 + 拓展选讲的方式，不要试图一次讲完所有高级专题。
 
 ---
 
-## 2. 项目规模与结构
+## 2. 当前规模与组成
 
-### 2.1 文件规模
-
-| 指标 | 数量 |
+| 指标 | 当前数量 |
 |---|---:|
-| 仓库总文件数 | 222 |
-| Go 源码文件 | 133 |
-| Proto 文件 | 10 |
-| Markdown 文档 | 13 |
-| 测试文件 | 15 |
+| 仓库文件总数 | 276 |
+| Go 源码文件 | 186 |
+| Markdown 文档 | 39 |
+| 测试文件 | 25 |
+| Proto 文件 | 13 |
 
-### 2.2 模块文件分布
+### 2.1 顶层课程资产
 
-| 模块 | 文件数 | 主要内容 |
-|---|---:|---|
-| `module01_basics` | 20 | Go 基础语法、集合、指针、结构体、泛型、任务管理器 |
-| `module02_advanced` | 29 | 接口、错误、defer、goroutine、channel、context、并发安全、测试、文件 IO、反射、runtime |
-| `module03_web_gin` | 25 | net/http、Gin、绑定校验、JWT、中间件、Zap、httptest、用户中心 |
-| `module04_gorm` | 17 | GORM 连接、模型关系、CRUD、预加载、事务、raw SQL、博客 API |
-| `module05_grpc` | 65 | Protobuf、代码生成、Unary/Streaming RPC、拦截器、Metadata、错误处理、Gateway、生成代码 |
-| `module06_gozero` | 21 | go-zero API/RPC/Etcd/缓存/MQ/观测/K8s、电商微服务简化示例 |
+- `README.md`：项目定位、模块总览、快速开始和教学边界。
+- `COURSE_RUNBOOK.md`：课前检查、Go 版本要求、课堂运行顺序和故障处理。
+- `Makefile`：统一 `fmt-check`、`test-basic`、`test-race` 和常见 demo 运行命令。
+- `.env.example`：课堂共享默认配置样例。
+- `Golang_Backend_Training_Syllabus.md`：46 课时课程大纲。
 
-### 2.3 顶层文档
+### 2.2 教师备课材料
 
-- `Golang_Backend_Training_Syllabus.md`：46 课时总纲，明确目标学员、教学风格和 6 个模块。
-- `docs/module01_basics_lesson_plan.md`：Module 01 教师备课教案。
-- `docs/module02_advanced_lesson_plan.md`：Module 02 教师备课教案。
-- `docs/module01_02_lecture_cheatsheet.md`：Module 01/02 讲台小抄。
-- `docs/go_darker_corners_supplements.md`：Go 暗角补充教学点。
+`docs/` 下已包含：
 
-文档体系目前对 Module 01/02 支撑最强，Module 03-06 主要依赖 README 和代码注释，缺少同等详细的教师教案。
+- Module 01-06 lesson plan。
+- Module 01/02 讲台小抄。
+- Go 暗角补充材料。
+- 企业级后端拓展专题。
+- 本调研报告 Markdown 与 HTML 版本。
 
----
+### 2.3 课程模块
 
-## 3. 课程设计分析
-
-### 3.1 课程定位
-
-总纲文件标题中使用了“Golang 后端工程师速成培训大纲”和“针对 Java 开发者”的表述，但结合补充背景，本项目更准确的定位是：面向计算机专业本科生的 Go 后端课程演示项目。Java 对比不是课程主轴，而是利用学生在校内 Java 课程中已有的语言经验做迁移参照。课程安排 46 课时，每节 1-1.5 小时，采用高密度、快节奏、对比提示、重实战的方式，目标覆盖：
-
-- Go 语言特性
-- Gin Web 框架
-- GORM ORM
-- gRPC 通信
-- go-zero 微服务架构
-
-这个定位清晰，并且更适合本科课堂的“概念地图 + 可运行示例 + 综合练习”模式，而不是面向在职工程师的转语言材料。
-
-### 3.2 学习路径
-
-课程路径是典型的“语言基础 -> 工程能力 -> Web API -> 数据持久化 -> RPC -> 微服务”：
-
-1. Module 01 建立 Go 的类型、内存、指针、结构体、集合基础。
-2. Module 02 引入接口、错误处理、并发、context、测试和系统能力。
-3. Module 03 进入 HTTP 和 Gin，开始构建 REST API。
-4. Module 04 连接数据库和 ORM，补齐持久化能力。
-5. Module 05 引入 Protobuf/gRPC，讲服务间强类型通信。
-6. Module 06 用 go-zero 串联微服务、注册发现、缓存、消息队列、可观测性和部署。
-
-这条主线合理，且符合从单体服务到分布式服务的认知负担递增规律。
-
-### 3.3 教学方法
-
-项目中有不少 Java 对比点，但它们更适合作为辅助教学脚手架，而不是课程定位本身。总纲中标注的对比点包括：
-
-- JDK vs Go SDK，Maven vs Go Modules，JVM vs Binary
-- Class vs Struct，this vs Receiver
-- Exception vs Error
-- Thread vs Goroutine
-- BlockingQueue vs Channel
-- Spring MVC vs Gin Router
-- Hibernate/MyBatis vs GORM
-- Spring Cloud vs go-zero
-
-这对学过 Java 的本科生很有帮助，可以减少初学 Go 时的陌生感。但建议课堂中把“类比”和“差异边界”分开讲，避免学生把 Go 的接口、结构体组合、context、error 值误解成 Java 概念的等价替代。
+| 模块 | 定位 | 当前状态 |
+|---|---|---|
+| `module01_basics` | Go 基础、集合、结构体、泛型、CLI 项目 | 稳定，适合作为入门主线 |
+| `module02_advanced` | 接口、错误、并发、context、测试、runtime | 稳定，测试和 race 示例较完整 |
+| `module03_web_gin` | Gin、JWT、中间件、httptest、用户中心 | 可授课，需明确安全简化 |
+| `module04_gorm` | GORM、事务、Preload、Raw SQL、博客 API | 可授课，依赖 MySQL 环境 |
+| `module05_grpc` | Protobuf、gRPC、stream、metadata、gateway | 已补强，适合作为 RPC 主线 |
+| `module06_gozero` | go-zero、API/RPC、Etcd、缓存、MQ、观测、部署 | 已增加概念版 + 标准工程双轨 |
+| `module07_enterprise_extensions` | 企业级后端可选小 demo | 新增，适合拓展课或期末项目前 |
 
 ---
 
-## 4. 模块深度分析
+## 3. 课程定位分析
+
+这个项目不是“Java 工程师转 Go”培训，而是面向计算机专业本科生的 Go 后端课程。课程中保留 Java 对比是合理的，因为很多学生在学校主语言环境中接触过 Java。它的作用是降低迁移成本，而不是把 Go 概念强行翻译成 Java 概念。
+
+推荐课堂表达：
+
+- 可以说“如果你学过 Java，可以这样类比”。
+- 不建议说“Go 就是 Java 的某某替代品”。
+- 对接口、错误处理、并发、context、结构体组合、微服务边界等内容，要强调 Go 自身的设计取舍。
+
+当前课程主线比较健康：
+
+1. Module 01/02 先建立语言和工程基本功。
+2. Module 03/04 进入单体 Web + DB。
+3. Module 05 讲服务间强类型通信。
+4. Module 06 讲微服务框架和工程化生态。
+5. Module 07 和 `docs/enterprise_backend_extensions` 用作企业级视野拓展。
+
+---
+
+## 4. 模块调研结论
 
 ### 4.1 Module 01：Go 语言基础
 
-模块内容覆盖：
+优势：
 
-- 最小 Go 程序
-- 变量、常量、类型推断、iota
-- 流程控制与函数
-- 数组、切片、map、字符串、rune
-- 指针、结构体、方法
-- 数据结构实践
-- 高级函数
-- 泛型入门
-- CLI Task Manager 项目
+- 小节颗粒度清晰，适合一节课一个目录。
+- CLI Task Manager 能自然串联 slice、map、struct、pointer、method。
+- 已包含 string/map/range 等暗角材料和 benchmark。
 
-优点：
+注意点：
 
-- 目录粒度清晰，每一节一个独立目录，适合课堂按顺序运行。
-- `project_task_manager` 用 `TaskManager` 管理 `[]*Task`，能自然串联指针、slice、方法、输入解析。
-- `05_maps_strings`、`03_control_funcs` 等目录包含暗角示例，例如 string/rune、map、range 行为。
-- 已有测试和 benchmark，例如任务管理器测试、字符串 benchmark、高级函数模式测试。
-
-不足：
-
-- `TaskManager` 的方法直接打印结果，业务逻辑与 IO 混在一起，测试只能检查内部状态，不便于讲“可测试设计”。
-- CLI 输入错误处理较基础，例如 `scanner.Scan()` 没有检查错误。
-- Module 01 README 没有提到 `10_generics_intro`，与实际目录有轻微不一致。
-
-授课建议：
-
-- 前 8 节按主线讲，`09_advanced_functions` 和 `10_generics_intro` 作为加餐或进阶补充。
-- 在任务管理器项目中引导一次小型重构：把“状态修改”和“输出打印”拆开，用它自然引出测试友好设计。
+- `project_task_manager` 仍有业务逻辑与 IO 混合的问题，可作为“可测试设计”重构练习。
+- 泛型、高阶函数等内容适合按学生吸收速度选讲，不宜压在第一轮主线里。
 
 ### 4.2 Module 02：高级特性与工程化
 
-模块内容覆盖：
+优势：
 
-- 接口、typed nil
-- error、panic/recover、defer 暗角
-- goroutine、channel、context
-- mutex、rwmutex、sync.Map
-- testing、benchmark、pprof 初步
-- os/signal、exec、文件 IO
-- reflection、runtime、embed、generate
-- 并发日志分析器项目
+- 接口、错误、defer、goroutine、channel、context、锁和测试覆盖完整。
+- `project_log_analyzer` 有 pipeline 测试和 race 验证入口。
+- `Makefile` 已提供 `test-race`，适合课堂现场演示竞态检测。
 
-优点：
+注意点：
 
-- 对 Go 的核心差异点覆盖较完整，尤其是接口、错误处理、并发和 context。
-- `docs/go_darker_corners_supplements.md` 提供了高价值陷阱点，适合提升课程深度。
-- `project_log_analyzer` 用 generator、processor、collector 三段流水线演示 goroutine/channel/context，结构清晰。
-- 有 benchmark 文件，利于讲性能评估而不是只讲功能实现。
+- 日志分析器主要是模拟数据，不是真实大文件读取。可在作业中扩展为真实文件版。
+- typed nil、defer 参数预计算、range 变量等暗角适合第二遍复盘讲，不建议第一遍全部展开。
 
-不足：
+### 4.3 Module 03：Gin Web
 
-- `project_log_analyzer` 实际是随机日志模拟，不是真正读取大文件，和总纲“多个 Goroutine 读取大文件”有差距。
-- `RunPipeline` 内部使用随机数，测试/benchmark 的结果不可完全复现。
-- collector 中 `errorCount++` 只在单 goroutine 内执行，当前是安全的，但这点需要课堂明确，否则学员可能误套到多 collector 场景。
+优势：
 
-授课建议：
+- 从 `net/http` 到 Gin 的路径自然。
+- 用户中心项目采用 handler/service/repository/model 分层，适合本科生理解 Web 后端结构。
+- 有 JWT、中间件、Zap、httptest 等常用能力。
 
-- 把 `project_log_analyzer` 明确分成两版：课堂版模拟数据、作业版真实文件。
-- 增加一个 race detector 演示脚本：`go test -race` 或 `go run -race`，让并发安全形成闭环。
+风险与教学口径：
 
-### 4.3 Module 03：Web 开发与 Gin
+- 明文密码、硬编码 JWT secret、内存仓库都是教学简化，不是生产写法。
+- `docs/enterprise_backend_extensions/topic_02_auth_security.md` 已提供密码 hash、secret 管理和敏感日志的拓展专题，可在 JWT 后插入。
 
-模块内容覆盖：
+### 4.4 Module 04：GORM
 
-- TCP/UDP 和 `net/http`
-- Gin 路由、JSON 响应
-- Binding 和 validation
-- JWT 中间件
-- Zap 日志
-- RESTful API 设计
-- `httptest`
-- Gin context 和优雅关机
-- 用户中心项目
+优势：
 
-优点：
+- 覆盖连接池、模型关系、CRUD、Preload、Hooks、Migration、Transaction、Raw SQL。
+- 博客 API 有 service/repository 分层和事务测试。
+- 可自然引出“事务边界”和“数据库建模”两个企业级专题。
 
-- 从标准库网络编程过渡到 Gin，路径合理。
-- `project_user_center` 采用 `handler/service/repository/model/pkg` 分层，结构适合作为“第一个 Web 小项目”。
-- 使用 `viper`、`zap`、JWT、自定义 middleware，能覆盖实际后端项目常用能力。
-- 服务层有单元测试，`07_testing_httptest` 也有 HTTP 测试示例。
+风险与教学口径：
 
-不足：
+- GORM 示例依赖 MySQL，课前必须确认数据库或 Docker 环境。
+- 硬编码 DSN 适合课堂简化，但正式工程要迁移到配置。
+- 多对多 Tag、级联删除、sqlmock 严格断言仍可作为后续增强点。
 
-- 用户中心使用内存仓库，刷新即丢失数据，适合演示但不适合称为完整微服务。
-- 密码以明文存储，JWT key 硬编码在 `pkg/utils/jwt.go`。
-- `Me` 接口没有真正从上下文取用户信息，只返回固定消息。
-- README 提到头像上传、Swagger 文档等目标，但当前项目实现没有完全覆盖。
+### 4.5 Module 05：gRPC
 
-授课建议：
+本模块已经显著补强。
 
-- 明确标注用户中心是“Web 分层 + 认证流程演示项目”。
-- 如果作为综合作业，应补充密码 hash、配置化 JWT secret、用户上下文注入和持久化存储。
+新增或改进点：
 
-### 4.4 Module 04：GORM 数据持久化
+- `project_distributed_compute/internal/engine`：计算逻辑独立并有单元测试。
+- `project_distributed_compute/internal/server`：stream service 可测试，并避免并发 goroutine 直接写同一个 stream。
+- `project_distributed_compute/internal/auth`：基于 metadata 的 stream auth interceptor。
+- `08_grpc_gateway`：从手写 HTTP bridge 改为 proto annotation + grpc-gateway 生成代码。
+- `module05_grpc/README.md`：补充建议讲课顺序和生成代码规则。
 
-模块内容覆盖：
+教学价值：
 
-- GORM 连接与连接池
-- 模型关系
-- CRUD
-- Preload 和 N+1
-- Hooks
-- Migration
-- Transaction
-- Raw SQL
-- MySQL 测试和 sqlmock 演示
-- 博客 API 项目
+- 可以先讲小 demo，再讲综合项目。
+- 综合项目可用于展示“算法核心、transport、auth、并发、测试”如何拆开。
+- grpc-gateway 可以真实展示 `.proto` 作为 HTTP/gRPC 双协议契约来源。
 
-优点：
+仍需注意：
 
-- GORM 主题覆盖较完整，适合串讲 ORM 常见场景。
-- `project_blog_api` 有 `handler/repository/service/model` 分层。
-- `CreatePostWithComment` 展示了 GORM 闭包事务。
-- `04_queries_preload` 包含 N+1 与 Hooks 示例，教学价值较高。
+- `protoc`、`protoc-gen-go`、`protoc-gen-go-grpc`、`protoc-gen-grpc-gateway` 必须课前装好。
+- 生成文件不要手改，已经在 README 中明确。
 
-不足：
+### 4.6 Module 06：go-zero
 
-- 多数示例默认使用硬编码 MySQL DSN：`root:password@tcp(127.0.0.1:3306)/gorm_demo...`。
-- `project_blog_api` 当前模型只有 Post 和 Comment，没有总纲中提到的 Tag 多对多关系。
-- 删除文章仅删除 `Post`，没有展示删除关联评论或多对多关联的事务清理。
-- `07_testing_mysql/sqlmock_demo_test.go` 更像讲义打印，不是真正执行 SQL mock 断言。
+本模块现在形成双轨结构。
 
-授课建议：
+Track A：概念演示
 
-- 课堂演示前统一提供 Docker Compose MySQL 或 `.env.example`。
-- 把博客项目升级为“Post-Comment-Tag”三类模型，补齐多对多、预加载、事务删除和 sqlmock 断言。
+- `01_gozero_intro` 到 `08_k8s_deploy` 继续用于第一遍讲概念。
+- 适合讲 go-zero 的术语、生态、注册发现、缓存、MQ、观测和部署。
 
-### 4.5 Module 05：gRPC 与 RPC
+Track B：标准工程
 
-模块内容覆盖：
+- 新增 `project_ecommerce_standard`。
+- 使用 goctl 风格目录。
+- 提供 API/RPC/proto/config/service context/logic 结构。
+- 形成真实调用链：`HTTP Client -> order-api -> order-rpc -> user-rpc + product-rpc`。
+- Product RPC 维护内存库存并支持预留扣减。
+- User RPC 对缺失用户返回 `NotFound`，禁用用户返回业务无效。
+- Prometheus metrics 使用独立端口 `19100-19103`，避免误抓业务端口。
 
-- Protobuf 基础
-- `protoc` 代码生成
-- Unary RPC
-- Streaming RPC
-- Interceptor
-- Metadata 认证
-- gRPC status/codes 错误处理
-- grpc-gateway
-- 分布式计算 proto
+教学价值：
 
-优点：
+- 可以把概念版作为“看懂 go-zero 做什么”，把标准版作为“知道真实工程长什么样”。
+- 适合期末项目基础，也适合讲微服务调用链、服务发现、配置、错误语义、库存状态和观测端口。
 
-- 章节结构非常标准，覆盖 gRPC 学习的核心路径。
-- 每个子目录有独立 proto、gen.sh 和生成代码，便于展示代码生成链路。
-- `08_grpc_gateway` 把 gRPC 和 HTTP 双暴露作为收尾，课程价值高。
+仍需注意：
 
-不足：
+- 本机没有 Docker，无法在当前环境运行 `docker compose up` 做容器验收。
+- 标准工程当前仍使用内存数据，适合教学，不是生产电商系统。
+- 真实环境还需要数据库持久化、幂等、事务/补偿、分布式锁或库存服务更严谨设计。
 
-- `project_distributed_compute` 只有 `compute.proto`、`gen.sh` 和生成代码，缺少服务端、客户端、流式处理主程序。
-- 生成代码占据大量文件数，README 没有区分“手写代码”和“生成代码”，新学员可能迷失。
-- Gateway 示例若要完整复现，还需要确保 protoc 插件和 gateway 相关 annotations 生成链路清晰。
+### 4.7 Module 07：企业级拓展 demo
 
-授课建议：
+新增可选 demo：
 
-- 在 README 中增加“不要手改生成代码”的说明。
-- 补齐综合项目最小实现：server 接收 stream，按 operation 计算 sum/avg/max/min，client 流式发送任务并接收结果。
-- 增加 `grpcurl` 测试脚本或 Make target。
+- `01_api_compatibility`：版本路由、统一响应、request_id。
+- `02_resilience`：timeout、retry、rate limit 的最小模拟，并有测试。
+- `03_pprof`：故意低效 Fibonacci endpoint + benchmark。
 
-### 4.6 Module 06：go-zero 微服务
+教学价值：
 
-模块内容覆盖：
-
-- go-zero intro
-- API service
-- RPC service
-- Etcd discovery
-- MySQL cache
-- Message queue
-- Observability
-- K8s deploy
-- 电商微服务项目
-
-优点：
-
-- 主题选择符合工业级微服务课程的核心关注点。
-- `project_ecommerce/docker-compose.yml` 提供 MySQL、Redis、Etcd、Prometheus、Grafana 基础设施。
-- 有 `prometheus.yml`、Dockerfile、Deployment YAML，能把课程延伸到部署和观测。
-- README 中给出了 go-zero 与 Spring Cloud 对照表，适合给学过 Java/Spring 相关概念的学生做横向参照。
-
-不足：
-
-- `project_ecommerce` 没有真正使用 goctl 生成的 `.api/.proto` 多服务骨架。
-- `user-rpc` 和 `order-rpc` 手写了 gRPC ServiceDesc 和普通 struct，这不是典型 go-zero/zRPC 项目写法。
-- `order-api` 中 `callOrderRpc_CreateOrder` 和 `callOrderRpc_GetOrder` 是本地模拟，并未真正调用 `order-rpc`。
-- README 目标包含 Product-RPC、MySQL、Redis、限流熔断，但当前项目主要是演示级骨架。
-
-授课建议：
-
-- 将 Module 06 明确拆成“概念演示版”和“goctl 生成版”。
-- 如果课程目标是工业级 go-zero，应补充 `.api`、`.proto`、`etc/*.yaml`、`internal/config`、`internal/logic`、`internal/svc` 等标准结构。
-- 电商项目应至少打通一次真实调用链：HTTP Order API -> zRPC Order RPC -> zRPC User RPC。
+- 小而完整，适合 10-20 分钟插入课堂。
+- 不引入第三方依赖，避免学生被工具链打断。
+- 与 `docs/enterprise_backend_extensions` 的专题一一呼应。
 
 ---
 
-## 5. 架构与代码质量分析
+## 5. 企业级拓展方向设计
 
-### 5.1 仓库组织
+拓展专题位于 `docs/enterprise_backend_extensions/`，定位是“看学生吸收速度选讲”，不是隐藏必修作业。
 
-项目采用课程模块即代码模块的组织方式，而不是业务域或 Go workspace 多模块方式。这对讲课是合理的：
+### 5.1 12 个专题
 
-- 学员可以 `cd moduleXX/lesson` 独立运行。
-- 每节课边界清晰。
-- 代码体量小，便于现场解释。
+1. API 设计与兼容性
+2. 认证、密码与密钥管理
+3. 数据库建模与事务边界
+4. 缓存一致性
+5. 消息队列与最终一致性
+6. 可观测性：日志、指标、链路追踪
+7. 韧性设计：超时、重试、熔断、限流
+8. API Gateway 与边缘层职责
+9. 部署、发布与回滚
+10. 性能分析与容量意识
+11. 服务边界与领域建模
+12. 数据隐私、审计与合规意识
 
-但也带来两个问题：
+### 5.2 推荐选讲策略
 
-- 大量目录都是 `package main`，全仓库测试/编译依赖 Go module 能正确解析并能跳过外部服务依赖。
-- 生成代码、演示代码、综合项目混在同一模块下，缺少统一的“运行入口索引”。
+| 班级状态 | 推荐专题 |
+|---|---|
+| 学生刚能跑通代码 | API 设计、认证安全 |
+| 学生能完成 Gin + GORM | 数据库事务、缓存一致性、可观测性 |
+| 学生能理解 gRPC + go-zero | MQ、韧性、Gateway、服务边界 |
+| 期末项目前 | 部署发布、性能分析、数据隐私 |
 
-### 5.2 分层设计
+### 5.3 教学提醒
 
-分层做得较好的项目：
+企业级专题容易讲成工具名堆叠。建议每个专题都按三问组织：
 
-- `module03_web_gin/project_user_center`
-- `module04_gorm/project_blog_api`
-
-这两个项目都采用类似：
-
-```text
-main.go
-internal/
-  handler/
-  service/
-  repository/
-  model/
-pkg/
-```
-
-这对教学很有价值，能把 Gin Handler、业务逻辑、存储接口分开讲。建议后续 Module 06 也使用 go-zero 标准目录结构，形成一致的工程化认知。
-
-### 5.3 测试质量
-
-测试现状：
-
-- 前半部分有基础单测和 benchmark。
-- Web 有 service test 和 httptest 示例。
-- GORM 有测试文件，但部分更像演示讲义。
-- gRPC 和 go-zero 综合链路缺少自动化测试。
-
-测试目标目前偏“展示 testing 用法”，还未达到“保证课程代码可持续演进”的程度。建议为每个综合项目增加最小验收测试：
-
-- Task Manager：Add/List/Complete/Delete 的无 IO 单测。
-- Log Analyzer：固定输入、固定输出的 pipeline 测试。
-- User Center：注册、登录、鉴权接口 httptest。
-- Blog API：使用 sqlite 或 sqlmock 的 service/repo 测试。
-- gRPC Compute：bufconn 或本地端口的 stream 测试。
-- go-zero Ecommerce：API handler 对 RPC client mock 的测试。
-
-### 5.4 安全与生产性
-
-项目中存在多处刻意简化，适合教学，但需要在报告和课堂中明确边界：
-
-- 明文密码：`project_user_center` 和 go-zero API 示例中直接存储密码。
-- 硬编码 secret：JWT key 为 `uc-secret` 或 `secret-key-demo`。
-- 硬编码 DSN：GORM 示例默认 `root:password@tcp(127.0.0.1:3306)`。
-- 内存存储：用户中心、电商订单等数据刷新即丢。
-- fatal/panic：多个示例用 `panic` 或 `log.Fatal` 展示失败路径。
-
-这些不是“错误”，但必须被标注为“教学简化”。否则学员可能把演示写法带入真实项目。
+1. 为什么需要这个问题？
+2. 什么时候不需要？
+3. 学生能做一个什么小实验？
 
 ---
 
-## 6. 可运行性验证
+## 6. 验证记录
 
-### 6.1 本次验证命令
+已通过的本地验证：
 
 ```bash
-go version
-go env GOVERSION GOMOD GOPATH GOCACHE
-go test ./...
+GOFLAGS=-mod=readonly make test-basic
+GOFLAGS=-mod=readonly make test-race
+make fmt-check
+GOFLAGS=-mod=readonly go test ./module05_grpc/project_distributed_compute/internal/... ./module05_grpc/08_grpc_gateway ./module06_gozero/project_ecommerce_standard/...
+go test ./module07_enterprise_extensions/...
+go test -bench=. ./module07_enterprise_extensions/03_pprof
 ```
 
-### 6.2 验证结果
+手动验证过：
 
-本机 Go 版本：
+- `module05_grpc/08_grpc_gateway` 的 HTTP `POST /v1/hello` 能经 grpc-gateway 返回 gRPC 响应。
+- `module07_enterprise_extensions/01_api_compatibility` 能启动并返回统一 JSON envelope。
+- `module07_enterprise_extensions/02_resilience` 输出 timeout、retry、rate limit 三段结果。
 
-```text
-go version go1.20.6 darwin/arm64
-```
+未完成的本机验证：
 
-`go test ./...` 失败，失败点在 `go.mod` 解析：
-
-```text
-go: errors parsing go.mod:
-/Users/zhangshiyu/iotestgo2/go.mod:3: invalid go version '1.25.0': must match format 1.23
-```
-
-### 6.3 风险判断
-
-当前 `go.mod` 写法会阻断本机 Go 1.20.6 的任何模块命令。对授课的影响很大：
-
-- 学员如果使用较旧 Go 版本，第一步 `go test` 或 `go run` 就会失败。
-- IDE 可能无法正常加载依赖和代码补全。
-- 课程现场调试成本增加。
-
-建议修复方式：
-
-- 如果课程必须使用 Go 1.25，则统一要求安装对应 Go 工具链，并确认该版本对 `go` directive patch 写法的支持。
-- 如果课程希望兼容更广泛环境，将 `go.mod` 调整为当前稳定工具链可接受的格式，例如 `go 1.20`、`go 1.22` 或实际课程指定版本，并通过 CI 验证。
+- Docker Compose 验证未运行，因为当前机器 `docker` 命令不存在：`zsh:1: command not found: docker`。
+- 因此 Module 06 的 Etcd/MySQL/Redis/Prometheus 容器链路需要在有 Docker 的课堂机或 CI 环境中再验收。
 
 ---
 
-## 7. 教学交付成熟度评估
+## 7. 当前剩余风险
 
-| 维度 | 评分 | 说明 |
-|---|---:|---|
-| 课程主线完整度 | 8/10 | 6 大模块覆盖完整，路径合理 |
-| 本科生课堂适配度 | 8/10 | 示例颗粒度小，Java 对比可作为辅助桥梁，但后续模块教案可继续补强 |
-| 示例可读性 | 8/10 | 小目录、小示例、多注释，适合讲课 |
-| 工程化一致性 | 6/10 | 前半部分清晰，后半部分 go-zero/gRPC 综合项目简化较多 |
-| 可运行性 | 4/10 | 当前 `go.mod` 阻断全量测试，数据库/外部依赖未统一脚本化 |
-| 测试覆盖 | 5/10 | 有 testing/benchmark 示例，但综合项目验收不足 |
-| 生产实践边界 | 5/10 | 明文密码、硬编码 secret/DSN 需要更明确标注 |
-| 文档完备度 | 7/10 | Module 01/02 文档强，Module 03-06 需要补教案 |
+| 风险 | 影响 | 建议 |
+|---|---|---|
+| Docker 未安装 | Module 04/06 容器化演示无法本机验证 | 课前统一 Docker Desktop 或替代云环境 |
+| 外部工具链依赖 | gRPC/go-zero 生成链路可能现场卡住 | 课前运行 `COURSE_RUNBOOK.md` 中检查项 |
+| 安全简化较多 | 学生可能误以为明文密码/硬编码 token 可生产使用 | 在 Module 03 后插入认证安全专题 |
+| 后半部分测试仍偏少 | API/RPC 集成行为主要靠局部测试 | 后续可增加 order-api/order-rpc mock 或集成测试 |
+| 内容丰富度较高 | 46 课时内容密度大 | 使用 `selection_guide.md` 控制选讲范围 |
 
-综合成熟度：**6.4/10**。
-
-适合用途：
-
-- 课堂现场代码演示
-- 计算机本科生 Go 后端课程
-- Go 后端学习路径展示
-- 内部培训材料原型
-
-暂不适合直接作为：
-
-- 生产项目模板
-- 企业级微服务脚手架
-- 可自动验收的在线实验平台
+当前工作树还有一个未提交改动：`module05_grpc/05_interceptors/main.go`。本轮提交和报告未纳入该文件，需由原修改者决定是否保留、提交或回滚。
 
 ---
 
-## 8. 优先改进路线
+## 8. 结论与建议
 
-### P0：授课前必须处理
+项目已经具备正式授课试运行条件。最适合的使用方式是：
 
-1. 修复或统一 Go 工具链版本。
-   - 当前 `go 1.25.0` 会让 Go 1.20.6 直接失败。
-   - 建议在 README 中明确 Go 版本，并提供安装说明。
+1. 按 Module 01-06 走主线，确保学生能跑、能改、能解释。
+2. 对 Module 05/06 采用“概念小 demo -> 标准综合项目”的两段式讲法。
+3. 企业级拓展只选 2-5 个专题穿插讲，不把全部专题变成必修。
+4. 每次课前运行 `make fmt-check`、`make test-basic` 和必要的模块专项测试。
+5. 第一次完整授课后，根据学生卡点把拓展专题重新排序，而不是继续增加新技术点。
 
-2. 增加一份顶层运行指南。
-   - 说明每个模块如何运行。
-   - 标注哪些示例需要 MySQL、Redis、Etcd、protoc、Docker。
-   - 给出推荐课堂命令。
-
-3. 标注教学简化边界。
-   - 明文密码、硬编码 secret、内存存储、模拟 RPC 都要明确“非生产写法”。
-
-### P1：正式课程应补齐
-
-1. 补全 Module 03-06 教师教案。
-   - 保持与 Module 01/02 同样的结构：目标、讲解点、演示脚本、练习、坑点。
-
-2. 补齐 gRPC 分布式计算综合项目。
-   - server、client、双向流、operation 计算、错误状态、认证拦截器。
-
-3. 升级 go-zero 电商项目。
-   - 使用 goctl 生成 API/RPC 标准结构。
-   - 打通真实 API -> RPC -> RPC 链路。
-   - 增加 Product-RPC 或在 README 中删除该目标。
-
-4. 统一数据库环境。
-   - 增加课程级 `docker-compose.yml` 或 module04 专用 compose。
-   - 提供 `.env.example`，避免散落硬编码 DSN。
-
-### P2：提升长期维护质量
-
-1. 增加 CI。
-   - 至少跑 `go test`、`go vet`、`gofmt` 检查。
-   - 对需要外部服务的测试做 tag 隔离。
-
-2. 增加 Makefile 或 taskfile。
-   - `make test`
-   - `make test-basic`
-   - `make proto`
-   - `make run-user-center`
-   - `make run-blog`
-
-3. 给每个综合项目增加验收清单。
-   - 功能命令
-   - 预期输出
-   - 常见错误
-   - 扩展作业
-
----
-
-## 9. 建议的讲课使用方式
-
-### 9.1 课堂节奏
-
-推荐每节课固定四段：
-
-1. 概念定位：这节课解决什么问题。
-2. 代码演示：运行一个最小示例。
-3. 暗角提醒：展示一个坑或反例。
-4. 小练习：让学员改一处代码并运行。
-
-### 9.2 项目使用策略
-
-- Module 01/02：可以按目录顺序完整讲，辅以已有教案。
-- Module 03：重点讲 Web 分层、JWT、中间件、httptest。
-- Module 04：重点讲 GORM 查询、事务、Preload 和测试隔离。
-- Module 05：重点讲 proto -> generated code -> service/client 的生成链路，不要让学员手改 `.pb.go`。
-- Module 06：重点讲微服务概念和生态组件；当前电商项目应定位为“架构演示”，不是完整 go-zero 最佳实践。
-
-### 9.3 给学员的预期管理
-
-建议在开课前明确：
-
-- 这是教学代码，优先强调概念清晰。
-- 部分代码故意简化，不代表生产建议。
-- 后半部分涉及外部依赖，运行前需要统一环境。
-- 课程目标是建立 Go 后端认知地图，而不是一次性掌握所有框架细节。
-
----
-
-## 10. 结论
-
-`iotestgo2` 的课程选题、模块顺序和代码颗粒度都比较适合计算机专业本科生的 Go 后端课程。它已经具备一个讲课演示项目的主体价值：结构清楚、覆盖面广、示例丰富，并能利用学生已有 Java 经验降低入门门槛。
-
-短板主要集中在“交付闭环”而不是“课程方向”：工具链版本当前阻断全量运行，Module 05/06 综合项目完成度不足，后半部分教师文档不如前半部分细，安全和生产实践边界需要更醒目标注。
-
-如果按 P0/P1 路线整理，本项目可以从“可讲的代码集合”提升为“可复用的本科 Go 后端课程材料”。
+一句话评价：`iotestgo2` 当前已经是一套结构清晰、可演示、可扩展的本科 Go 后端课程项目；它的下一阶段重点不是继续堆技术，而是用稳定课堂环境和精选作业把学习闭环打磨出来。
