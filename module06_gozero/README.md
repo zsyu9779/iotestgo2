@@ -55,6 +55,8 @@ cd module06_gozero/project_ecommerce
 docker-compose up -d
 ```
 
+`project_ecommerce` 的 compose 用于概念演示；讲 Track B 标准工程时，进入 `module06_gozero/project_ecommerce_standard` 并使用该目录下的 `docker compose up -d`。
+
 ## 学习目标
 
 1. 理解 go-zero 架构设计理念
