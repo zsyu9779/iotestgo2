@@ -58,9 +58,7 @@ Module 01 面向已能阅读 Java 的学员，用四个连续 Block 建立 Go �
 go run ./module01_basics/blocks/01_go_basics/demo/01_hello
 go run ./module01_basics/blocks/01_go_basics/demo/02_vars_types
 go run ./module01_basics/blocks/01_go_basics/demo/03_control_funcs
-go run ./module01_basics/blocks/01_go_basics/demo/04_zero_values
 go run ./module01_basics/blocks/01_go_basics/demo/05_strings_basics
-go run ./module01_basics/blocks/01_go_basics/demo/06_control_flow_edges
 go run ./module01_basics/blocks/02_collections/demo/04_arrays_slices
 go run ./module01_basics/blocks/02_collections/demo/05_maps_strings
 go run ./module01_basics/blocks/02_collections/demo/06_slice_map_edges

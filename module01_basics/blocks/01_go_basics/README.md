@@ -39,12 +39,10 @@ Go 允许忽略表达式周围的圆括号，但要求分支体使用花括号�
 go run ./module01_basics/blocks/01_go_basics/demo/01_hello
 go run ./module01_basics/blocks/01_go_basics/demo/02_vars_types
 go run ./module01_basics/blocks/01_go_basics/demo/03_control_funcs
-go run ./module01_basics/blocks/01_go_basics/demo/04_zero_values
 go run ./module01_basics/blocks/01_go_basics/demo/05_strings_basics
-go run ./module01_basics/blocks/01_go_basics/demo/06_control_flow_edges
 ```
 
-重点观察程序入口、类型推断、零值、String 基础操作、`for`、`range`、`switch`、函数参数和多返回值。
+重点观察程序入口、类型推断、变量零值、String 基础操作、`for`、`range`、多值 `case`、`fallthrough`、`switch {}`、函数参数和多返回值。
 
 ## 语言语义补充
 
@@ -52,7 +50,7 @@ go run ./module01_basics/blocks/01_go_basics/demo/06_control_flow_edges
 
 Go 声明变量但没有提供初始值时，会自动使用该类型的零值：整数为 `0`，浮点数为 `0`，布尔值为 `false`，字符串为 `""`，Struct 的每个字段也使用各自的零值。
 
-复合类型还要区分“可直接使用”和“必须初始化”：nil Slice 可以读取长度并 `append`，nil Map 可以读取但不能写入。运行 `04_zero_values` 观察这些结果。
+复合类型还要区分“可直接使用”和“必须初始化”：nil Slice 可以读取长度并 `append`，nil Map 可以读取但不能写入。运行 `02_vars_types` 观察这些结果。
 
 ### 控制流边界
 

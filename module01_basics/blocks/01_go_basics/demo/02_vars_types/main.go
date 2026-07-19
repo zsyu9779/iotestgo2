@@ -5,6 +5,12 @@ import (
 	"math"
 )
 
+type Config struct {
+	Port    int
+	Enabled bool
+	Name    string
+}
+
 func main() {
 	// 1. Variable Declaration
 	var age int = 30
@@ -36,4 +42,23 @@ func main() {
 	var i int = 42
 	var f float64 = float64(i)
 	fmt.Println("Float:", f)
+
+	// 5. Zero values: every declared variable starts with a useful default.
+	var count int
+	var ratio float64
+	var enabled bool
+	var label string
+	fmt.Printf("Zero values: int=%d float=%.1f bool=%t string=%q\n", count, ratio, enabled, label)
+
+	var cfg Config
+	fmt.Printf("Struct zero value: %#v\n", cfg)
+
+	var numbers []int
+	var scores map[string]int
+	fmt.Printf("Nil collections: slice nil=%t len=%d map nil=%t missing=%d\n",
+		numbers == nil, len(numbers), scores == nil, scores["missing"])
+	numbers = append(numbers, 1)
+	scores = make(map[string]int)
+	scores["Alice"] = 95
+	fmt.Printf("After initialization: numbers=%v scores=%v\n", numbers, scores)
 }

@@ -49,9 +49,7 @@ go test -tags=exercise ./module01_basics/blocks/01_go_basics/lab/starter -run '^
 按班级节奏选择以下镜头，不要删除原有 `01_hello`、`02_vars_types` 和 `03_control_funcs`：
 
 ```bash
-go run ./module01_basics/blocks/01_go_basics/demo/04_zero_values
 go run ./module01_basics/blocks/01_go_basics/demo/05_strings_basics
-go run ./module01_basics/blocks/01_go_basics/demo/06_control_flow_edges
 ```
 
 - **核心：**让学员预测 `var int/string/bool` 的零值，说明 nil Slice 可以 `append`，nil Map 只能读不能写。

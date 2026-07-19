@@ -8,21 +8,32 @@ func main() {
 		fmt.Println("Passed with score:", score)
 	}
 
-	// 2. Switch (No break needed)
-	role := "admin"
+	// 2. Switch (No break needed; a case may contain multiple values)
+	role := "owner"
 	switch role {
-	case "admin":
-		fmt.Println("Access granted")
-		// fallthrough // Optional: continue to next case
-	case "user":
+	case "admin", "owner":
+		fmt.Println("Full access")
+	case "user", "viewer":
 		fmt.Println("Read only")
 	default:
 		fmt.Println("Access denied")
 	}
 
+	// fallthrough 不会自动发生，只会把执行继续交给紧邻的下一个 case。
+	switch role {
+	case "owner":
+		fmt.Println("Owner branch")
+		fallthrough
+	case "admin":
+		fmt.Println("Admin branch reached by fallthrough")
+	}
+
 	// 3. For loop (The only loop in Go)
 	// Java: for (int i = 0; i < 5; i++)
 	for i := 0; i < 3; i++ {
+		if i == 1 {
+			continue
+		}
 		fmt.Println("Loop:", i)
 	}
 
@@ -31,6 +42,15 @@ func main() {
 	for count < 2 {
 		fmt.Println("Count:", count)
 		count++
+	}
+
+	switch {
+	case count == 0:
+		fmt.Println("Expressionless switch: empty")
+	case count < 3:
+		fmt.Println("Expressionless switch: small")
+	default:
+		fmt.Println("Expressionless switch: large")
 	}
 
 	// 4. Functions
