@@ -2,6 +2,7 @@
 .vscode
 .trae
 .cursor
+.worktrees/
 .DS_Store
 .claude
 docs
