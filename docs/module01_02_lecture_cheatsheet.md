@@ -1,39 +1,14 @@
 # 模块01+02 讲课线性“小抄”（教师讲台备忘录）
- 
-定位：Module 01 只保留指向新课程入口的兼容导航；Module 02 继续保留原线性讲台备忘录。
-覆盖：Module 01 一日四 Block 工作坊与一周 Task Manager 作业入口，以及 `module02_advanced` 原有讲稿。
- 
----
- 
-## 讲前 3 分钟准备（你只看这一段就能开讲）
- 
-- 从仓库根目录打开唯一学员入口：[Module 01 README](../module01_basics/README.md)。
-- 打开唯一讲师入口：[Module 01 Runbook](../module01_basics/instructor/RUNBOOK.md)；现场演示提示见 [Demo Notes](../module01_basics/instructor/DEMO_NOTES.md)。
-- 依次确认四个 Block 入口：[Go Basics](../module01_basics/blocks/01_go_basics/README.md)、[Collections](../module01_basics/blocks/02_collections/README.md)、[Modeling](../module01_basics/blocks/03_modeling/README.md)、[Functions & Testing](../module01_basics/blocks/04_functions_testing/README.md)。
-- 运行 `make module01-verify`，确认 Demo、课堂 Solution 和教师版作业答案为 GREEN；学员 Starter 只在显式练习命令下保持预期 RED。
- 
----
- 
-## 开场（1 分钟）
- 
-你说：
-- “Module 01 用四个连续 Block 完成 Go 基础，再用 Scorebook 组合能力；Task Manager 留作一周迁移作业。”
-- “Module 02 再进入接口、错误、并发与工程化；今天每一段都要产生可运行、可验收的结果。”
- 
-你做：
-- 快速展示 `module01_basics/README.md` 的学习路径和 `module01_basics/instructor/RUNBOOK.md` 的时间盒，再切到下方 Module 02 主线。
- 
-过渡串词：
-- “先按 Module 01 的四个 Block 建立可测试的基础，再进入 Module 02 的抽象、错误和并发。”
- 
----
- 
-## Module01 主线：四 Block 工作坊
 
-Module 01 已改为一日四 Block 工作坊加一周 Task Manager 作业。本兼容小抄不再维护第二套 Module 01 讲稿；请使用唯一讲师小抄：[Module 01 Demo Notes](../module01_basics/instructor/DEMO_NOTES.md)。完整时间盒、救援和披露规则见 [Module 01 Runbook](../module01_basics/instructor/RUNBOOK.md)。
+## Module 01 兼容导航
+
+Module 01 的课程内容已迁移到两个权威入口，本兼容页不再维护独立讲稿或命令：
+
+- [Module 01 学员入口](../module01_basics/README.md)
+- [Module 01 讲师入口](../module01_basics/instructor/RUNBOOK.md)
 
 ---
- 
+
 ## Module02 主线：抽象 + 错误 + 并发 + 工程化（按目录顺序）
  
 ### 01_interfaces（隐式实现：Go 抽象能力的核心）

@@ -24,7 +24,7 @@ func main() {
 	fmt.Println("Map:", scores)
 
 	// 2. Strings
-	// Strings are immutable byte slices
+	// Strings are immutable byte sequences with their own distinct string type.
 	str := "Hello, 世界"
 	fmt.Println("Length (bytes):", len(str)) // 13 (Hello, = 7 + 世界 = 6)
 

@@ -94,7 +94,7 @@ go test -tags=exercise ./module01_basics/blocks/03_modeling/lab/starter -run '^T
 
 ```bash
 go run ./module01_basics/blocks/04_functions_testing/demo/09_advanced_functions
-go test ./module01_basics/bonus/function_patterns -run '^TestURLBuilder$'
+go test ./module01_basics/blocks/04_functions_testing/lab/solution -run '^TestFilterWithClosure$'
 ```
 
 ### 投影提示
@@ -129,8 +129,7 @@ go test -tags=exercise ./module01_basics/blocks/04_functions_testing/lab/starter
 先声明“这是一周作业，现在不写实现”，再运行：
 
 ```bash
-cd module01_basics/homework/task_manager/student_pack
-make grade
+(cd module01_basics/homework/task_manager/student_pack && make grade)
 ```
 
 预期 gofmt 和 Vet 通过，测试在 `Add` 的 `ErrNotImplemented` 行为处失败。该 RED 证明 Starter 和公开测试已对接，不需要现场“修好”。如因权限、依赖或编译失败，按 [Troubleshooting](../homework/task_manager/teacher/TROUBLESHOOTING.md) 处理环境问题。

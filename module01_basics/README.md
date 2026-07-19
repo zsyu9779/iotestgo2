@@ -70,8 +70,7 @@ go test ./module01_basics/bonus/function_patterns
 Task Manager 是课后一周作业，课堂内不实现答案。先阅读 [学员作业说明](homework/task_manager/student_pack/README.md)，再在独立学员包内完成行为：
 
 ```bash
-cd module01_basics/homework/task_manager/student_pack
-make grade
+(cd module01_basics/homework/task_manager/student_pack && make grade)
 ```
 
 未完成的 Starter 应在验收脚本的测试步骤因 `ErrNotImplemented` 失败；这是作业起点，不是环境故障。完成后同一命令应依次通过 gofmt、Vet、测试和构建。讲师在仓库根目录用下列命令验证教师答案：

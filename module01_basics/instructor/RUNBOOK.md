@@ -122,3 +122,4 @@
 1. 用 [answer key](../assessments/answer_key.md) 统计 Entry/Exit 题号，按诊断语言记录下次开场要回收的误解。
 2. 运行 `make module01-verify`，确认课堂 Solution 与 Task Manager 教师答案都经过验收。
 3. 发布时只复制 `homework/task_manager/student_pack/` 的内容，严格按 [发布检查清单](../homework/task_manager/teacher/RELEASE_CHECKLIST.md) 排除教师答案。
+4. 下一次课开场先安排 10 分钟 Task Manager 提交与 Code Review 反馈：展示两类匿名共性问题、让学员修正一处代码，并说明评分反馈；该活动属于下一次课，不计入本日 09:30–16:00 的 310 分钟。

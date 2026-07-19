@@ -13,6 +13,7 @@ func TestGrade(t *testing.T) {
 	}{
 		{name: "excellent lower bound", score: 90, want: "A"},
 		{name: "good", score: 82, want: "B"},
+		{name: "average", score: 75, want: "C"},
 		{name: "pass", score: 60, want: "D"},
 		{name: "fail", score: 59, want: "F"},
 	}
@@ -32,8 +33,12 @@ func TestGrade(t *testing.T) {
 
 func TestGradeRejectsOutOfRange(t *testing.T) {
 	for _, score := range []int{-1, 101} {
-		if _, err := Grade(score); !errors.Is(err, ErrScoreOutOfRange) {
+		got, err := Grade(score)
+		if !errors.Is(err, ErrScoreOutOfRange) {
 			t.Fatalf("Grade(%d) error = %v, want ErrScoreOutOfRange", score, err)
+		}
+		if got != "" {
+			t.Fatalf("Grade(%d) grade = %q, want empty string", score, got)
 		}
 	}
 }

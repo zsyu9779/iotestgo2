@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-// Benchmark: += vs strings.Builder vs bytes.Buffer
+// Benchmark: += vs strings.Builder
 
 func BenchmarkStringPlusEqual(b *testing.B) {
 	var s string
@@ -42,5 +42,5 @@ func BenchmarkStringsBuilderNoGrow(b *testing.B) {
 //
 // 教学要点：
 //   1. 循环中不要用 += 拼接字符串
-//   2. 优先用 strings.Builder（单线程）或 bytes.Buffer（多线程安全）
+//   2. 单 goroutine 拼接可优先用 strings.Builder；strings.Builder 和 bytes.Buffer 都不能在无同步保护下并发使用
 //   3. 能预估大小的用 sb.Grow() 预分配
