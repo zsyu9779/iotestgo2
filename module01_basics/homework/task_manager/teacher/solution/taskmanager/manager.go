@@ -1,135 +1,68 @@
-package main
+package taskmanager
 
 import (
-	"bufio"
-	"fmt"
-	"os"
-	"strconv"
+	"errors"
+	"strings"
 )
 
-// Task struct
-type Task struct {
-	ID        int
-	Title     string
-	Completed bool
-}
+var (
+	ErrEmptyTitle   = errors.New("task title cannot be empty")
+	ErrTaskNotFound = errors.New("task not found")
+)
 
-// TaskManager handles tasks
-type TaskManager struct {
+type Manager struct {
 	tasks  []*Task
 	nextID int
 }
 
-func NewTaskManager() *TaskManager {
-	return &TaskManager{
+func NewManager() *Manager {
+	return &Manager{
 		tasks:  make([]*Task, 0),
 		nextID: 1,
 	}
 }
 
-func (tm *TaskManager) Add(title string) {
+func (m *Manager) Add(title string) (Task, error) {
+	title = strings.TrimSpace(title)
+	if title == "" {
+		return Task{}, ErrEmptyTitle
+	}
+
 	task := &Task{
-		ID:        tm.nextID,
-		Title:     title,
-		Completed: false,
+		ID:    m.nextID,
+		Title: title,
 	}
-	tm.tasks = append(tm.tasks, task)
-	tm.nextID++
-	fmt.Printf("Task added with ID: %d\n", task.ID)
+	m.tasks = append(m.tasks, task)
+	m.nextID++
+	return *task, nil
 }
 
-func (tm *TaskManager) List() {
-	if len(tm.tasks) == 0 {
-		fmt.Println("No tasks.")
-		return
+func (m *Manager) List() []Task {
+	tasks := make([]Task, len(m.tasks))
+	for i, task := range m.tasks {
+		tasks[i] = *task
 	}
-	fmt.Println("Tasks:")
-	for _, t := range tm.tasks {
-		status := "[ ]"
-		if t.Completed {
-			status = "[x]"
-		}
-		fmt.Printf("%d. %s %s\n", t.ID, status, t.Title)
-	}
+	return tasks
 }
 
-func (tm *TaskManager) Complete(id int) {
-	for _, t := range tm.tasks {
-		if t.ID == id {
-			t.Completed = true
-			fmt.Println("Task marked as completed.")
-			return
+func (m *Manager) Complete(id int) (Task, error) {
+	for _, task := range m.tasks {
+		if task.ID == id {
+			task.Completed = true
+			return *task, nil
 		}
 	}
-	fmt.Println("Task not found.")
+	return Task{}, ErrTaskNotFound
 }
 
-func (tm *TaskManager) Delete(id int) {
-	index := -1
-	for i, t := range tm.tasks {
-		if t.ID == id {
-			index = i
-			break
+func (m *Manager) Delete(id int) error {
+	for i, task := range m.tasks {
+		if task.ID == id {
+			copy(m.tasks[i:], m.tasks[i+1:])
+			m.tasks[len(m.tasks)-1] = nil
+			m.tasks = m.tasks[:len(m.tasks)-1]
+			return nil
 		}
 	}
-	if index != -1 {
-		// Efficient delete for slice if order matters: copy elements
-		tm.tasks = append(tm.tasks[:index], tm.tasks[index+1:]...)
-		fmt.Println("Task deleted.")
-	} else {
-		fmt.Println("Task not found.")
-	}
-}
-
-func main() {
-	tm := NewTaskManager()
-	scanner := bufio.NewScanner(os.Stdin)
-
-	for {
-		fmt.Println("\n--- CLI Task Manager ---")
-		fmt.Println("1. Add Task")
-		fmt.Println("2. List Tasks")
-		fmt.Println("3. Complete Task")
-		fmt.Println("4. Delete Task")
-		fmt.Println("5. Exit")
-		fmt.Print("Choose option: ")
-
-		scanner.Scan()
-		input := scanner.Text()
-
-		switch input {
-		case "1":
-			fmt.Print("Enter task title: ")
-			scanner.Scan()
-			title := scanner.Text()
-			tm.Add(title)
-		case "2":
-			tm.List()
-		case "3":
-			fmt.Print("Enter task ID to complete: ")
-			scanner.Scan()
-			idStr := scanner.Text()
-			id, err := strconv.Atoi(idStr)
-			if err != nil {
-				fmt.Println("Invalid ID")
-				continue
-			}
-			tm.Complete(id)
-		case "4":
-			fmt.Print("Enter task ID to delete: ")
-			scanner.Scan()
-			idStr := scanner.Text()
-			id, err := strconv.Atoi(idStr)
-			if err != nil {
-				fmt.Println("Invalid ID")
-				continue
-			}
-			tm.Delete(id)
-		case "5":
-			fmt.Println("Bye!")
-			return
-		default:
-			fmt.Println("Invalid option")
-		}
-	}
+	return ErrTaskNotFound
 }

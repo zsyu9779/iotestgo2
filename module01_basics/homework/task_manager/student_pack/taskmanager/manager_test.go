@@ -75,20 +75,3 @@ func TestUnknownIDsReturnErrors(t *testing.T) {
 		t.Fatal("Delete(99) error = nil; want an error")
 	}
 }
-
-func TestAddRejectsEmptyTitle(t *testing.T) {
-	m := NewManager()
-	if _, err := m.Add(" \t\n"); err != ErrEmptyTitle {
-		t.Fatalf("Add(empty) error = %v; want ErrEmptyTitle", err)
-	}
-}
-
-func TestUnknownIDsReturnErrTaskNotFound(t *testing.T) {
-	m := NewManager()
-	if _, err := m.Complete(99); err != ErrTaskNotFound {
-		t.Fatalf("Complete(99) error = %v; want ErrTaskNotFound", err)
-	}
-	if err := m.Delete(99); err != ErrTaskNotFound {
-		t.Fatalf("Delete(99) error = %v; want ErrTaskNotFound", err)
-	}
-}

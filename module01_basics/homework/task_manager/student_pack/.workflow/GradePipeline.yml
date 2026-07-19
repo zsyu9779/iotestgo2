@@ -1,0 +1,17 @@
+version: '1.0'
+name: task-manager-grade
+displayName: Task Manager 作业验收
+stages:
+  - stage:
+    name: grade
+    displayName: 作业验收
+    strategy: naturally
+    trigger: manual
+    steps:
+      - step: build@golang
+        name: grade_task_manager
+        displayName: 格式、Vet、测试和构建
+        golangVersion: '1.16'
+        commands: |
+          chmod +x ./scripts/grade.sh
+          ./scripts/grade.sh
