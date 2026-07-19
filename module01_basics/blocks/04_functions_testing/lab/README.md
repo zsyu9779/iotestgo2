@@ -2,6 +2,8 @@
 
 请在 `starter/scores.go` 中完成三个函数，练习把函数当作值传递、用闭包保存配置，以及用 `defer` 保证收尾动作的执行位置。
 
+完成两个已有测试后，运行 `TestFilterPreservesInputOrderForAdditionalCase`，把它当作一次学员自己补充的回归测试：它要求 `Filter` 保持原输入中的相对顺序。Starter 的这个测试初始失败是预期的，不能通过删除测试或修改期望值绕过。
+
 保持以下公开接口不变：
 
 ```go

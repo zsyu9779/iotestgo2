@@ -124,10 +124,12 @@ go test -tags=exercise ./module01_basics/blocks/03_modeling/lab/starter -run '^T
 
 ## Block 4：Functions & Testing（15 分钟）
 
-核心 Demo 只保留函数值、一个闭包和 `defer`；柯里化、函数组合和并发已经移入可裁 Bonus。
+核心 Demo 保留函数值、闭包和 `defer`，并增加变参、命名函数类型、闭包状态和 defer 求值；柯里化、函数组合和并发继续移入可裁 Bonus。
 
 ```bash
 go run ./module01_basics/blocks/04_functions_testing/demo/09_advanced_functions
+go run ./module01_basics/blocks/04_functions_testing/demo/10_function_forms
+go run ./module01_basics/blocks/04_functions_testing/demo/11_defer_edges
 go test ./module01_basics/blocks/04_functions_testing/lab/solution -run '^TestFilterWithClosure$'
 ```
 
@@ -146,6 +148,13 @@ go test -tags=exercise ./module01_basics/blocks/04_functions_testing/lab/starter
 ```
 
 始终一次只运行一个具名测试。Filter 有多余零值时，检查是否先创建了 `len(values)` 长度再 `append`；audit 顺序错误时，让学员在纸上写出三个可观察事件，再移动 `defer`。
+
+### Block 4 内容扩展
+
+- **核心：**用 `10_function_forms` 展示命名函数类型、变参、Slice 展开、高阶函数和闭包状态隔离。
+- **核心：**用 `11_defer_edges` 展示 LIFO、普通参数立即求值和闭包延迟读取。
+- **核心：**让学员运行并解释 `scores_additional_exercise_test.go`，把“补一个测试”纳入测试反馈循环。
+- **可裁：**柯里化、函数组合、Functional Options 和并发继续留在 Bonus；`panic/recover` 放到 Module 02。
 
 ## Scorebook 综合 Lab（40 分钟）
 

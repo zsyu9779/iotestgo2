@@ -38,11 +38,23 @@
 
 ```bash
 go run ./module01_basics/blocks/04_functions_testing/demo/09_advanced_functions
+go run ./module01_basics/blocks/04_functions_testing/demo/10_function_forms
+go run ./module01_basics/blocks/04_functions_testing/demo/11_defer_edges
 go run ./module01_basics/bonus/function_patterns
 go test ./module01_basics/bonus/function_patterns
 ```
 
-核心 Demo 只观察函数值、一个闭包和 `defer` 顺序。Bonus 测试用于识别 Arrange、Act、Assert；可用 `go test ./module01_basics/bonus/function_patterns -run TestURLBuilder` 单独执行一个测试，说明测试名为何也是开发反馈接口的一部分。
+Demo 现在从当前闭包示例继续扩展到变参、函数类型、高阶函数、闭包状态和 `defer` 的 LIFO/参数求值语义；柯里化、函数组合和并发继续移入可裁 Bonus。Bonus 测试用于识别 Arrange、Act、Assert；可用 `go test ./module01_basics/bonus/function_patterns -run TestURLBuilder` 单独执行一个测试，说明测试名为何也是开发反馈接口的一部分。
+
+## 函数与测试基础
+
+- 函数可以作为变量、参数和返回值；可以定义命名函数类型。
+- 变参函数接收一个 Slice，调用方可以用 `values...` 展开已有 Slice。
+- 闭包可以捕获外层变量；每次调用外层函数都会创建独立的捕获状态。
+- 多个 `defer` 按后进先出执行；普通参数在注册时求值，闭包体在执行时读取变量。
+- 测试文件使用 `_test.go`，测试函数使用 `TestXxx(t *testing.T)`；`t.Run` 适合组织子场景，表格驱动测试适合覆盖边界。
+
+课堂上至少补写一个测试。`lab/starter/scores_additional_exercise_test.go` 提供了一个额外的输入顺序场景；Starter 保持预期 RED，学生应先读失败，再完成 `Filter`。
 
 ## 学员任务
 
@@ -67,6 +79,7 @@ go test -tags=exercise ./module01_basics/blocks/04_functions_testing/lab/starter
 - 在 `WithAudit` 中先执行 `operation`，导致开始事件出现得太晚。
 - 直接记录结束事件或过早调用它，没有使用 `defer` 表达返回前收尾。
 - 每次都运行全部测试，导致反馈中混入尚未开始实现的另一个行为。
+- 测试只验证“能通过”而不验证顺序、边界或输入不变性；先写一个具名失败，再运行最小测试。
 
 ## 三级提示
 
@@ -79,6 +92,8 @@ go test -tags=exercise ./module01_basics/blocks/04_functions_testing/lab/starter
 - Go 的 `func(int) bool` 与 Java 的 `Predicate<Integer>` 在表达和调用上有哪些差异？
 - `AtLeast(60)` 返回后，参数 `min` 为什么仍然可用？
 - 为什么 `defer record("end:" + name)` 写在 `operation()` 之前，结束事件却发生在操作之后？
+- 普通 `defer fmt.Println(value)` 与 `defer func() { fmt.Println(value) }()` 的读取时机有什么区别？
+- 为什么给 `Filter` 写测试时要同时检查结果内容和原输入顺序？
 - 单独运行具名测试相比每次运行整个包，如何缩短 RED、GREEN、REFACTOR 的反馈循环？
 
 ## Bonus
