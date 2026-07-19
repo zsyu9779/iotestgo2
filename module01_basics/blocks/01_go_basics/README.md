@@ -39,9 +39,32 @@ Go 允许忽略表达式周围的圆括号，但要求分支体使用花括号�
 go run ./module01_basics/blocks/01_go_basics/demo/01_hello
 go run ./module01_basics/blocks/01_go_basics/demo/02_vars_types
 go run ./module01_basics/blocks/01_go_basics/demo/03_control_funcs
+go run ./module01_basics/blocks/01_go_basics/demo/04_zero_values
+go run ./module01_basics/blocks/01_go_basics/demo/05_strings_basics
+go run ./module01_basics/blocks/01_go_basics/demo/06_control_flow_edges
 ```
 
-重点观察程序入口、类型推断、零值、`for`、`range`、`switch`、函数参数和多返回值。
+重点观察程序入口、类型推断、零值、String 基础操作、`for`、`range`、`switch`、函数参数和多返回值。
+
+## 语言语义补充
+
+### 零值
+
+Go 声明变量但没有提供初始值时，会自动使用该类型的零值：整数为 `0`，浮点数为 `0`，布尔值为 `false`，字符串为 `""`，Struct 的每个字段也使用各自的零值。
+
+复合类型还要区分“可直接使用”和“必须初始化”：nil Slice 可以读取长度并 `append`，nil Map 可以读取但不能写入。运行 `04_zero_values` 观察这些结果。
+
+### 控制流边界
+
+- `for` 是 Go 唯一的循环关键字，可写成三段式、条件式或无限循环。
+- `break` 结束当前循环，`continue` 跳过当前迭代。
+- 一个 `case` 可以写多个值，例如 `case "admin", "owner"`。
+- Go 的 `switch` 默认不会自动贯穿；`fallthrough` 必须显式写出，并且无条件进入紧邻的下一个 `case`。它在业务代码中通常不推荐使用。
+- `switch {}` 是按顺序判断条件的简洁写法，适合成绩等级等互斥条件。
+
+### String 基础
+
+String 是不可变的 UTF-8 字节序列。拼接、比较、`strings.Fields`、`strings.TrimSpace` 和大小写转换适合日常文本处理；下标和切片按 byte 工作，按字符遍历应使用 `range`，需要字符 Slice 时再转换为 `[]rune`。运行 `05_strings_basics` 对比 byte index 与 rune index。
 
 ## 学员任务
 
@@ -74,6 +97,9 @@ go test -tags=exercise ./module01_basics/blocks/01_go_basics/lab/starter
 ## 复盘问题
 
 - 为什么 Go 的函数签名把 `error` 与正常结果并列返回？
+- `var i int`、`var s string` 和 `var m map[string]int` 的零值分别是什么？它们哪些可以直接写入？
+- `case "admin", "owner"` 与 `fallthrough` 分别表达什么？为什么业务代码通常不需要 `fallthrough`？
+- 为什么 `range` 处理 String 时 index 是 byte offset，而不是字符序号？
 - `Grade(90)`、`Grade(60)`、`Grade(0)` 与 `Grade(101)` 分别应该走哪条路径？
 - 如果新增 `S` 等级，哪些测试应当先改变？
 

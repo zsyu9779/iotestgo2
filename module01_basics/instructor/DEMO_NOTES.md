@@ -44,6 +44,22 @@ go test -tags=exercise ./module01_basics/blocks/01_go_basics/lab/starter -run '^
 
 起始 Starter 应因返回等级不符合而失败。请学员只读出“测试名、实际值、期望值”；如 8 分钟仍无进展，给一级提示“先把输入分成有效与无效”，不投影 solution。
 
+### Block 1 内容扩展
+
+按班级节奏选择以下镜头，不要删除原有 `01_hello`、`02_vars_types` 和 `03_control_funcs`：
+
+```bash
+go run ./module01_basics/blocks/01_go_basics/demo/04_zero_values
+go run ./module01_basics/blocks/01_go_basics/demo/05_strings_basics
+go run ./module01_basics/blocks/01_go_basics/demo/06_control_flow_edges
+```
+
+- **核心：**让学员预测 `var int/string/bool` 的零值，说明 nil Slice 可以 `append`，nil Map 只能读不能写。
+- **核心：**展示 `strings.TrimSpace`、`Fields`、`ToLower`，再解释 String 下标是 byte、`range` 得到 rune。
+- **核心：**让学员预测 `case "admin", "owner"`、`switch {}` 和 `continue/break` 的输出。
+- **深挖：**实际运行 `fallthrough`，强调它不重新判断下一个 case，且业务代码通常不建议使用。
+- **可裁：**标签和 `goto` 只口头说明存在，不在当天编码。
+
 ## Block 2：Collections（25 分钟）
 
 ```bash
