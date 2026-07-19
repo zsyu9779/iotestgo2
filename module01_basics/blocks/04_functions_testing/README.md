@@ -13,7 +13,7 @@
 
 - 讲师 Demo：15 分钟
 - 学员结对实现：20 分钟
-- 测试、复盘与 Bonus：10 分钟
+- 测试与复盘：10 分钟
 
 ## 前置知识
 
@@ -82,5 +82,7 @@ go test -tags=exercise ./module01_basics/blocks/04_functions_testing/lab/starter
 - 单独运行具名测试相比每次运行整个包，如何缩短 RED、GREEN、REFACTOR 的反馈循环？
 
 ## Bonus
+
+以下内容不计入本 Block 的 45 分钟核心时间盒，仅在课后或进度提前时选做。
 
 先增加一个失败测试，再实现 `Between(min, max int) func(int) bool`。明确边界是否包含在范围内，并将返回的闭包传给 `Filter`；不要修改 `Filter` 的接口。

@@ -96,6 +96,9 @@ func TestCompleteReturnsCopy(t *testing.T) {
 	completed.Completed = false
 
 	stored := m.List()
+	if len(stored) != 1 {
+		t.Fatalf("List() after Complete = %#v; want one task", stored)
+	}
 	if stored[0].Title != "keep this title" || !stored[0].Completed {
 		t.Fatalf("stored task changed through Complete result: %#v", stored[0])
 	}
