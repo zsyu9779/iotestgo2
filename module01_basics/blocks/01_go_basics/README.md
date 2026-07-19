@@ -66,6 +66,10 @@ Go 声明变量但没有提供初始值时，会自动使用该类型的零值�
 
 String 是不可变的 UTF-8 字节序列。拼接、比较、`strings.Fields`、`strings.TrimSpace` 和大小写转换适合日常文本处理；下标和切片按 byte 工作，按字符遍历应使用 `range`，需要字符 Slice 时再转换为 `[]rune`。运行 `05_strings_basics` 对比 byte index 与 rune index。
 
+### 核心语义深挖
+
+- [Range 变量与闭包陷阱](../../bonus/dark_corners/range/main.go)：放在基本 `for`/`range` 之后，先讲正常遍历，再讲取地址和闭包捕获的版本差异。
+
 ## 学员任务
 
 进入 `lab/starter`，实现 `Grade(score int) (string, error)`。有效成绩应返回 A、B、C、D 或 F；无效成绩应返回 `ErrScoreOutOfRange`。完整规则见 [lab/README.md](lab/README.md)。

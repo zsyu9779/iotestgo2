@@ -59,6 +59,7 @@ go run ./module01_basics/blocks/01_go_basics/demo/06_control_flow_edges
 - **核心：**让学员预测 `case "admin", "owner"`、`switch {}` 和 `continue/break` 的输出。
 - **深挖：**实际运行 `fallthrough`，强调它不重新判断下一个 case，且业务代码通常不建议使用。
 - **可裁：**标签和 `goto` 只口头说明存在，不在当天编码。
+- **深挖入口：**在 `range` 基础示例后按需打开 [range dark corner](../bonus/dark_corners/range/main.go)，先说明其 Go 1.22+ 语义，再与 Go 1.16 作业环境区分。
 
 ## Block 2：Collections（25 分钟）
 

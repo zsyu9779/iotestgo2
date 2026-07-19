@@ -22,6 +22,13 @@
 | Block 4 Scores | `Filter` 顺序不变，`AtLeast(60)` 包含 60，audit 顺序为 start/operation/end | 能说明闭包捕获了什么，以及 `defer` 何时执行 |
 | Scorebook | 连续 ID、返回副本、未知 ID、空平均值、小数平均值和等级边界全部通过 | 能把第一个失败断言连回某个不变量 |
 
+新增内容的观察证据：
+
+- 能预测基本变量和 Struct 的零值，并区分 nil Slice 与 nil Map 的可写行为。
+- 能解释 String 的 byte/rune、`range string` 的 byte offset、Slice 的底层数组共享和 Map 的无序迭代。
+- 能区分多值 `case`、默认不贯穿的 `switch` 与显式 `fallthrough`。
+- 能读懂并补充一个具名测试，断言结果内容、边界和顺序，而不是修改期望值绕过失败。
+
 ## 形成性等级
 
 - **9–10：可独立迁移。**行为通过，能用测试证据解释取舍。

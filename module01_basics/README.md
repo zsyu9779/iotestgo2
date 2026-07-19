@@ -12,6 +12,7 @@ Module 01 面向已能阅读 Java 的学员，用四个连续 Block 建立 Go �
 
 - 用 `go run`、`go test`、`go vet` 和 `gofmt` 完成最小开发反馈循环。
 - 说明 Array 的值语义、Slice 的共享行为、Map 的 comma-ok 查询以及 byte/rune 的区别。
+- 解释变量和 Struct 的零值，完成常见 String 操作，并预测 `range`、多值 `case`、`fallthrough` 和 nil Map 的行为。
 - 用 Struct、指针、方法和值副本维护小型业务模型的不变量。
 - 传递函数值，用闭包保存配置，用 `defer` 表达返回前的收尾动作。
 - 从失败的 Go 测试定位当前行为差距，并用小步修改完成 Scorebook。
@@ -57,11 +58,20 @@ Module 01 面向已能阅读 Java 的学员，用四个连续 Block 建立 Go �
 go run ./module01_basics/blocks/01_go_basics/demo/01_hello
 go run ./module01_basics/blocks/01_go_basics/demo/02_vars_types
 go run ./module01_basics/blocks/01_go_basics/demo/03_control_funcs
+go run ./module01_basics/blocks/01_go_basics/demo/04_zero_values
+go run ./module01_basics/blocks/01_go_basics/demo/05_strings_basics
+go run ./module01_basics/blocks/01_go_basics/demo/06_control_flow_edges
 go run ./module01_basics/blocks/02_collections/demo/04_arrays_slices
 go run ./module01_basics/blocks/02_collections/demo/05_maps_strings
+go run ./module01_basics/blocks/02_collections/demo/06_slice_map_edges
+go run ./module01_basics/blocks/02_collections/demo/07_string_utf8_edges
 go run ./module01_basics/blocks/03_modeling/demo/06_pointers
 go run ./module01_basics/blocks/03_modeling/demo/07_structs_methods
+go run ./module01_basics/blocks/03_modeling/demo/08_struct_zero_values
+go run ./module01_basics/blocks/03_modeling/demo/09_copy_and_receivers
 go run ./module01_basics/blocks/04_functions_testing/demo/09_advanced_functions
+go run ./module01_basics/blocks/04_functions_testing/demo/10_function_forms
+go run ./module01_basics/blocks/04_functions_testing/demo/11_defer_edges
 go test ./module01_basics/bonus/function_patterns
 ```
 
@@ -90,7 +100,7 @@ Bonus 不占用当天的 310 分钟核心课程：
 - [Bonus 总览与运行命令](bonus/README.md)
 - [数据结构示例](bonus/data_structures/main.go)
 - [Generics 入门](bonus/generics/main.go)
-- [range 变量、取地址与闭包陷阱](bonus/dark_corners/range/main.go)
+- [range 变量、取地址与闭包陷阱](bonus/dark_corners/range/main.go)（Block 1/2 核心深挖入口）
 - [Map 深层行为](bonus/dark_corners/map/main.go) 与 [String/UTF-8 深层行为](bonus/dark_corners/string/main.go)
 - [函数配置模式](bonus/function_patterns/configuration_patterns.md)、[柯里化场景](bonus/function_patterns/curry_best_practice_test.go) 与 [Builder/Functional Options 对比](bonus/function_patterns/patterns_comparison_test.go)
 

@@ -1,4 +1,4 @@
-# Module 01 Exit Quiz（10 题）
+# Module 01 Exit Quiz（14 题）
 
 用时 5 分钟，不查资料。每题都请根据可观察行为作答，不只选“听起来像 Go”的术语。
 
@@ -144,3 +144,59 @@ again, _ := book.Find(1)
 - D. 访问时 panic
 
 完成后写下你最不确定的一个题号，作为下次 Code Review 的离场票。
+
+## 11. 变量零值
+
+```go
+var n int
+var ok bool
+var name string
+```
+
+哪个结果正确？
+
+- A. `n=1, ok=true, name="null"`
+- B. `n=0, ok=false, name=""`
+- C. 三个变量都为 `nil`
+- D. 代码无法编译
+
+## 12. 多值 Case 与 Fallthrough
+
+```go
+role := "owner"
+switch role {
+case "admin", "owner":
+    fmt.Println("full")
+case "user":
+    fmt.Println("read")
+}
+```
+
+输出是什么？如果在第一个 case 末尾加上 `fallthrough`，还会发生什么？
+
+- A. 只输出 `full`；加 `fallthrough` 后无条件执行下一个 case
+- B. 输出 `full` 和 `read`；加不加 `fallthrough` 都一样
+- C. 代码无法编译，因为一个 case 不能有多个值
+- D. 输出 `read`，因为 `owner` 会自动贯穿到下一个 case
+
+## 13. String 基础操作
+
+```go
+words := strings.Fields("  Go\t语言 ")
+```
+
+哪个结果正确？
+
+- A. `[]string{"", "Go", "", "语言", ""}`
+- B. `[]string{"Go", "语言"}`
+- C. `[]rune{'G', 'o', '语', '言'}`
+- D. `nil`
+
+## 14. 学员补充测试
+
+为 `Filter` 增加一个回归测试时，哪个断言最有价值？
+
+- A. 只断言函数没有 panic
+- B. 只断言返回 Slice 非 nil
+- C. 同时断言筛选结果和原输入中的相对顺序
+- D. 修改期望值直到测试通过
