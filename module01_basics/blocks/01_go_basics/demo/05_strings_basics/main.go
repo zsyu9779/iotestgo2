@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -25,4 +26,18 @@ func main() {
 	// String indexes and slices use bytes; use range or []rune for characters.
 	runes := []rune(text)
 	fmt.Printf("runes=%v first-rune=%c\n", runes, runes[0])
+
+	bytes := []byte("Go语言")
+	roundTrip := string(bytes)
+	fmt.Println("bytes round trip:", roundTrip)
+
+	number, err := strconv.Atoi("42")
+	if err != nil {
+		fmt.Println("Atoi unexpected error:", err)
+	} else {
+		fmt.Println("Atoi success:", number)
+	}
+
+	_, err = strconv.Atoi("forty-two")
+	fmt.Println("Atoi error:", err != nil)
 }

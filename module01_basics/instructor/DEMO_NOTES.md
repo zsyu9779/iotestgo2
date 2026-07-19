@@ -44,6 +44,13 @@ go run ./module01_basics/blocks/01_go_basics/demo/03_control_funcs
 | 第二个 const 块 | resetA 是多少？ | 0 | 每个 const 块独立重置 iota | iota 在整个包连续计数 | 深挖 |
 | `UserID` / alias | 哪个需要转换？ | UserID 需要，alias 不需要 | 定义类型与别名语义不同 | 两种 type 写法完全一样 | 深挖 |
 | `floatValue := 1.9; int(floatValue)` | 输出 1 还是 2？ | 1 | 变量从浮点转整数会截断小数；`int(1.9)` 会编译失败，因为 1.9 不能精确表示为 int | 数值转换会自动舍入，或 `int(1.9)` 可直接编译 | 核心 |
+| if 初始化 | if 外打印哪个 score？ | 外层仍为 50 | 初始化变量只在 if/else 作用域内，外层变量未改变 | 认为短声明修改了外层变量 | 核心 |
+| continue / break | 1 和 3 会不会进入循环体？ | 1 被跳过，3 终止循环 | continue 跳过本轮，break 结束当前循环 | 两者都只是跳过本轮 | 核心 |
+| 无限 for | 如何安全退出？ | attempts 到 3 时 break | `for {}` 是合法无限循环，需要显式退出条件 | Go 必须写 while | 核心 |
+| switch 初始化 | currentRole 在 switch 外可用吗？ | 不可用 | 初始化变量作用域属于 switch | 与普通赋值作用域相同 | 深挖 |
+| 多值 case | owner 匹配哪个分支？ | 第一个分支 | 逗号分隔值表示 OR | 一个 case 只能有一个值 | 核心 |
+| fallthrough | 下一 case 条件会重算吗？ | 不会 | 无条件进入紧邻 case，业务代码通常不建议使用 | 相当于继续匹配条件 | 深挖 |
+| Atoi 失败 | 错误能否忽略？ | err 非 nil | 外部输入解析属于可预期失败，应显式处理 | 转换失败自动得到 0 且安全 | 核心 |
 
 ### 失败演示与救援
 
@@ -62,10 +69,10 @@ go run ./module01_basics/blocks/01_go_basics/demo/05_strings_basics
 ```
 
 - **核心：**让学员预测 `var int/string/bool` 的零值，说明 nil Slice 可以 `append`，nil Map 只能读不能写。
-- **核心：**展示 `strings.TrimSpace`、`Fields`、`ToLower`，再解释 String 下标是 byte、`range` 得到 rune。
-- **核心：**让学员预测 `case "admin", "owner"`、`switch {}` 和 `continue/break` 的输出。
-- **深挖：**实际运行 `fallthrough`，强调它不重新判断下一个 case，且业务代码通常不建议使用。
-- **可裁：**标签和 `goto` 只口头说明存在，不在当天编码。
+- **核心：**展示 `strings.TrimSpace`、`Fields`、`ToLower`，再解释 String 下标是 byte、`range` 得到 rune；展示 String/`[]byte` 往返和 `Atoi` 的成功与错误路径。
+- **核心：**让学员预测 `case "admin", "owner"`、`switch {}`、`continue/break` 和无限 `for` 的输出；指出 if 初始化变量的作用域。
+- **深挖：**实际运行 `fallthrough`，强调它不重新判断下一个 case；说明 switch 初始化变量只属于 switch。
+- **可裁：**标签、`goto`、switch 初始化作用域细节和 String 转换成功路径只口头说明或按需演示，不在当天编码。
 - **深挖入口：**在 `range` 基础示例后按需打开 [range dark corner](../bonus/dark_corners/range/main.go)，先说明其 Go 1.22+ 语义，再与 Go 1.16 作业环境区分。
 
 ## Block 2：Collections（25 分钟）

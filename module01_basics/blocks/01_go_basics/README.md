@@ -42,7 +42,7 @@ go run ./module01_basics/blocks/01_go_basics/demo/03_control_funcs
 go run ./module01_basics/blocks/01_go_basics/demo/05_strings_basics
 ```
 
-重点观察程序入口、类型推断、变量零值、String 基础操作、`for`、`range`、多值 `case`、`fallthrough`、`switch {}`、函数参数和多返回值。
+重点观察程序入口、类型推断、变量零值、String 基础操作和转换、`for`、`range`、多值 `case`、`fallthrough`、`switch {}`、函数参数和多返回值。
 
 ## 语言语义补充
 
@@ -64,13 +64,14 @@ Go 声明变量但没有提供初始值时，会自动使用该类型的零值�
 
 - `for` 是 Go 唯一的循环关键字，可写成三段式、条件式或无限循环。
 - `break` 结束当前循环，`continue` 跳过当前迭代。
-- 一个 `case` 可以写多个值，例如 `case "admin", "owner"`。
+- `if` 与 `switch` 都可在条件前初始化变量；初始化变量只在相应的 `if`/`else` 或 `switch` 作用域内。
+- 一个 `case` 可以写多个值，例如 `case "admin", "owner"`，逗号分隔值表示 OR。
 - Go 的 `switch` 默认不会自动贯穿；`fallthrough` 必须显式写出，并且无条件进入紧邻的下一个 `case`。它在业务代码中通常不推荐使用。
 - `switch {}` 是按顺序判断条件的简洁写法，适合成绩等级等互斥条件。
 
 ### String 基础
 
-String 是不可变的 UTF-8 字节序列。拼接、比较、`strings.Fields`、`strings.TrimSpace` 和大小写转换适合日常文本处理；下标和切片按 byte 工作，按字符遍历应使用 `range`，需要字符 Slice 时再转换为 `[]rune`。运行 `05_strings_basics` 对比 byte index 与 rune index。
+String 是不可变的 UTF-8 字节序列。拼接、比较、`strings.Fields`、`strings.TrimSpace` 和大小写转换适合日常文本处理；下标和切片按 byte 工作，按字符遍历应使用 `range`，需要字符 Slice 时再转换为 `[]rune`。String 与 `[]byte` 可以显式往返转换；用 `strconv.Atoi` 解析外部字符串时必须处理 `error`，不能用 `_` 丢弃失败。运行 `05_strings_basics` 对比 byte index、rune index、转换与错误路径。
 
 ### 核心语义深挖
 

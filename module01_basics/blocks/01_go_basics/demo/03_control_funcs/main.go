@@ -4,19 +4,21 @@ import "fmt"
 
 func main() {
 	// 1. If with initialization
+	outerScore := 50
 	if score := 85; score >= 60 {
 		fmt.Println("Passed with score:", score)
 	}
+	fmt.Println("outer score:", outerScore)
 
-	// 2. Switch (No break needed; a case may contain multiple values)
+	// 2. Switch initialization (No break needed; a case may contain multiple values)
 	role := "owner"
-	switch role {
+	switch currentRole := role; currentRole {
 	case "admin", "owner":
-		fmt.Println("Full access")
+		fmt.Println("switch init:", currentRole, "has full access")
 	case "user", "viewer":
-		fmt.Println("Read only")
+		fmt.Println("switch init:", currentRole, "has read only access")
 	default:
-		fmt.Println("Access denied")
+		fmt.Println("switch init:", currentRole, "is denied")
 	}
 
 	// fallthrough 不会自动发生，只会把执行继续交给紧邻的下一个 case。
@@ -30,20 +32,26 @@ func main() {
 
 	// 3. For loop (The only loop in Go)
 	// Java: for (int i = 0; i < 5; i++)
-	for i := 0; i < 3; i++ {
+	for i := 0; i < 5; i++ {
 		if i == 1 {
 			continue
 		}
-		fmt.Println("Loop:", i)
+		if i == 3 {
+			break
+		}
+		fmt.Println("loop body:", i)
 	}
 
-	// While-like loop
-	count := 0
-	for count < 2 {
-		fmt.Println("Count:", count)
-		count++
+	attempts := 0
+	for {
+		attempts++
+		if attempts == 3 {
+			break
+		}
 	}
+	fmt.Println("infinite for stopped at:", attempts)
 
+	count := 2
 	switch {
 	case count == 0:
 		fmt.Println("Expressionless switch: empty")
