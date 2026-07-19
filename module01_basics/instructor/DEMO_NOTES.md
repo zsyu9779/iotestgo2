@@ -39,10 +39,11 @@ go run ./module01_basics/blocks/01_go_basics/demo/03_control_funcs
 | 暂停点 | 先问 | 预期结果 | 准确解释 | 常见误解 | 级别 |
 | --- | --- | --- | --- | --- | --- |
 | `left, _, right` | `_` 能否打印？ | 只能打印 1 和 3 | `_` 丢弃值，不绑定可读变量 | 把 `_` 当普通变量 | 核心 |
+| `const messageLength = len(message)` | `messageLength` 是运行时才计算的吗？ | 3 | `message` 是常量时，`len(message)` 是编译期常量 | 所有 `len` 调用都在运行时计算 | 核心 |
 | `consD/consE/consF` | E、F 分别是多少？ | 250、5 | E 复用 `= 250`；iota 未停止，F 使用当前行号 5 | “iota 被打断后重新从 0 开始” | 核心 |
 | 第二个 const 块 | resetA 是多少？ | 0 | 每个 const 块独立重置 iota | iota 在整个包连续计数 | 深挖 |
 | `UserID` / alias | 哪个需要转换？ | UserID 需要，alias 不需要 | 定义类型与别名语义不同 | 两种 type 写法完全一样 | 深挖 |
-| `int(1.9)` | 输出 1 还是 2？ | 1 | 转换截断小数，不四舍五入 | 数值转换会自动舍入 | 核心 |
+| `floatValue := 1.9; int(floatValue)` | 输出 1 还是 2？ | 1 | 变量从浮点转整数会截断小数；`int(1.9)` 会编译失败，因为 1.9 不能精确表示为 int | 数值转换会自动舍入，或 `int(1.9)` 可直接编译 | 核心 |
 
 ### 失败演示与救援
 
