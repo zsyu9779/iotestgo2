@@ -37,7 +37,7 @@ func showUnaryInterceptor() {
 	// func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error)
 
 	fmt.Println("// 日志 + 计时拦截器：")
-	fmt.Println(`func loggingInterceptor(
+	showCode(`func loggingInterceptor(
     ctx context.Context,
     req interface{},
     info *grpc.UnaryServerInfo,
@@ -59,7 +59,7 @@ func showUnaryInterceptor() {
 	fmt.Println()
 
 	fmt.Println("// Panic 恢复拦截器：")
-	fmt.Println(`func recoveryInterceptor(
+	showCode(`func recoveryInterceptor(
     ctx context.Context,
     req interface{},
     info *grpc.UnaryServerInfo,
@@ -95,7 +95,7 @@ func showStreamInterceptor() {
 	fmt.Println("// func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error")
 	fmt.Println()
 	fmt.Println("// 包装 ServerStream 添加日志：")
-	fmt.Println(`type wrappedStream struct {
+	showCode(`type wrappedStream struct {
     grpc.ServerStream
 }
 
@@ -112,4 +112,8 @@ func (w *wrappedStream) SendMsg(m interface{}) error {
 }`)
 
 	_ = fmt.Println
+}
+
+func showCode(code string) {
+	fmt.Println(code)
 }
