@@ -60,7 +60,7 @@ go run ./module01_basics/blocks/02_collections/demo/05_maps_strings
 go run ./module01_basics/blocks/03_modeling/demo/06_pointers
 go run ./module01_basics/blocks/03_modeling/demo/07_structs_methods
 go run ./module01_basics/blocks/04_functions_testing/demo/09_advanced_functions
-go test ./module01_basics/blocks/04_functions_testing/demo/09_advanced_functions
+go test ./module01_basics/bonus/function_patterns
 ```
 
 课堂结束前完成 [Exit Quiz](assessments/exit_quiz.md)，把不确定的题号记入课后复习清单。
@@ -86,11 +86,12 @@ make module01-homework-solution
 
 Bonus 不占用当天的 310 分钟核心课程：
 
-- [数据结构示例](08_data_structures/main.go)
-- [Generics 入门](10_generics_intro/main.go)
-- [range 变量、取地址与闭包陷阱](blocks/01_go_basics/demo/03_control_funcs/range_dark_corner.go)
-- [Map 深层行为](blocks/02_collections/demo/05_maps_strings/map_dark_corner.go) 与 [String/UTF-8 深层行为](blocks/02_collections/demo/05_maps_strings/string_dark_corner.go)
-- [函数配置模式](blocks/04_functions_testing/demo/09_advanced_functions/configuration_patterns.md)、[柯里化场景](blocks/04_functions_testing/demo/09_advanced_functions/curry_best_practice_test.go) 与 [Builder/Functional Options 对比](blocks/04_functions_testing/demo/09_advanced_functions/patterns_comparison_test.go)
+- [Bonus 总览与运行命令](bonus/README.md)
+- [数据结构示例](bonus/data_structures/main.go)
+- [Generics 入门](bonus/generics/main.go)
+- [range 变量、取地址与闭包陷阱](bonus/dark_corners/range/main.go)
+- [Map 深层行为](bonus/dark_corners/map/main.go) 与 [String/UTF-8 深层行为](bonus/dark_corners/string/main.go)
+- [函数配置模式](bonus/function_patterns/configuration_patterns.md)、[柯里化场景](bonus/function_patterns/curry_best_practice_test.go) 与 [Builder/Functional Options 对比](bonus/function_patterns/patterns_comparison_test.go)
 
 ## 仓库级验收
 

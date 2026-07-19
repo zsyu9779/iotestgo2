@@ -90,17 +90,17 @@ go test -tags=exercise ./module01_basics/blocks/03_modeling/lab/starter -run '^T
 
 ## Block 4：Functions & Testing（15 分钟）
 
-主 Demo 输出很长，投影时只聚焦函数值、闭包和 `defer`；柯里化、函数组合和并发为可裁 Bonus。
+核心 Demo 只保留函数值、一个闭包和 `defer`；柯里化、函数组合和并发已经移入可裁 Bonus。
 
 ```bash
 go run ./module01_basics/blocks/04_functions_testing/demo/09_advanced_functions
-go test ./module01_basics/blocks/04_functions_testing/demo/09_advanced_functions -run '^TestURLBuilder$'
+go test ./module01_basics/bonus/function_patterns -run '^TestURLBuilder$'
 ```
 
 ### 投影提示
 
 1. 将 `func(int) bool` 直接与 Java `Predicate<Integer>` 对比：Go 的函数值不需要额外函数式接口。
-2. 调用同一 `counter` 三次，让学员解释为何么 `createCounter` 返回后 `count` 仍可访问。
+2. 让学员预测 `atLeast(60)` 返回的闭包为何能继续访问 `min`，再观察 `passed(75)`。
 3. 在 `defer` 注册处指向“现在声明意图，函数返回前执行”，不延伸 panic/recover。
 4. 用 `-run` 说明测试名是反馈接口；失败时先读测试名，再读 actual/want，最后回到最小行为。
 

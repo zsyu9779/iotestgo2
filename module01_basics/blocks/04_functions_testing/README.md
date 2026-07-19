@@ -34,14 +34,15 @@
 
 ## 讲师 Demo
 
-先运行高级函数演示，再运行其中的模式测试：
+先运行核心的函数值、闭包与 `defer` 演示；完整函数模式已移到 Bonus，可在核心时间盒之外运行和测试：
 
 ```bash
 go run ./module01_basics/blocks/04_functions_testing/demo/09_advanced_functions
-go test ./module01_basics/blocks/04_functions_testing/demo/09_advanced_functions
+go run ./module01_basics/bonus/function_patterns
+go test ./module01_basics/bonus/function_patterns
 ```
 
-重点观察函数变量、匿名函数、高阶函数、闭包和 `defer`。在测试代码中识别 Arrange、Act、Assert，并用 `-run TestURLBuilder` 单独执行一个测试，说明测试名为何也是开发反馈接口的一部分。
+核心 Demo 只观察函数值、一个闭包和 `defer` 顺序。Bonus 测试用于识别 Arrange、Act、Assert；可用 `go test ./module01_basics/bonus/function_patterns -run TestURLBuilder` 单独执行一个测试，说明测试名为何也是开发反馈接口的一部分。
 
 ## 学员任务
 
