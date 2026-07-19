@@ -6,43 +6,30 @@
 *   **教学风格：** 高密度、快节奏、概念对比、重实战
 *   **核心目标：** 建立 Go 后端开发的完整认知地图，掌握 Go 语言特性、Web API、数据库访问、RPC 通信和微服务工程的基本实践。
 
-## 模块 1: Go 语言基础与内存模型 (8 节课)
-> **焦点：** 建立 Go 的思维模式，克服 Java 的“对象”惯性，深入理解指针和内存布局。
+## 模块 1: Go 语言基础与内存模型（一日四 Block 工作坊 + 一周作业）
+> **焦点：** 在 09:30–16:00 的一日工作坊中建立 Go 思维，通过连续实操组合语法、集合、建模、函数和测试；Task Manager 在课后一周独立完成。
 
-*   **课 1: Golang 破冰与环境**
-    *   Go 历史与设计哲学 (Less is more)
-    *   **Java 对比：** JDK vs Go SDK, Maven vs Go Modules, JVM vs Binary
-    *   实战：Hello World, `go env`, `go mod`, VS Code/GoLand 配置
-*   **课 2: 变量、常量与基本类型**
-    *   变量声明 (`var` vs `:=`), 零值机制, 类型推断
-    *   **Java 对比：** Primitive types vs Go types, 显式类型转换
-    *   实战：多重赋值, iota 枚举实现
-*   **课 3: 流程控制与函数一等公民**
-    *   `if` (带初始化语句), `switch` (默认 break), `for` (唯一循环)
-    *   函数：多返回值, 命名返回值, 匿名函数与闭包
-    *   **Java 对比：** Exception vs Error (初步), Lambda vs Closure
-*   **课 4: 数组与切片 (Slice) 的奥秘**
-    *   数组的值传递特性
-    *   切片：底层数组, `len` vs `cap`, `append` 扩容机制, 切片截取
-    *   **Java 对比：** ArrayList vs Slice (核心差异：Slice 只是视图)
-*   **课 5: Map 与 字符串**
-    *   Map 操作, 无序性, 线程不安全性
-    *   String: 不可变性, `rune` (int32) vs `byte`, 多行字符串
-    *   **Java 对比：** HashMap vs Map, String Pool
-*   **课 6: 指针与内存详解**
-    *   `&` 与 `*` 操作, `nil` 含义, `new` vs `make`
-    *   **Java 对比：** 引用传递 vs 指针传递, 栈逃逸分析 (Escape Analysis) 简介
-*   **课 7: 结构体 (Struct) 与 方法**
-    *   Struct 定义, 内存布局, 结构体标签 (Tag)
-    *   方法接收者：值接收者 vs 指针接收者 (性能与语义)
-    *   **Java 对比：** Class vs Struct, `this` vs Receiver
-*   **课 8: 基础算法与数据结构实战**
-    *   实战：使用 Struct 和 Pointer 实现单向链表 (增删改查)
-    *   实战：利用 Slice 实现通用 Stack 和 Queue
-    *   **重点：** 理解指针在数据结构中的实际流转，而非复杂的算法逻辑
-*   **🏆 综合实践任务 1: 命令行任务管理器 (CLI Task Manager)**
-    *   功能：支持任务的增删改查、标记完成。
-    *   要求：数据存储在内存 (Slice/Map)，使用指针操作任务状态，包含简单的输入解析。
+*   **Block 1: Go Basics**
+    *   Go 工具链、程序入口、变量与零值、控制流、函数和显式错误返回
+    *   **Java 对比：** JDK vs Go SDK，Class 入口 vs `package main`，Exception vs Error 返回值
+    *   实战：带输入校验的成绩等级计算器
+*   **Block 2: Collections**
+    *   Array/Slice 值与共享语义、Map comma-ok、String/byte/rune 与 UTF-8
+    *   **Java 对比：** ArrayList vs Slice，HashMap vs Map，String vs UTF-8 字节序列
+    *   实战：中英文文本统计和词频汇总
+*   **Block 3: Modeling**
+    *   Go 只有值传递、Pointer、Struct、构造函数惯例、值/指针接收器和组合
+    *   **Java 对比：** Class/继承 vs Struct/组合，`this` vs Receiver
+    *   实战：Scorebook 核心模型和状态修改
+*   **Block 4: Functions & Testing**
+    *   函数值、闭包、`defer` 和 `testing` 包；复杂函数式模式留作 Bonus
+    *   **Java 对比：** Lambda/函数式接口 vs Go 函数值，`finally` vs `defer`
+    *   实战：统计函数、审计顺序和基础测试
+*   **🏆 课堂综合 Lab: Scorebook**
+    *   组合集合、建模、方法与测试，产生可运行、可验收的课堂成果。
+*   **🏆 一周课后作业: 命令行 Task Manager**
+    *   功能：新增、列出、完成和删除任务，并处理空标题与未知 ID。
+    *   要求：仅使用 Go 标准库；本地 `make grade` 与教师手动运行的 Gitee 流水线调用同一验收脚本。
 
 ## 模块 2: Go 高级特性与工程化 (9 节课)
 > **焦点：** 掌握 Go 的杀手级特性——并发，以及接口和工程标准。

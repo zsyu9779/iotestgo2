@@ -1,22 +1,17 @@
-# IDE / local tooling
-.idea/
+.idea
 .vscode
-.trae/
+.trae
 .cursor
+.worktrees/
 .DS_Store
 .claude
+docs
 *_verify_test.go
-
-# Build outputs
-bin/
-*.test
-*.out
-coverage.out
 
 # Go compiled binaries
 iotestgo
-/server
-/client
+server
+client
 *.exe
 
 # Local compiled demo binaries. Source directories should contain .go/.proto/.md only.
