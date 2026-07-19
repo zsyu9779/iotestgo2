@@ -11,6 +11,8 @@
 
 空文本的三个计数都应为 0，`Frequencies` 应为空 map。
 
+本实验依赖的 String 基础操作包括 `strings.Fields`、`strings.ToLower`、`len` 和 rune 计数；先运行 Block 2 的 String Demo，再开始实现。Map 词频必须初始化后再写入，不能依赖 nil Map 的写入行为。
+
 从仓库根目录运行验收测试：
 
 ```bash

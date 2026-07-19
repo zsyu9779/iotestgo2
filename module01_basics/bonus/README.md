@@ -4,7 +4,7 @@
 
 - [数据结构](data_structures/main.go)：用链表和栈继续练习 Struct、Pointer 与边界处理。
 - [Generics](generics/main.go)：体验类型参数；它不属于兼容 Go 1.16 的 Week 1 作业要求。
-- Dark Corners：[range](dark_corners/range/main.go)、[map](dark_corners/map/main.go) 与 [string/UTF-8](dark_corners/string/main.go)。
+- Dark Corners：[range](dark_corners/range/main.go)、[map](dark_corners/map/main.go) 与 [string/UTF-8](dark_corners/string/main.go) 已由 Block 1/2 的核心讲师入口引用；它们仍保留在这里作为可独立运行的完整材料。
 - Function Patterns：[完整演示](function_patterns/main.go)、[配置模式说明](function_patterns/configuration_patterns.md)、[柯里化真实场景](function_patterns/curry_best_practice_test.go) 与 [Builder/Functional Options 对比](function_patterns/patterns_comparison_test.go)。
 
 从仓库根目录独立运行各程序：

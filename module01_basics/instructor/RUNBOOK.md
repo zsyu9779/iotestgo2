@@ -69,6 +69,7 @@
 
 - **目标：**通过中英文文本统计验证 Array 值语义、Slice 共享、Map comma-ok 与 UTF-8 byte/rune 行为。
 - **讲师动作：**10:45–11:10 运行两个 Collections Demo 并先让学员预测输出；11:10–11:50 巡视 `Analyze`实现；11:50–12:00 对比一个中文字符的 byte 和 rune 计数。
+- **内容扩展：**在两个原有 Demo 后按需运行 `06_slice_map_edges` 和 `07_string_utf8_edges`；Array range、nil Slice/Map、String 基础和 `range string` 属于核心，Map/String dark corner 属于穿插深挖。
 - **学员动作（40 分钟动手）：**实现 `Analyze`，用 `strings.Fields`、`strings.ToLower` 和 `utf8.RuneCountInString` 完成计数，反复运行练习测试。
 - **可观察检查点：**`go test -tags=exercise ./module01_basics/blocks/02_collections/lab/starter` PASS；`"Go go 你好"` 的结果为 12 bytes、8 runes、3 words 和 `go:2`。
 - **常见延误：**把 `len(text)` 当作字符数，未初始化 Map，或自行删标点而改变了分词契约。

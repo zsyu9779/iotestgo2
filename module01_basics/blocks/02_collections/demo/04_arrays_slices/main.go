@@ -14,7 +14,7 @@ func main() {
 	fmt.Println("Original Array:", arr) // [1 2 3]
 	fmt.Println("Copy Array:", arrCopy) // [100 2 3]
 
-	// 2. Slices (Dynamic size, Reference-like)
+	// 2. Slices (A value describing a view over an underlying array)
 	slice := []int{1, 2, 3}
 	fmt.Printf("Slice: %v, Len: %d, Cap: %d\n", slice, len(slice), cap(slice))
 
@@ -29,6 +29,9 @@ func main() {
 	// Modification affects underlying array
 	subSlice[0] = 999
 	fmt.Println("Original Slice after sub-slice mod:", slice) // [1 999 3 4 5]
+
+	// append may reuse the underlying array or allocate a new one; never rely on
+	// a particular growth factor when explaining this behavior.
 
 	// 3. Making Slices
 	// make([]type, len, cap)

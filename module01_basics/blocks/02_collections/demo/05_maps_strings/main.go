@@ -23,6 +23,14 @@ func main() {
 	delete(scores, "Bob")
 	fmt.Println("Map:", scores)
 
+	var nilScores map[string]int
+	fmt.Println("Nil map read:", nilScores["Alice"])
+	// nilScores["Alice"] = 1 // panic: assignment to entry in nil map
+
+	for name, score := range scores {
+		fmt.Println("Map iteration (order is not guaranteed):", name, score)
+	}
+
 	// 2. Strings
 	// Strings are immutable byte sequences with their own distinct string type.
 	str := "Hello, 世界"
@@ -37,4 +45,5 @@ func main() {
 	// Strings package
 	upper := strings.ToUpper("go is fun")
 	fmt.Println("Upper:", upper)
+	fmt.Println("Fields:", strings.Fields("  Go\t语言 "))
 }

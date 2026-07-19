@@ -38,9 +38,20 @@ Slice 不是“数组引用”的简单别名；它是描述底层数组一段�
 ```bash
 go run ./module01_basics/blocks/02_collections/demo/04_arrays_slices
 go run ./module01_basics/blocks/02_collections/demo/05_maps_strings
+go run ./module01_basics/blocks/02_collections/demo/06_slice_map_edges
+go run ./module01_basics/blocks/02_collections/demo/07_string_utf8_edges
 ```
 
 第一个 Demo 对比 Array 复制、Slice 分片和共享修改，并观察 `append` 前后的 `len` 与 `cap`。第二个 Demo 展示 Map 初始化、comma-ok、`delete`、String 不可变性以及 byte 与 rune 的差异。
+
+新增 Demo 补充早期项目中的基础边界：Array 的 `range` 值副本、Slice 在容量充足或不足时的底层数组行为、nil Slice 与 nil Map 的区别、Map 中 Struct 值的写回、Map 遍历无序，以及 String 常用操作和 `range string` 的 byte offset/rune 关系。
+
+## 核心语义陷阱
+
+- [Map 边界演示](../../bonus/dark_corners/map/main.go)：nil Map 能读不能写、Map 迭代顺序不保证、Map 中 Struct 值需要取出修改再写回，或改用指针值。
+- [String/UTF-8 边界演示](../../bonus/dark_corners/string/main.go)：byte、rune、字符串遍历和字符串长度的差异。
+
+这两份材料现在是 Block 2 的课堂深挖入口，不再只是课后 Bonus。讲师至少应从每份材料中选择一个现象让学员预测输出；Go 版本相关的行为要先标明版本。
 
 ## 学员任务
 
@@ -75,8 +86,11 @@ go test -tags=exercise ./module01_basics/blocks/02_collections/lab/starter
 
 - 为什么 `"Go go 你好"` 的 byte 数和 rune 数不同？
 - 为什么从 Map 中读到 0 不能证明 key 存在？
+- nil Slice 和 nil Map 都是零值，为什么前者可以 `append`，后者不能直接写入？
+- 为什么 Map 中的 Struct 值需要“取出、修改、写回”，而 Map 中的指针值可以直接改字段？
 - 什么情况下修改一个子 Slice 会影响原 Slice？`append` 后这个答案为什么可能改变？
 - 如果需要按词频高低稳定输出，为什么不能直接依赖 Map 迭代？
+- `range string` 返回的 index 为什么是 byte offset，而不是字符序号？
 
 ## Bonus
 

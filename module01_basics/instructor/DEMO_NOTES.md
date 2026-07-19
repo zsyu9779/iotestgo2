@@ -65,6 +65,8 @@ go run ./module01_basics/blocks/01_go_basics/demo/06_control_flow_edges
 ```bash
 go run ./module01_basics/blocks/02_collections/demo/04_arrays_slices
 go run ./module01_basics/blocks/02_collections/demo/05_maps_strings
+go run ./module01_basics/blocks/02_collections/demo/06_slice_map_edges
+go run ./module01_basics/blocks/02_collections/demo/07_string_utf8_edges
 ```
 
 ### 投影提示
@@ -81,6 +83,13 @@ go test -tags=exercise ./module01_basics/blocks/02_collections/lab/starter -run 
 ```
 
 把第一个失败字段当作当前任务，不同时修四个计数。如 Map 赋值 panic，询问 `Frequencies` 是 nil 还是已经 `make`；如 byte/rune 混淆，让学员单独打印 `len("你")` 和 `utf8.RuneCountInString("你")`。
+
+### Block 2 内容扩展
+
+- **核心：**用 `06_slice_map_edges` 展示 Array 的 range 值副本、Slice 共享和容量变化、nil Slice/nil Map、comma-ok、Map Struct 写回。
+- **核心：**用 `07_string_utf8_edges` 展示 `Contains`、`Split`、`Join`、`TrimSpace`、`Fields`、大小写转换和 `range string`。
+- **深挖：**穿插 [Map dark corner](../bonus/dark_corners/map/main.go) 的 Map 顺序、nil Map、不可寻址值；穿插 [String dark corner](../bonus/dark_corners/string/main.go) 的 byte/rune 细节。
+- **可裁：**`unsafe.Pointer`、指针运算和复杂 Map 指针场景不进入核心课堂。
 
 ## Block 3：Modeling（20 分钟）
 
