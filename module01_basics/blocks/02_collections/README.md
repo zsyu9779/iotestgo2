@@ -6,7 +6,9 @@
 
 - 说明 Array 的值语义与 Slice 共享底层数组带来的行为差异。
 - 使用 `len`、`cap` 和 `append`，并识别 Slice 扩容可能改变底层数组。
+- 使用 `copy(dst, src)`，说明复制方向、返回数量及目标 Slice 保留的零值位置。
 - 初始化和读写 Map，使用 comma-ok 区分“不存在”与“零值”，并理解 Map 迭代无序。
+- 初始化嵌套 Map 的每一层后再写入内层 key。
 - 区分 String 的 byte 数与 rune 数，正确统计中英文文本和词频。
 
 ## 时间盒：75 分钟
@@ -29,7 +31,7 @@
 | 不应依赖 `HashMap` 迭代顺序 | Go Map 迭代顺序不保证 |
 | `String.length()` 计算 UTF-16 code unit | `len(string)` 计算 UTF-8 字节，rune 计数需单独处理 |
 
-Slice 不是“数组引用”的简单别名；它是描述底层数组一段区域的值。Map 读取不存在的 key 会得到值类型的零值，需要 comma-ok 才能判断 key 是否真实存在。
+Slice 不是“数组引用”的简单别名；它是描述底层数组一段区域的值。`copy(dst, src)` 的第一个参数是目标 Slice，返回实际复制数量（最多为两个长度中的较小值），不会自动扩展 `dst`。Map 读取不存在的 key 会得到值类型的零值，需要 comma-ok 才能判断 key 是否真实存在；嵌套 Map 必须逐层 `make` 后才能写入内层 key。
 
 ## 讲师 Demo
 
@@ -42,7 +44,7 @@ go run ./module01_basics/blocks/02_collections/demo/06_slice_map_edges
 go run ./module01_basics/blocks/02_collections/demo/07_string_utf8_edges
 ```
 
-第一个 Demo 对比 Array 复制、Slice 分片和共享修改，并观察 `append` 前后的 `len` 与 `cap`。第二个 Demo 展示 Map 初始化、comma-ok、`delete`、String 不可变性以及 byte 与 rune 的差异。
+第一个 Demo 对比 Array 复制、Slice 分片和共享修改，并观察 `append` 前后的 `len` 与 `cap`，再用 `copy(dst, src)` 观察复制方向、数量和目标 Slice 的零值。第二个 Demo 展示 Map 初始化、comma-ok、`delete`、逐层初始化嵌套 Map、String 不可变性以及 byte 与 rune 的差异。
 
 新增 Demo 补充早期项目中的基础边界：Array 的 `range` 值副本、Slice 在容量充足或不足时的底层数组行为、nil Slice 与 nil Map 的区别、Map 中 Struct 值的写回、Map 遍历无序，以及 String 常用操作和 `range string` 的 byte offset/rune 关系。
 

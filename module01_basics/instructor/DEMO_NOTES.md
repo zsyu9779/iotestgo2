@@ -91,6 +91,11 @@ go run ./module01_basics/blocks/02_collections/demo/07_string_utf8_edges
 3. 对 Map 提问：成绩 0 和不存在的学生如何区分？答案必须包含 comma-ok。
 4. 对 `"Hello, 世界"` 先收集 `len` 预测，再比较 13 bytes 与 9 runes。
 
+| 暂停点 | 先问 | 预期结果 | 准确解释 | 常见误解 | 级别 |
+| --- | --- | --- | --- | --- | --- |
+| `copy(destination, source)` | 返回值和剩余两个位置是什么？ | 3，剩余为 0 | 复制数量为 min(len(dst), len(src)) | copy 会自动扩展 dst | 核心 |
+| 嵌套 Map | 只 make 外层能否直接写内层？ | 不能，会 panic | 每层 Map 都要初始化 | 外层 make 会递归初始化 | 深挖 |
+
 ### 失败演示与救援
 
 ```bash
@@ -102,8 +107,9 @@ go test -tags=exercise ./module01_basics/blocks/02_collections/lab/starter -run 
 ### Block 2 内容扩展
 
 - **核心：**用 `06_slice_map_edges` 展示 Array 的 range 值副本、Slice 共享和容量变化、nil Slice/nil Map、comma-ok、Map Struct 写回。
+- **核心：**在 `04_arrays_slices` 用 `copy(destination, source)` 说明目标在前、返回复制数量和未覆盖位置保持零值。
 - **核心：**用 `07_string_utf8_edges` 展示 `Contains`、`Split`、`Join`、`TrimSpace`、`Fields`、大小写转换和 `range string`。
-- **深挖：**穿插 [Map dark corner](../bonus/dark_corners/map/main.go) 的 Map 顺序、nil Map、不可寻址值；穿插 [String dark corner](../bonus/dark_corners/string/main.go) 的 byte/rune 细节。
+- **深挖：**在 `05_maps_strings` 说明嵌套 Map 必须逐层初始化；穿插 [Map dark corner](../bonus/dark_corners/map/main.go) 的 Map 顺序、nil Map、不可寻址值；穿插 [String dark corner](../bonus/dark_corners/string/main.go) 的 byte/rune 细节。
 - **可裁：**`unsafe.Pointer`、指针运算和复杂 Map 指针场景不进入核心课堂。
 
 ## Block 3：Modeling（20 分钟）

@@ -35,4 +35,10 @@ assert_contains "$string_output" 'bytes round trip: Go语言'
 assert_contains "$string_output" 'Atoi success: 42'
 assert_contains "$string_output" 'Atoi error: true'
 
+slice_output="$(go run ./module01_basics/blocks/02_collections/demo/04_arrays_slices)"
+assert_contains "$slice_output" 'copy count=3 dst=[10 20 30 0 0] src=[10 20 30]'
+
+map_output="$(go run ./module01_basics/blocks/02_collections/demo/05_maps_strings)"
+assert_contains "$map_output" 'nested map value: ready'
+
 printf 'module01 demo contracts: PASS\n'

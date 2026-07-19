@@ -38,4 +38,9 @@ func main() {
 	dynamicSlice := make([]int, 0, 5)
 	dynamicSlice = append(dynamicSlice, 1)
 	fmt.Println("Dynamic Slice:", dynamicSlice)
+
+	source := []int{10, 20, 30}
+	destination := make([]int, 5)
+	copied := copy(destination, source)
+	fmt.Printf("copy count=%d dst=%v src=%v\n", copied, destination, source)
 }

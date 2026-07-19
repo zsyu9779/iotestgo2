@@ -31,6 +31,11 @@ func main() {
 		fmt.Println("Map iteration (order is not guaranteed):", name, score)
 	}
 
+	nested := make(map[int]map[int]string)
+	nested[1] = make(map[int]string)
+	nested[1][2] = "ready"
+	fmt.Println("nested map value:", nested[1][2])
+
 	// 2. Strings
 	// Strings are immutable byte sequences with their own distinct string type.
 	str := "Hello, 世界"
