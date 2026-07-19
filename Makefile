@@ -1,4 +1,4 @@
-.PHONY: help fmt-check test-basic test-race run-basic-hello run-task-manager run-log-analyzer run-user-center run-blog-api run-compute-server run-compute-client ecommerce-up ecommerce-down module01-verify module01-lab-01 module01-lab-02 module01-lab-03 module01-lab-04 module01-integrated-lab module01-homework-solution
+.PHONY: help fmt-check test-basic test-race run-basic-hello run-task-manager run-log-analyzer run-user-center run-blog-api run-compute-server run-compute-client ecommerce-up ecommerce-down module01-verify module01-demo-contracts module01-lab-01 module01-lab-02 module01-lab-03 module01-lab-04 module01-integrated-lab module01-homework-solution
 
 help:
 	@echo "Targets: fmt-check test-basic test-race module01-verify"
@@ -63,3 +63,6 @@ module01-verify:
 	go vet ./module01_basics/...
 	go test ./module01_basics/...
 	$(MAKE) module01-homework-solution
+
+module01-demo-contracts:
+	bash module01_basics/instructor/scripts/verify_demo_contracts.sh

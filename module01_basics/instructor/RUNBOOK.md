@@ -55,11 +55,11 @@
 
 - **目标：**使用条件、函数、多返回值和显式 `error` 实现有边界校验的 `Grade`。
 - **讲师动作：**09:50–10:05 按 [Demo Notes](DEMO_NOTES.md#block-1go-basics15-分钟) 展示程序入口、类型推断、`for`、`switch` 和 `(value, error)`；10:05–10:30 巡视结对实现；10:30–10:35 用一个边界失败做复盘。
-- **内容扩展：**若班级基础较稳，在原有 Demo 中加入零值、String 基础、多值 `case` 和 `switch {}`；`fallthrough` 属于语义深挖，`goto` 只保留识别。
+- **内容扩展：**若班级基础较稳，在原有 Demo 中加入零值、String 基础、多值 `case` 和 `switch {}`；`fallthrough` 属于语义深挖，`goto` 只保留识别。用户补充的隐式 ConstSpec/iota Case 不可裁。
 - **学员动作（25 分钟动手）：**在 `blocks/01_go_basics/lab/starter` 运行 RED，实现范围校验和 A–F 映射，重复运行全包测试。
 - **可观察检查点：**`go test -tags=exercise ./module01_basics/blocks/01_go_basics/lab/starter` PASS，且学员能解释 60、90、-1 和 101 的路径。
 - **常见延误：**从低到高写过宽分支，或返回临时文本错误而不是 `ErrScoreOutOfRange`。
-- **可裁内容：**精确删除 `iota` 的扩展例子和 Bonus 表驱动测试讨论；保留错误返回与边界测试。
+- **可裁内容：**精确删除位运算、第二个 iota 重置块、类型别名和 Bonus 表驱动测试讨论；用户补充的隐式 ConstSpec/iota Case 不可裁，保留错误返回与边界测试。
 
 ## 10:35–10:45：短休息
 
