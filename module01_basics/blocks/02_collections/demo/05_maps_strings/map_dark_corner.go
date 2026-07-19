@@ -30,8 +30,8 @@ func showMapIterationOrder() {
 // 演示 nil map 行为
 func showNilMap() {
 	var m map[int]int
-	fmt.Println("nil map 长度:", len(m))     // OK: 0
-	fmt.Println("nil map 读取:", m[10])      // OK: 0（不 panic）
+	fmt.Println("nil map 长度:", len(m)) // OK: 0
+	fmt.Println("nil map 读取:", m[10])  // OK: 0（不 panic）
 	// m[10] = 1 // PANIC: assignment to entry in nil map
 
 	// 正确初始化
