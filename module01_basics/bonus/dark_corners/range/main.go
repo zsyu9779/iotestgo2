@@ -1,81 +1,97 @@
-// 黑暗角落：range 变量复用 — 取地址、闭包捕获、goroutine 陷阱
+// 黑暗角落：循环变量是按迭代创建，还是被显式复用
 package main
 
 import (
 	"fmt"
-	"time"
+	"sync"
 )
 
-// 陷阱 1：取地址——全指向同一个变量
-func showRangeAddressTrap() {
-	var out []*int
-	for i := 0; i < 3; i++ {
-		out = append(out, &i)
+func valuesAt(pointers []*int) []int {
+	values := make([]int, len(pointers))
+	for index, pointer := range pointers {
+		values[index] = *pointer
 	}
-	// 全打印同一个值（最后一次迭代的 i 值）
-	for _, p := range out {
-		fmt.Printf("%v ", *p)
-	}
-	fmt.Printf("  (期望 0 1 2，实际全部相同！因为 &i 始终指向同一个变量)\n")
+	return values
 }
 
-// 修复 1：循环体内复制一份
-func fixRangeAddressTrap() {
-	var out []*int
-	for i := 0; i < 3; i++ {
-		i := i // 关键：复制一份，新变量有自己的地址
-		out = append(out, &i)
+// explicitReusePointerValues 预先声明 i，再用赋值形式的 for 显式复用它。
+func explicitReusePointerValues() []int {
+	var pointers []*int
+	var i int
+	for i = 0; i < 3; i++ {
+		pointers = append(pointers, &i)
 	}
-	for _, p := range out {
-		fmt.Printf("%v ", *p)
-	}
-	fmt.Printf("  (修复后正确)\n")
+	return valuesAt(pointers)
 }
 
-// 陷阱 2：goroutine 中捕获循环变量
-func showGoroutineTrap() {
+// loopDeclaredPointerValues 使用 := 让 Go 1.22+ 为每次迭代创建新的 i。
+func loopDeclaredPointerValues() []int {
+	var pointers []*int
 	for i := 0; i < 3; i++ {
+		pointers = append(pointers, &i)
+	}
+	return valuesAt(pointers)
+}
+
+// explicitReuseClosureValues 让 goroutine 在循环结束后读取同一个 i。
+// start 保证循环已经结束，WaitGroup 保证所有结果写入完成，因此没有数据竞态。
+func explicitReuseClosureValues() []int {
+	values := make([]int, 3)
+	start := make(chan struct{})
+	var workers sync.WaitGroup
+
+	var i int
+	for i = 0; i < len(values); i++ {
+		workers.Add(1)
+		go func(slot int) {
+			defer workers.Done()
+			<-start
+			values[slot] = i
+		}(i)
+	}
+
+	close(start)
+	workers.Wait()
+	return values
+}
+
+// loopDeclaredClosureValues 捕获由循环声明的每轮 i。
+func loopDeclaredClosureValues() []int {
+	values := make([]int, 3)
+	start := make(chan struct{})
+	var workers sync.WaitGroup
+
+	for i := 0; i < len(values); i++ {
+		workers.Add(1)
 		go func() {
-			fmt.Printf("%d ", i) // 全部打印最后一个值
+			defer workers.Done()
+			<-start
+			values[i] = i
 		}()
 	}
-	time.Sleep(100 * time.Millisecond)
-	fmt.Printf("  (goroutine 闭包捕获，全为同一个值)\n")
+
+	close(start)
+	workers.Wait()
+	return values
 }
 
-// 修复 2：通过参数传入
-func fixGoroutineTrap() {
-	for i := 0; i < 3; i++ {
-		go func(n int) {
-			fmt.Printf("%d ", n)
-		}(i) // 值复制传入
-	}
-	time.Sleep(100 * time.Millisecond)
-	fmt.Printf("  (通过参数传入后正确)\n")
-}
-
-// 陷阱 3：range 单变量是索引
+// 保留原有知识点：range 只接收一个变量时，该变量是索引。
 func showRangeSingleVar() {
-	s := []string{"one", "two", "three"}
-	for v := range s {
-		fmt.Printf("%d ", v) // 0 1 2（索引，而非值！）
+	words := []string{"one", "two", "three"}
+	for index := range words {
+		fmt.Printf("%d ", index)
 	}
-	fmt.Printf("  (单变量 range 返回的是索引，不是值)\n")
+	fmt.Println("(单变量 range 返回索引，而不是值)")
 }
 
 func main() {
-	fmt.Println("=== Range 黑暗角落 ===")
+	fmt.Println("=== Go 1.22+ 循环变量语义 ===")
+	fmt.Println("循环用 := 声明变量时，每次迭代都有新变量；预先声明后用 = 才会显式复用。")
 	fmt.Println()
-	fmt.Print("陷阱 1 (取地址): ")
-	showRangeAddressTrap()
-	fmt.Print("修复 1: ")
-	fixRangeAddressTrap()
-	fmt.Println()
-	fmt.Print("陷阱 2 (goroutine): ")
-	showGoroutineTrap()
-	fmt.Print("修复 2: ")
-	fixGoroutineTrap()
-	fmt.Println()
-	fmt.Print("陷阱 3 (单变量 range): ")
+	fmt.Println("显式复用变量的地址值:", explicitReusePointerValues())
+	fmt.Println("循环声明变量的地址值:", loopDeclaredPointerValues())
+	fmt.Println("显式复用变量的闭包值:", explicitReuseClosureValues())
+	fmt.Println("循环声明变量的闭包值:", loopDeclaredClosureValues())
+	fmt.Print("单变量 range: ")
 	showRangeSingleVar()
 }
