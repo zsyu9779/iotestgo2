@@ -20,7 +20,7 @@ func (u *User) UpdateName(newName string) {
 	u.Name = newName
 }
 
-// Embedding (Inheritance-like)
+// Embedding (composition with promoted fields and methods)
 type Admin struct {
 	User  // Anonymous field
 	Level int

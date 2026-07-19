@@ -83,6 +83,7 @@
 
 - **目标：**用 Struct、构造函数惯例、指针接收者和值快照建立保持不变量的 `Student`。
 - **讲师动作：**13:00–13:20 用值传递与指针修改 Demo 对比 Java 引用；13:20–13:55 巡视建模练习；13:55–14:05 用“修改 Snapshot”的测试复盘接收者选择。
+- **内容扩展：**在两个原有 Demo 后按需运行 `08_struct_zero_values` 和 `09_copy_and_receivers`；Struct 零值、值复制和接收者选择属于核心，Embedding 作为组合语义深挖。
 - **学员动作（35 分钟动手）：**实现 `New`、`Rename`、`UpdateScore` 和 `Snapshot`，先校验再修改状态，逐步使测试变绿。
 - **可观察检查点：**`go test -tags=exercise ./module01_basics/blocks/03_modeling/lab/starter` PASS；修改 Snapshot 不影响原对象，失败的 Rename/Update 不改原状态。
 - **常见延误：**修改方法使用值接收者，或先赋值再校验，导致变更丢失或无效状态泄漏。

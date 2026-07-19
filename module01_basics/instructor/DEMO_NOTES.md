@@ -96,6 +96,8 @@ go test -tags=exercise ./module01_basics/blocks/02_collections/lab/starter -run 
 ```bash
 go run ./module01_basics/blocks/03_modeling/demo/06_pointers
 go run ./module01_basics/blocks/03_modeling/demo/07_structs_methods
+go run ./module01_basics/blocks/03_modeling/demo/08_struct_zero_values
+go run ./module01_basics/blocks/03_modeling/demo/09_copy_and_receivers
 ```
 
 ### 投影提示
@@ -112,6 +114,13 @@ go test -tags=exercise ./module01_basics/blocks/03_modeling/lab/starter -run '^T
 ```
 
 当修改丢失时，让学员圈出接收者是 `Student` 还是 `*Student`；当无效修改污染状态时，让其标出第一次赋值和第一次校验的顺序。救援只给“先校验，后赋值”，不代写方法。
+
+### Block 3 内容扩展
+
+- **核心：**用 `08_struct_zero_values` 观察 Struct 零值、复合字面量、值复制、指针参数和 nil 指针检查。
+- **核心：**用 `09_copy_and_receivers` 对比值接收者、指针接收者、快照隔离和 Embedding 的字段提升。
+- **深挖：**强调 Embedding 是组合，不是继承；讲解指针参数和指针接收者都遵守值传递，但复制的值不同。
+- **可裁：**匿名字段的复杂方法集、指针嵌入和反射不进入核心课堂。
 
 ## Block 4：Functions & Testing（15 分钟）
 

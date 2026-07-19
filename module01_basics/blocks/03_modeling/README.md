@@ -39,9 +39,13 @@ Go 指针支持解引用和共享修改，但不支持指针算术。方法调�
 ```bash
 go run ./module01_basics/blocks/03_modeling/demo/06_pointers
 go run ./module01_basics/blocks/03_modeling/demo/07_structs_methods
+go run ./module01_basics/blocks/03_modeling/demo/08_struct_zero_values
+go run ./module01_basics/blocks/03_modeling/demo/09_copy_and_receivers
 ```
 
 第一个 Demo 对比值传递与指针传递，观察解引用、共享修改和 nil 指针。第二个 Demo 展示 Struct、值接收者、指针接收者和嵌入，重点观察 `UpdateName` 为什么能够修改原对象。
+
+新增 Demo 补充 Struct 零值、复合字面量、值复制、指针参数、Snapshot 隔离和组合语义。注意：指针参数与指针接收者是两个相关但不同的概念；Embedding 提升字段和方法，但不建立 Java 意义上的继承关系。
 
 ## 学员任务
 
@@ -76,6 +80,9 @@ go test -tags=exercise ./module01_basics/blocks/03_modeling/lab/starter
 
 - 为什么 `Rename` 和 `UpdateScore` 必须修改调用者持有的同一个 `Student`？
 - 为什么 `Snapshot` 使用值接收者并返回 `Student`，而不是返回 `*Student`？
+- Struct 的零值为什么通常可以直接使用？哪些字段或嵌套对象仍需要额外初始化？
+- 指针参数和指针接收者分别解决什么问题？它们为什么仍然符合 Go 的值传递规则？
+- Embedding 为什么是组合而不是继承？被提升的字段访问是否改变了对象之间的类型关系？
 - `New` 集中维护不变量，相比调用方直接写 Struct 字段有什么好处？
 - Java 对象引用与 Go 的 Struct 值、Struct 指针分别有哪些相似和不同？
 

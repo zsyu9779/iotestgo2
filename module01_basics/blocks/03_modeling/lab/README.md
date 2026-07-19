@@ -2,6 +2,8 @@
 
 请在 `starter/student.go` 中完成一个维护自身不变量的学生模型。
 
+开始前建议运行 Block 3 的 `08_struct_zero_values` 和 `09_copy_and_receivers`，分别观察 Struct 零值、值复制、指针参数、值接收者和指针接收者。实验要求的是行为契约，不要求复制 Demo 的内部实现。
+
 `Student` 必须保持以下状态：
 
 - `ID` 是正整数。

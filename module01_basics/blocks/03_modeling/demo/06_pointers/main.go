@@ -22,7 +22,8 @@ func main() {
 	}
 	// *nilPtr = 1 // Panic: invalid memory address or nil pointer dereference
 
-	// 3. Pointer vs Value Receiver (demo in functions)
+	// 3. Pointer parameter vs value parameter. Receiver semantics are shown in
+	// the Structs and Methods demo; both cases still pass a value to a function.
 	val := 5
 	modifyValue(val)
 	fmt.Println("After value pass:", val) // 5
