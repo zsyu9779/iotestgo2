@@ -39,7 +39,7 @@ Module 01 面向已能阅读 Java 的学员，用四个连续 Block 建立 Go �
 1. 在仓库根目录运行 `go version` 和 `go env GOMOD`，确认 Go 可用且 `GOMOD` 指向本仓库。
 2. 运行 `make module01-lab-01`，确认可编译并执行 Go 测试。
 3. 运行 `make module01-demo-contracts`，确认正常 Demo 的关键教学输出符合约定，预期末行是 `module01 demo contracts: PASS`。
-4. 运行 `make module01-teaching-failures`，确认隔离的编译失败与运行时 panic 均以非零状态和匹配诊断结束，预期末行是 `module01 teaching failures: PASS`。
+4. 运行 `make module01-teaching-failures`。脚本会逐个确认隔离教学 Case 以非零状态结束且诊断匹配；整体验证成功时该命令返回 0，预期末行是 `module01 teaching failures: PASS`。
 5. 在不查资料的情况下完成 [Entry Quiz](assessments/entry_quiz.md)；它用来调整课堂节奏，不计作业分。
 
 ## 课中：按 Block 完成 RED–GREEN–REFACTOR

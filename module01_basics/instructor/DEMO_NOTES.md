@@ -123,6 +123,8 @@ go run ./module01_basics/blocks/02_collections/demo/07_string_utf8_edges
 
 - `04_arrays_slices`：`Original Array: [1 2 3]`、`Original Slice after sub-slice mod: [1 999 3 4 5]`，以及 `copy count=3 dst=[10 20 30 0 0] src=[10 20 30]`。
 - `05_maps_strings`：nil Map 读取为 `0`、Map 遍历标注“不保证顺序”，以及 `nested map value: ready`。
+- `06_slice_map_edges`：`array after changing range value: [1 2 3]` 与 `shared slice: base=[9 2] view=[9 2 3] len=3 cap=4`；**救援：**先只预测修改的是 range 值副本还是共享的底层数组，再指出当前操作的对象。
+- `07_string_utf8_edges`：`text="A你" bytes=4 runes=2` 与 `byte-index=1 rune=你`；**救援：**让学员先标出 byte-index 是 1，再将它与 rune 个数 2 分开解释。
 
 ### 投影提示
 
@@ -176,6 +178,8 @@ go run ./module01_basics/blocks/03_modeling/demo/09_copy_and_receivers
 
 - `06_pointers`：`After value pass: 5`、`After pointer pass: 100`、`pointer field sugar: 3`。
 - `09_copy_and_receivers`：`value receiver mutation keeps: Alice` 与 `pointer receiver: 1:Bob=80`。
+- `07_structs_methods`：`Updated: John Doe` 与 `Admin Name: Admin, Level: 1`；**救援：**先问更新发生在同一个对象还是副本，再把提升字段解释为组合提供的访问便利，不等同于继承。
+- `08_struct_zero_values`：`struct zero value: main.User{ID:0, Name:"", Enabled:false, Address:main.Address{City:""}}` 与 `after pointer parameter: shared value`；**救援：**让学员分别圈出 Struct 零值字段和指针参数修改的对象，再回到“传入的是地址值的副本”。
 
 ### 投影提示
 
@@ -231,6 +235,7 @@ go test ./module01_basics/blocks/04_functions_testing/lab/solution -run '^TestFi
 
 - `10_function_forms`：`closure state: 11 12` 与 `independent closure state: 11`，证明两个 counter 状态独立。
 - `11_defer_edges`：LIFO 段先输出 `defer second registered` 再输出 `defer first registered`，普通参数读取 `1`，闭包读取 `2`。
+- `09_advanced_functions`：`75 passed: true`、`filtered: [60 75]`，以及 `start` 后才出现 `end`；**救援：**先让学员只预测谓词对 75 的结果和过滤后的顺序，再指出函数值是参数、`defer` 的 `end` 在当前函数返回时执行。
 
 ### 投影提示
 
