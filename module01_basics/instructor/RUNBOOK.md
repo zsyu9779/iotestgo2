@@ -42,6 +42,15 @@
 
 `185 ÷ 310 = 0.59677…`，四舍五入为 59.7%。延误时先删除各段标明的可裁内容，不挪用这 185 分钟中的编码、测试和 Quiz 时间。
 
+## 不可裁内容与固定可裁顺序
+
+- **Block 1 不可裁：**隐式 ConstSpec/iota、多值 case、默认不贯穿、fallthrough 语义、零值、Atoi 错误路径。
+- **Block 2 不可裁：**Array/Slice 值与共享语义、copy、comma-ok、byte/rune。
+- **Block 3 不可裁：**Go 只有值传递、值/指针接收者、校验后修改、Snapshot 隔离。
+- **Block 4 不可裁：**函数值、闭包捕获、defer 顺序、读取失败测试。
+
+若需压缩，严格按以下可裁顺序逐项删除：位运算 → iota 重置块 → 类型别名 → switch 初始化作用域 → 嵌套 Map → 指针字段语法糖 → 多 defer 扩展。不得用删学员动手时间来容纳深挖内容。
+
 ## 受控失败的验收规则
 
 课前运行：
@@ -68,11 +77,11 @@ make module01-teaching-failures
 
 - **目标：**使用条件、函数、多返回值和显式 `error` 实现有边界校验的 `Grade`。
 - **讲师动作：**09:50–10:05 按 [Demo Notes](DEMO_NOTES.md#block-1go-basics15-分钟) 展示程序入口、类型推断、`for`、`switch` 和 `(value, error)`；10:05–10:30 巡视结对实现；10:30–10:35 用一个边界失败做复盘。
-- **内容扩展：**若班级基础较稳，在原有 Demo 中加入零值、String 基础与转换、if/switch 初始化作用域、多值 `case` 和 `switch {}`；`fallthrough` 属于语义深挖，`goto` 只保留识别。用户补充的隐式 ConstSpec/iota Case 不可裁。
+- **内容扩展：**若班级基础较稳，在原有 Demo 中加入零值、String 基础与转换、if/switch 初始化作用域、多值 `case` 和 `switch {}`；必须讲清 Go 默认不贯穿及显式 `fallthrough` 的语义，`goto` 只保留识别。用户补充的隐式 ConstSpec/iota Case 不可裁。
 - **学员动作（25 分钟动手）：**在 `blocks/01_go_basics/lab/starter` 运行 RED，实现范围校验和 A–F 映射，重复运行全包测试。
 - **可观察检查点：**`go test -tags=exercise ./module01_basics/blocks/01_go_basics/lab/starter` PASS，且学员能解释 60、90、-1 和 101 的路径。
 - **常见延误：**从低到高写过宽分支，或返回临时文本错误而不是 `ErrScoreOutOfRange`。
-- **可裁内容：**精确删除位运算、第二个 iota 重置块、类型别名、标签、`goto`、switch 初始化作用域细节、String 转换成功路径和 Bonus 表驱动测试讨论；用户补充的隐式 ConstSpec/iota Case 不可裁，保留 `break`/`continue`、多值 `case`、`fallthrough` 语义、Atoi 错误路径、错误返回与边界测试。
+- **可裁内容：**只按本 Runbook 的固定可裁顺序处理；保留隐式 ConstSpec/iota、多值 `case`、默认不贯穿、`fallthrough` 语义、零值、Atoi 错误路径、错误返回与边界测试。
 
 ## 10:35–10:45：短休息
 
@@ -86,7 +95,7 @@ make module01-teaching-failures
 - **学员动作（40 分钟动手）：**实现 `Analyze`，用 `strings.Fields`、`strings.ToLower` 和 `utf8.RuneCountInString` 完成计数，反复运行练习测试。
 - **可观察检查点：**`go test -tags=exercise ./module01_basics/blocks/02_collections/lab/starter` PASS；`"Go go 你好"` 的结果为 12 bytes、8 runes、3 words 和 `go:2`。
 - **常见延误：**把 `len(text)` 当作字符数，未初始化 Map，或自行删标点而改变了分词契约。
-- **可裁内容：**精确删除 Slice 容量增长策略推演、嵌套 Map 初始化、Map 深层陷阱和 String benchmark；保留 Slice 共享、`copy`、comma-ok 和 byte/rune。
+- **可裁内容：**只按本 Runbook 的固定可裁顺序处理；保留 Array/Slice 值与共享语义、`copy`、comma-ok 和 byte/rune。
 
 ## 12:00–13:00：午休
 
@@ -100,7 +109,7 @@ make module01-teaching-failures
 - **学员动作（35 分钟动手）：**实现 `New`、`Rename`、`UpdateScore` 和 `Snapshot`，先校验再修改状态，逐步使测试变绿。
 - **可观察检查点：**`go test -tags=exercise ./module01_basics/blocks/03_modeling/lab/starter` PASS；修改 Snapshot 不影响原对象，失败的 Rename/Update 不改原状态。
 - **常见延误：**修改方法使用值接收者，或先赋值再校验，导致变更丢失或无效状态泄漏。
-- **可裁内容：**精确删除 Struct embedding 对比、nil pointer 扩展讨论和自动解引用语法糖；保留 Go 只有值传递、值/指针接收者选择和校验前置。
+- **可裁内容：**只按本 Runbook 的固定可裁顺序处理；保留 Go 只有值传递、值/指针接收者、校验后修改和 Snapshot 隔离。
 
 ## 14:05–14:50：Block 4 — Functions & Testing
 
@@ -110,7 +119,7 @@ make module01-teaching-failures
 - **学员动作（25 分钟动手）：**先使 `TestFilterWithClosure` 通过，再使 `TestWithAuditRecordsEndAfterOperation` 通过，最后运行全包测试。
 - **可观察检查点：**`go test -tags=exercise ./module01_basics/blocks/04_functions_testing/lab/starter` PASS，audit 事件严格为 `start:average`、`operation`、`end:average`。
 - **常见延误：**`Filter` 硬编码阈值，`AtLeast` 使用 `>`，或在 `operation` 之后才注册 `defer`。
-- **可裁内容：**精确删除柯里化、函数组合、Functional Options 和多 `defer` LIFO 扩展；保留单一闭包、单一 `defer` 和失败输出阅读。
+- **可裁内容：**只按本 Runbook 的固定可裁顺序处理；保留函数值、闭包捕获、defer 顺序和读取失败测试。
 
 ## 14:50–15:00：短休息
 

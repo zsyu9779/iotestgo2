@@ -31,6 +31,11 @@ go run ./module01_basics/blocks/01_go_basics/demo/02_vars_types
 go run ./module01_basics/blocks/01_go_basics/demo/03_control_funcs
 ```
 
+### 必须看到
+
+- `02_vars_types`：`iota edge cases: 0 1 2 250 250 5 6`、`iota reset: 0 1`，以及 `Zero values: int=0 float=0.0 bool=false string=""`。
+- `03_control_funcs`：`switch init: owner has full access`、`Owner branch` 和 `Admin branch reached by fallthrough`；循环体只出现 `loop body: 0` 与 `loop body: 2`。
+
 ### 投影提示
 
 1. 在执行前请学员指出 `package main`、`import` 和 `func main`，对比 Java 的 Class 入口。
@@ -54,6 +59,18 @@ go run ./module01_basics/blocks/01_go_basics/demo/03_control_funcs
 | fallthrough | 下一 case 条件会重算吗？ | 不会 | 无条件进入紧邻 case，业务代码通常不建议使用 | 相当于继续匹配条件 | 深挖 |
 | Atoi 失败 | 错误能否忽略？ | err 非 nil | 外部输入解析属于可预期失败，应显式处理 | 转换失败自动得到 0 且安全 | 核心 |
 
+**一级提示：**让学员只预测当前一行输出。
+
+**二级提示：**指出当前操作的是值、地址、底层数组、Map key 或闭包捕获变量中的哪一个。
+
+**三级提示：**运行最小 Case，只解释 actual/want 或编译器第一条诊断，不直接展示 Solution。
+
+### 不得讲错
+
+- `iota` 始终按 ConstSpec 行递增；表达式省略与 `iota` 计数是两个维度。
+- String 下标和切片按 byte；`range` 解码 rune，index 仍是 byte offset。
+- nil Slice 可以 `append`；nil Map 可以读但不能写。
+
 ### 失败演示与救援
 
 ```bash
@@ -70,6 +87,12 @@ make module01-teaching-failures
 
 课堂只选择三个核心 Case：同作用域无新变量的 `:=`、Map Struct 字段不可直接赋值、nil Map 写入 panic。逐一先让学员预测诊断或 panic，再展示 [受控失败 Case](../teaching_failures/README.md) 中的正确写法。其余 Case（包级短声明、定义类型赋值、Slice 比较、最后一个 case 的 `fallthrough`、nil 指针）仅按班级情况调用，不逐个占用课堂时间。命令非零且诊断匹配才是通过；路径、权限、依赖或工具链异常不是教学成功。
 
+**一级提示：**让学员只预测当前一条诊断或 panic。
+
+**二级提示：**指出当前操作的是声明位置、可寻址 Map value，还是 nil Map 写入。
+
+**三级提示：**展示正确写法的最小差异，只解释编译器第一条诊断或 panic；不修改失败 fixture，也不展示 Solution。
+
 ### Block 1 内容扩展
 
 按班级节奏选择以下镜头，不要删除原有 `01_hello`、`02_vars_types` 和 `03_control_funcs`：
@@ -77,6 +100,8 @@ make module01-teaching-failures
 ```bash
 go run ./module01_basics/blocks/01_go_basics/demo/05_strings_basics
 ```
+
+**必须看到：**`"A你" bytes=4`；`range over string` 下恰好两次 rune 输出；`Atoi error: true`。
 
 - **核心：**让学员预测 `var int/string/bool` 的零值，说明 nil Slice 可以 `append`，nil Map 只能读不能写。
 - **核心：**展示 `strings.TrimSpace`、`Fields`、`ToLower`，再解释 String 下标是 byte、`range` 得到 rune；展示 String/`[]byte` 往返和 `Atoi` 的成功与错误路径。
@@ -94,6 +119,11 @@ go run ./module01_basics/blocks/02_collections/demo/06_slice_map_edges
 go run ./module01_basics/blocks/02_collections/demo/07_string_utf8_edges
 ```
 
+### 必须看到
+
+- `04_arrays_slices`：`Original Array: [1 2 3]`、`Original Slice after sub-slice mod: [1 999 3 4 5]`，以及 `copy count=3 dst=[10 20 30 0 0] src=[10 20 30]`。
+- `05_maps_strings`：nil Map 读取为 `0`、Map 遍历标注“不保证顺序”，以及 `nested map value: ready`。
+
 ### 投影提示
 
 1. 在修改 `arrCopy[0]` 和 `subSlice[0]` 前暂停，让学员分别预测原值是否改变：Array 赋值复制元素，Slice 描述符副本仍可共享底层数组。
@@ -105,6 +135,17 @@ go run ./module01_basics/blocks/02_collections/demo/07_string_utf8_edges
 | --- | --- | --- | --- | --- | --- |
 | `copy(destination, source)` | 返回值和剩余两个位置是什么？ | 3，剩余为 0 | 复制数量为 min(len(dst), len(src)) | copy 会自动扩展 dst | 核心 |
 | 嵌套 Map | 只 make 外层能否直接写内层？ | 不能，会 panic | 每层 Map 都要初始化 | 外层 make 会递归初始化 | 深挖 |
+
+**一级提示：**让学员只预测当前一行输出。
+
+**二级提示：**指出当前操作的是值、地址、底层数组、Map key 或闭包捕获变量中的哪一个。
+
+**三级提示：**运行最小 Case，只解释 actual/want 或编译器第一条诊断，不直接展示 Solution。
+
+### 不得讲错
+
+- `append` 可能复用也可能更换底层数组；不能承诺固定扩容倍数。
+- Map 遍历顺序不是稳定契约。
 
 ### 失败演示与救援
 
@@ -131,6 +172,11 @@ go run ./module01_basics/blocks/03_modeling/demo/08_struct_zero_values
 go run ./module01_basics/blocks/03_modeling/demo/09_copy_and_receivers
 ```
 
+### 必须看到
+
+- `06_pointers`：`After value pass: 5`、`After pointer pass: 100`、`pointer field sugar: 3`。
+- `09_copy_and_receivers`：`value receiver mutation keeps: Alice` 与 `pointer receiver: 1:Bob=80`。
+
 ### 投影提示
 
 1. 在 `modifyValue` 和 `modifyPointer` 前分别预测 `val`，用输出强调 Go 只有值传递；传入指针时复制的值是地址。
@@ -143,6 +189,17 @@ go run ./module01_basics/blocks/03_modeling/demo/09_copy_and_receivers
 | `counter.Value` / `(*counter).Value` | 是否修改同一字段？ | 最终为 3 | Go 自动解引用字段访问 | `p.field` 会复制对象 | 深挖 |
 | `RenameCopy` | student.Name 会变吗？ | 仍为 Alice | 值接收者得到 Struct 副本 | 方法天然拥有 Java this 引用语义 | 核心 |
 | `Rename` | 为什么变为 Bob？ | 指针接收者修改同一对象 | 传入的仍是值，只是该值为地址 | Go 存在“引用传递” | 核心 |
+
+**一级提示：**让学员只预测当前一行输出。
+
+**二级提示：**指出当前操作的是值、地址、底层数组、Map key 或闭包捕获变量中的哪一个。
+
+**三级提示：**运行最小 Case，只解释 actual/want 或编译器第一条诊断，不直接展示 Solution。
+
+### 不得讲错
+
+- Go 所有参数传递都是值传递；传指针时复制的是地址值。
+- 值接收者操作副本；指针接收者用于修改同一对象，但仍是值传递。
 
 ### 失败演示与救援
 
@@ -170,12 +227,33 @@ go run ./module01_basics/blocks/04_functions_testing/demo/11_defer_edges
 go test ./module01_basics/blocks/04_functions_testing/lab/solution -run '^TestFilterWithClosure$'
 ```
 
+### 必须看到
+
+- `10_function_forms`：`closure state: 11 12` 与 `independent closure state: 11`，证明两个 counter 状态独立。
+- `11_defer_edges`：LIFO 段先输出 `defer second registered` 再输出 `defer first registered`，普通参数读取 `1`，闭包读取 `2`。
+
 ### 投影提示
 
 1. 将 `func(int) bool` 直接与 Java `Predicate<Integer>` 对比：Go 的函数值不需要额外函数式接口。
 2. 让学员预测 `atLeast(60)` 返回的闭包为何能继续访问 `min`，再观察 `passed(75)`。
 3. 在 `defer` 注册处指向“现在声明意图，函数返回前执行”，不延伸 panic/recover。
 4. 用 `-run` 说明测试名是反馈接口；失败时先读测试名，再读 actual/want，最后回到最小行为。
+
+| 暂停点 | 先问 | 预期结果 | 准确解释 | 常见误解 | 级别 |
+| --- | --- | --- | --- | --- | --- |
+| 两个 counter | 第二个 counter 会接着第一个计数吗？ | 不会，独立输出 11 | 每次调用工厂函数各自捕获一份状态 | 所有闭包共享同一个局部变量 | 核心 |
+| defer LIFO | 哪个 defer 先执行？ | 后注册的先执行 | defer 栈按 LIFO 执行 | defer 按书写顺序执行 | 核心 |
+| 参数与闭包 | 为什么一个读 1、一个读 2？ | 普通参数 1，闭包 2 | 普通参数在注册时求值；闭包体在执行时读取 | 两者都在 defer 执行时才取值 | 核心 |
+
+**一级提示：**让学员只预测当前一行输出。
+
+**二级提示：**指出当前操作的是值、地址、底层数组、Map key 或闭包捕获变量中的哪一个。
+
+**三级提示：**运行最小 Case，只解释 actual/want 或编译器第一条诊断，不直接展示 Solution。
+
+### 不得讲错
+
+- defer 普通参数在注册时求值；闭包体读取发生在执行时。
 
 ### 失败演示与救援
 
