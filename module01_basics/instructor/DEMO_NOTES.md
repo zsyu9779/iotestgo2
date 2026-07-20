@@ -57,6 +57,7 @@ go run ./module01_basics/blocks/01_go_basics/demo/03_control_funcs
 | switch 初始化 | currentRole 在 switch 外可用吗？ | 不可用 | 初始化变量作用域属于 switch | 与普通赋值作用域相同 | 深挖 |
 | 多值 case | owner 匹配哪个分支？ | 第一个分支 | 逗号分隔值表示 OR | 一个 case 只能有一个值 | 核心 |
 | fallthrough | 下一 case 条件会重算吗？ | 不会 | 无条件进入紧邻 case，业务代码通常不建议使用 | 相当于继续匹配条件 | 深挖 |
+| String/`[]byte` 往返 | `[]byte("Go语言")` 再转回 String 会丢失中文吗？ | `bytes round trip: Go语言` | String 与 `[]byte` 可显式转换；字节序列不变时，转回后保留原 UTF-8 内容 | 转成 `[]byte` 会按字符截断，或往返必然丢失中文 | 核心 |
 | Atoi 失败 | 错误能否忽略？ | err 非 nil | 外部输入解析属于可预期失败，应显式处理 | 转换失败自动得到 0 且安全 | 核心 |
 
 **一级提示：**让学员只预测当前一行输出。
@@ -86,6 +87,17 @@ make module01-teaching-failures
 ```
 
 课堂只选择三个核心 Case：同作用域无新变量的 `:=`、Map Struct 字段不可直接赋值、nil Map 写入 panic。逐一先让学员预测诊断或 panic，再展示 [受控失败 Case](../teaching_failures/README.md) 中的正确写法。其余 Case（包级短声明、定义类型赋值、Slice 比较、最后一个 case 的 `fallthrough`、nil 指针）仅按班级情况调用，不逐个占用课堂时间。每个 fixture 必须非零退出且诊断匹配；全部 fixture 都匹配时，`make module01-teaching-failures` 返回 0。路径、权限、依赖或工具链异常不是教学成功。
+
+| 知识点 | 先问 | 预期结果 | 准确解释 | 常见误解 | 级别 |
+| --- | --- | --- | --- | --- | --- |
+| 包级短声明 | `value := 1` 能放在函数外吗？ | 编译失败，诊断含 `outside function body` 或 `syntax error` | `:=` 是函数体内的短变量声明；包级声明使用 `var`、`const`、`type` 或 `func` | 包级与函数体内都能使用 `:=` | 深挖 |
+| 同作用域无新变量 | 已有 `value` 后再次写 `value := 2` 会更新吗？ | 编译失败，诊断含 `no new variables` | 同一作用域的短声明必须至少引入一个新变量；仅更新已有变量用 `=` | `:=` 与 `=` 在已有变量上等价 | 核心 |
+| 定义类型赋值 | `int` 能直接赋给 `UserID` 吗？ | 编译失败，诊断含 `cannot use raw` | `type UserID int` 是新定义类型；与 `int` 间需显式转换 | 定义类型只是 `int` 的别名 | 深挖 |
+| Slice 比较 | 两个内容相同的 Slice 能用 `==` 比较吗？ | 编译失败，诊断含 `slice can only be compared to nil` 或 `invalid operation` | Slice 不可彼此比较，只能与 `nil` 比较；内容相等需逐元素比较或使用相应工具 | Slice 和 Array 一样可直接用 `==` | 深挖 |
+| Map Struct 字段 | `items["one"].Value = 2` 能直接改吗？ | 编译失败，诊断含 `cannot assign to struct field` | Map index 得到的 Struct value 不可寻址；取出副本、修改后再写回 | Map value 总是可直接修改的对象 | 核心 |
+| 最后一个 `fallthrough` | 最后一个 case 能 `fallthrough` 吗？ | 编译失败，诊断含 `cannot fallthrough final case` | `fallthrough` 只能进入紧邻的后续 case；最后一个 case 没有后续目标 | `fallthrough` 等同于循环的 `continue` | 深挖 |
+| nil Map 写入 | 未 `make` 的 Map 写 key 会怎样？ | 运行时 panic，诊断含 `assignment to entry in nil map` | nil Map 可读但不可写；写入前必须初始化 Map | nil Map 与空 Map 都能写入 | 核心 |
+| nil 指针解引用 | `*value = 1` 且 `value` 为 nil 会怎样？ | 运行时 panic，诊断含 `nil pointer dereference` 或 `invalid memory address` | nil 指针没有可写入的目标；先分配值或确认指针非 nil | 声明指针变量会自动分配其指向的值 | 深挖 |
 
 **一级提示：**让学员只预测当前一条诊断或 panic。
 
