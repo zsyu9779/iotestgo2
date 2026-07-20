@@ -60,7 +60,7 @@ make module01-demo-contracts
 make module01-teaching-failures
 ```
 
-正常 Demo、Lab 和 `go test ./module01_basics/...` 必须保持 GREEN。编译失败和 panic 示例只允许位于 `teaching_failures/testdata/`，由独立命令验证。对每个教学 Case，只有命令非零退出且输出匹配约定诊断才算通过；命令路径错误、权限、依赖、Go 安装或其他环境问题都不是“预期失败”，应先按环境故障处理。
+正常 Demo、Lab 和 `go test ./module01_basics/...` 必须保持 GREEN。编译失败和 panic 示例只允许位于 `teaching_failures/testdata/`，由独立命令验证。对每个教学 Case，fixture 只有非零退出且输出匹配约定诊断才算通过；全部 fixture 匹配时，聚合命令 `make module01-teaching-failures` 返回 0。路径错误、权限、依赖、Go 安装或其他环境问题都不是“预期失败”，应先按环境故障处理。
 
 课堂只使用三个核心失败：同作用域无新变量的 `:=`、Map Struct 字段不可直接赋值、nil Map 写入 panic。其余 Case 仅作按需小抄，避免挤占 Block 的学员动手时间。
 

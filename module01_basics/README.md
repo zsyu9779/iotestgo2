@@ -116,4 +116,4 @@ make module01-teaching-failures
 make module01-audit
 ```
 
-`module01-verify` 检查 Module 01 的 gofmt，对根 Go Module 中的 Demo、课堂包和 Solution 执行 Vet 与测试，并通过统一脚本验证 Task Manager 教师答案。`module01-demo-contracts` 断言正常 Demo 的关键教学输出，预期打印 `module01 demo contracts: PASS`；`module01-teaching-failures` 要求每个隔离 Case 非零退出且诊断匹配，预期打印 `module01 teaching failures: PASS`；`module01-audit` 一次依次运行这三类验收，只有全部成功才结束。`student_pack` 是独立 Go Module，其故意未完成的测试不进入根验收；受控失败源码位于 `teaching_failures/testdata/`，也不进入正常 `go test ./module01_basics/...`。
+`module01-verify` 检查 Module 01 的 gofmt，对根 Go Module 中的 Demo、课堂包和 Solution 执行 Vet 与测试，并通过统一脚本验证 Task Manager 教师答案。`module01-demo-contracts` 断言正常 Demo 的关键教学输出，预期打印 `module01 demo contracts: PASS`；`module01-teaching-failures` 要求每个隔离 Case 非零退出且诊断匹配，全部匹配时聚合命令返回 0 并打印 `module01 teaching failures: PASS`；`module01-audit` 一次依次运行这三类验收，只有全部成功才结束。`student_pack` 是独立 Go Module，其故意未完成的测试不进入根验收；受控失败源码位于 `teaching_failures/testdata/`，也不进入正常 `go test ./module01_basics/...`。

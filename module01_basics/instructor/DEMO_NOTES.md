@@ -12,7 +12,7 @@ make module01-demo-contracts
 make module01-teaching-failures
 ```
 
-预期 `module01-verify` 检查根 Go Module 中的 Module 01 代码，并进入 `teacher/solution` 调用与学员包相同的 `scripts/grade.sh`。它不运行独立 Go Module `student_pack` 中故意保留的 RED。`module01-demo-contracts` 验证正常 Demo 输出；`module01-teaching-failures` 则确认隔离教学 Case 按预期以匹配诊断失败。
+预期 `module01-verify` 检查根 Go Module 中的 Module 01 代码，并进入 `teacher/solution` 调用与学员包相同的 `scripts/grade.sh`。它不运行独立 Go Module `student_pack` 中故意保留的 RED。`module01-demo-contracts` 验证正常 Demo 输出；`module01-teaching-failures` 逐个确认隔离教学 Case 非零退出且诊断匹配，全部匹配时聚合命令返回 0。
 
 打开下列页面，但不在学员投影画面中展示 `solution/` 或 [answer key](../assessments/answer_key.md)：
 
@@ -85,7 +85,7 @@ go test -tags=exercise ./module01_basics/blocks/01_go_basics/lab/starter -run '^
 make module01-teaching-failures
 ```
 
-课堂只选择三个核心 Case：同作用域无新变量的 `:=`、Map Struct 字段不可直接赋值、nil Map 写入 panic。逐一先让学员预测诊断或 panic，再展示 [受控失败 Case](../teaching_failures/README.md) 中的正确写法。其余 Case（包级短声明、定义类型赋值、Slice 比较、最后一个 case 的 `fallthrough`、nil 指针）仅按班级情况调用，不逐个占用课堂时间。命令非零且诊断匹配才是通过；路径、权限、依赖或工具链异常不是教学成功。
+课堂只选择三个核心 Case：同作用域无新变量的 `:=`、Map Struct 字段不可直接赋值、nil Map 写入 panic。逐一先让学员预测诊断或 panic，再展示 [受控失败 Case](../teaching_failures/README.md) 中的正确写法。其余 Case（包级短声明、定义类型赋值、Slice 比较、最后一个 case 的 `fallthrough`、nil 指针）仅按班级情况调用，不逐个占用课堂时间。每个 fixture 必须非零退出且诊断匹配；全部 fixture 都匹配时，`make module01-teaching-failures` 返回 0。路径、权限、依赖或工具链异常不是教学成功。
 
 **一级提示：**让学员只预测当前一条诊断或 panic。
 
