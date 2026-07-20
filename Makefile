@@ -1,4 +1,4 @@
-.PHONY: help fmt-check test-basic test-race run-basic-hello run-task-manager run-log-analyzer run-user-center run-blog-api run-compute-server run-compute-client ecommerce-up ecommerce-down module01-verify module01-demo-contracts module01-lab-01 module01-lab-02 module01-lab-03 module01-lab-04 module01-integrated-lab module01-homework-solution
+.PHONY: help fmt-check test-basic test-race run-basic-hello run-task-manager run-log-analyzer run-user-center run-blog-api run-compute-server run-compute-client ecommerce-up ecommerce-down module01-verify module01-demo-contracts module01-teaching-failures module01-audit module01-lab-01 module01-lab-02 module01-lab-03 module01-lab-04 module01-integrated-lab module01-homework-solution
 
 help:
 	@echo "Targets: fmt-check test-basic test-race module01-verify"
@@ -59,10 +59,15 @@ module01-homework-solution:
 	cd module01_basics/homework/task_manager/teacher/solution && ../../student_pack/scripts/grade.sh
 
 module01-verify:
-	@test -z "$$(find module01_basics -type f -name '*.go' -exec gofmt -l {} \;)" || (echo "Module 01 存在未格式化 Go 文件" && exit 1)
+	@test -z "$$(find module01_basics -path 'module01_basics/teaching_failures/testdata' -prune -o -type f -name '*.go' -exec gofmt -l {} \;)" || (echo "Module 01 存在未格式化 Go 文件" && exit 1)
 	go vet ./module01_basics/...
 	go test ./module01_basics/...
 	$(MAKE) module01-homework-solution
 
 module01-demo-contracts:
 	bash module01_basics/instructor/scripts/verify_demo_contracts.sh
+
+module01-teaching-failures:
+	bash module01_basics/teaching_failures/verify.sh
+
+module01-audit: module01-verify module01-demo-contracts module01-teaching-failures

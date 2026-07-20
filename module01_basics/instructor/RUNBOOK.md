@@ -42,6 +42,19 @@
 
 `185 ÷ 310 = 0.59677…`，四舍五入为 59.7%。延误时先删除各段标明的可裁内容，不挪用这 185 分钟中的编码、测试和 Quiz 时间。
 
+## 受控失败的验收规则
+
+课前运行：
+
+```bash
+make module01-demo-contracts
+make module01-teaching-failures
+```
+
+正常 Demo、Lab 和 `go test ./module01_basics/...` 必须保持 GREEN。编译失败和 panic 示例只允许位于 `teaching_failures/testdata/`，由独立命令验证。对每个教学 Case，只有命令非零退出且输出匹配约定诊断才算通过；命令路径错误、权限、依赖、Go 安装或其他环境问题都不是“预期失败”，应先按环境故障处理。
+
+课堂只使用三个核心失败：同作用域无新变量的 `:=`、Map Struct 字段不可直接赋值、nil Map 写入 panic。其余 Case 仅作按需小抄，避免挤占 Block 的学员动手时间。
+
 ## 09:30–09:50：开场、环境检查、Entry Quiz
 
 - **目标：**确认学员能在仓库根目录运行 Go，并识别班级最需要纠正的 Java-to-Go 默认假设。
