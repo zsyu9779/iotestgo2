@@ -30,7 +30,7 @@
 | 常用异常报告构造参数非法 | Go 常返回约定的 `error`，调用方显式处理 |
 | 防御性复制常返回新对象 | 小型 Struct 可以直接按值返回快照副本 |
 
-Go 指针支持解引用和共享修改，但不支持指针算术。方法调用时 Go 在可寻址的值与指针之间提供便利转换；接收者的选择仍然表达重要语义：这个方法是观察值，还是修改同一个对象。
+Go 指针支持解引用和共享修改，但不支持指针算术。对 Struct 指针，`p.Field` 是 `(*p).Field` 的字段访问语法糖，两种写法操作同一字段，不会复制 Struct。方法调用时 Go 在可寻址的值与指针之间提供便利转换；接收者的选择仍然表达重要语义：这个方法是观察值，还是修改同一个对象。值接收者拿到 Struct 副本，所以即使在方法内给字段赋值，调用方的原值也不会改变。
 
 ## 讲师 Demo
 
@@ -43,7 +43,7 @@ go run ./module01_basics/blocks/03_modeling/demo/08_struct_zero_values
 go run ./module01_basics/blocks/03_modeling/demo/09_copy_and_receivers
 ```
 
-第一个 Demo 对比值传递与指针传递，观察解引用、共享修改和 nil 指针。第二个 Demo 展示 Struct、值接收者、指针接收者和嵌入，重点观察 `UpdateName` 为什么能够修改原对象。
+第一个 Demo 对比值传递与指针传递，观察解引用、共享修改、nil 指针，以及 `counter.Value` 与 `(*counter).Value` 操作同一字段。第二个 Demo 展示 Struct、值接收者、指针接收者和嵌入，先观察 `RenameCopy` 不会改变 `student.Name`，再观察 `Rename` 为什么能够修改原对象。
 
 新增 Demo 补充 Struct 零值、复合字面量、值复制、指针参数、Snapshot 隔离和组合语义。注意：指针参数与指针接收者是两个相关但不同的概念；Embedding 提升字段和方法，但不建立 Java 意义上的继承关系。
 

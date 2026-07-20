@@ -41,4 +41,10 @@ assert_contains "$slice_output" 'copy count=3 dst=[10 20 30 0 0] src=[10 20 30]'
 map_output="$(go run ./module01_basics/blocks/02_collections/demo/05_maps_strings)"
 assert_contains "$map_output" 'nested map value: ready'
 
+pointer_output="$(go run ./module01_basics/blocks/03_modeling/demo/06_pointers)"
+assert_contains "$pointer_output" 'pointer field sugar: 3'
+
+receiver_output="$(go run ./module01_basics/blocks/03_modeling/demo/09_copy_and_receivers)"
+assert_contains "$receiver_output" 'value receiver mutation keeps: Alice'
+
 printf 'module01 demo contracts: PASS\n'

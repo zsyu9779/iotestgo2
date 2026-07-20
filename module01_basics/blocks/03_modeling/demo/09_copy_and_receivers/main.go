@@ -21,6 +21,10 @@ func (s Student) Label() string {
 	return fmt.Sprintf("%d:%s=%d", s.ID, s.Name, s.Score)
 }
 
+func (s Student) RenameCopy(name string) {
+	s.Name = name
+}
+
 func (s *Student) Rename(name string) {
 	s.Name = name
 }
@@ -28,6 +32,9 @@ func (s *Student) Rename(name string) {
 func main() {
 	student := Student{ID: 1, Name: "Alice", Score: 80}
 	fmt.Println("value receiver:", student.Label())
+
+	student.RenameCopy("Nobody")
+	fmt.Println("value receiver mutation keeps:", student.Name)
 
 	student.Rename("Bob")
 	fmt.Println("pointer receiver:", student.Label())

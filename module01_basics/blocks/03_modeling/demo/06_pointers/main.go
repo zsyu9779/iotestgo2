@@ -2,6 +2,10 @@ package main
 
 import "fmt"
 
+type Counter struct {
+	Value int
+}
+
 func main() {
 	// 1. Basic Pointers
 	x := 10
@@ -22,7 +26,13 @@ func main() {
 	}
 	// *nilPtr = 1 // Panic: invalid memory address or nil pointer dereference
 
-	// 3. Pointer parameter vs value parameter. Receiver semantics are shown in
+	// 3. Struct pointer field access automatically dereferences the pointer.
+	counter := &Counter{Value: 1}
+	counter.Value = 2
+	(*counter).Value = 3
+	fmt.Println("pointer field sugar:", counter.Value)
+
+	// 4. Pointer parameter vs value parameter. Receiver semantics are shown in
 	// the Structs and Methods demo; both cases still pass a value to a function.
 	val := 5
 	modifyValue(val)

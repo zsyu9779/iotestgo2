@@ -128,6 +128,12 @@ go run ./module01_basics/blocks/03_modeling/demo/09_copy_and_receivers
 3. 将 Java 类的构造器对比为普通 `New(...)` 函数，强调校验成功后才创建有效状态。
 4. Embedding 只做“组合可以提升字段和方法”的一句展示，不说它等于继承。
 
+| 暂停点 | 先问 | 预期结果 | 准确解释 | 常见误解 | 级别 |
+| --- | --- | --- | --- | --- | --- |
+| `counter.Value` / `(*counter).Value` | 是否修改同一字段？ | 最终为 3 | Go 自动解引用字段访问 | `p.field` 会复制对象 | 深挖 |
+| `RenameCopy` | student.Name 会变吗？ | 仍为 Alice | 值接收者得到 Struct 副本 | 方法天然拥有 Java this 引用语义 | 核心 |
+| `Rename` | 为什么变为 Bob？ | 指针接收者修改同一对象 | 传入的仍是值，只是该值为地址 | Go 存在“引用传递” | 核心 |
+
 ### 失败演示与救援
 
 ```bash
@@ -139,9 +145,9 @@ go test -tags=exercise ./module01_basics/blocks/03_modeling/lab/starter -run '^T
 ### Block 3 内容扩展
 
 - **核心：**用 `08_struct_zero_values` 观察 Struct 零值、复合字面量、值复制、指针参数和 nil 指针检查。
-- **核心：**用 `09_copy_and_receivers` 对比值接收者、指针接收者、快照隔离和 Embedding 的字段提升。
-- **深挖：**强调 Embedding 是组合，不是继承；讲解指针参数和指针接收者都遵守值传递，但复制的值不同。
-- **可裁：**匿名字段的复杂方法集、指针嵌入和反射不进入核心课堂。
+- **核心：**用 `09_copy_and_receivers` 对比 `RenameCopy` 的副本修改、指针接收者、快照隔离和 Embedding 的字段提升。
+- **深挖：**用 `06_pointers` 说明 `counter.Value` 是 `(*counter).Value` 的自动解引用语法糖；强调 Embedding 是组合，不是继承；讲解指针参数和指针接收者都遵守值传递，但复制的值不同。
+- **可裁：**自动解引用语法糖、匿名字段的复杂方法集、指针嵌入和反射不进入核心课堂。
 
 ## Block 4：Functions & Testing（15 分钟）
 
