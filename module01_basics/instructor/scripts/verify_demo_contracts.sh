@@ -14,6 +14,15 @@ assert_contains() {
     fi
 }
 
+assert_not_contains() {
+    local output="$1"
+    local unexpected="$2"
+    if grep -Fq "$unexpected" <<<"$output"; then
+        printf 'unexpected output: %s\n' "$unexpected" >&2
+        exit 1
+    fi
+}
+
 vars_output="$(go run ./module01_basics/blocks/01_go_basics/demo/02_vars_types)"
 assert_contains "$vars_output" 'blank identifier: 1 3'
 assert_contains "$vars_output" 'const expression length: 3'
@@ -27,6 +36,8 @@ assert_contains "$control_output" 'outer score: 50'
 assert_contains "$control_output" 'switch init: owner has full access'
 assert_contains "$control_output" 'loop body: 0'
 assert_contains "$control_output" 'loop body: 2'
+assert_not_contains "$control_output" 'loop body: 1'
+assert_not_contains "$control_output" 'loop body: 3'
 assert_contains "$control_output" 'infinite for stopped at: 3'
 assert_contains "$control_output" 'Admin branch reached by fallthrough'
 
