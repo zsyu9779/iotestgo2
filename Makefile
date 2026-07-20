@@ -4,8 +4,13 @@ help:
 	@echo "Targets: fmt-check test-basic test-race module01-verify"
 
 fmt-check:
-	@files="$$(gofmt -l $$(git ls-files '*.go'))"; \
-	if [ -n "$$files" ]; then echo "Go files need formatting:"; echo "$$files"; exit 1; fi
+	@formatted_files="$$(mktemp)"; \
+	trap 'rm -f "$$formatted_files"' EXIT; \
+	if ! git ls-files -z -- '*.go' ':(exclude)module01_basics/teaching_failures/testdata/**' | xargs -0 gofmt -l > "$$formatted_files"; then \
+		echo "gofmt failed while checking tracked Go files" >&2; \
+		exit 1; \
+	fi; \
+	if [ -s "$$formatted_files" ]; then echo "Go files need formatting:"; cat "$$formatted_files"; exit 1; fi
 
 test-basic:
 	go test ./module01_basics/... ./module02_advanced/... ./module03_web_gin/01_net_basics ./module03_web_gin/07_testing_httptest ./module03_web_gin/project_user_center/internal/service ./module03_web_gin/project_user_center/internal/handler ./module04_gorm/project_blog_api/internal/service
