@@ -1,6 +1,6 @@
-# Module 01 Exit Quiz（14 题）
+# Module 01 Exit Quiz（核心 14 题 + 选做 3 题）
 
-用时 5 分钟，不查资料。每题都请根据可观察行为作答，不只选“听起来像 Go”的术语。
+用时 5 分钟，不查资料。课堂先完成核心题 1–14；15–17 为提前完成者或课后 Code Review 使用的选做题，不挤占 Task Manager 启动时间。每题都请根据可观察行为作答，不只选“听起来像 Go”的术语。
 
 ## 1. Array 值语义
 
@@ -200,3 +200,52 @@ words := strings.Fields("  Go\t语言 ")
 - B. 只断言返回 Slice 非 nil
 - C. 同时断言筛选结果和原输入中的相对顺序
 - D. 修改期望值直到测试通过
+
+## 15. ConstSpec 与 iota（选做）
+
+```go
+const (
+	a = iota
+	b
+	c = 100
+	d
+	e = iota
+)
+```
+
+`a, b, c, d, e` 分别是什么？
+
+- A. `0, 1, 100, 100, 4`
+- B. `0, 1, 100, 3, 4`
+- C. `0, 1, 100, 100, 0`
+- D. `1, 2, 100, 100, 5`
+
+## 16. Slice copy（选做）
+
+```go
+src := []int{1, 2, 3}
+dst := make([]int, 5)
+n := copy(dst, src)
+```
+
+哪个结果正确？
+
+- A. `n=5, dst=[1 2 3 0 0]`
+- B. `n=3, dst=[1 2 3 0 0]`
+- C. `n=3, dst=[0 0 1 2 3]`
+- D. copy 会自动把 dst 长度改成 3
+
+## 17. Map Struct Value（选做）
+
+```go
+type Item struct{ Value int }
+items := map[string]Item{"one": {Value: 1}}
+items["one"].Value = 2
+```
+
+这段代码的结果是什么？
+
+- A. Value 被改为 2
+- B. 运行时 panic
+- C. 编译失败，因为 Map index 得到的 Struct value 不可寻址
+- D. 编译成功但赋值被静默忽略

@@ -128,8 +128,8 @@ make module01-teaching-failures
 ## 15:40–16:00：Task Manager 作业启动、Exit Quiz
 
 - **目标：**让学员知道一周作业的范围、预期 RED、唯一验收入口和分支交付方式，不在现场实现 Task Manager。
-- **讲师动作：**15:40–15:44 演示作业目标行为；15:44–15:49 指导学员跑 `make grade`；15:49–15:54 说明一周里程碑、开发分支和 Gitee 手动验收；15:54–15:59 主持 Exit Quiz；15:59–16:00 收取离场票。
-- **学员动作（10 分钟动手）：**在 `student_pack` 运行 `make grade` 5 分钟并标记预期失败阶段，然后完成 [Exit Quiz](../assessments/exit_quiz.md) 5 分钟。
+- **讲师动作：**15:40–15:44 演示作业目标行为；15:44–15:49 指导学员跑 `make grade`；15:49–15:54 说明一周里程碑、开发分支和 Gitee 手动验收；15:54–15:59 主持 Exit Quiz 核心题 1–14；15:59–16:00 收取离场票。第 15–17 题仅供提前完成者或课后 Code Review 使用，不挤占 Task Manager 启动时间。
+- **学员动作（10 分钟动手）：**在 `student_pack` 运行 `make grade` 5 分钟并标记预期失败阶段，然后完成 [Exit Quiz](../assessments/exit_quiz.md) 核心题 1–14（5 分钟）；15–17 为选做。
 - **可观察检查点：**Starter 在 gofmt 和 Vet 后的测试步骤因 `ErrNotImplemented` 行为性失败，而不是编译、权限或依赖失败；每人交一个最不确定题号。
 - **常见延误：**学员在仓库根目录运行作业 `make grade`，或讲师开始直播编写 `Add`。
 - **可裁内容：**精确删除 CLI 所有命令的逐一现场操作和 Gitee UI 屏幕导览；保留 Starter RED、`make grade`、分支交付规则和 Exit Quiz。

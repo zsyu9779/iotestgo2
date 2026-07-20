@@ -221,3 +221,13 @@ make module01-homework-solution
 ```
 
 不向学员投影 `teacher/solution`。
+
+## Exit Quiz 诊断（5 分钟）
+
+课堂计时内只收核心题 1–14。15–17 是提前完成者或下一次课 Code Review 的选做诊断，不占用 Task Manager 启动、`make grade` 或分支交付说明的时间。
+
+| 题号 | 正确答案 | 回收误解的讲师语言 |
+| --- | --- | --- |
+| 15（选做） | A | 选 B 时追问“省略的 ConstSpec 复用了哪一整行表达式？”；选 C 时重申 iota 在同一个 const 块内不重置。 |
+| 16（选做） | B | 让学员先指出 `copy(dst, src)` 中谁是目标，再计算 `min(len(dst), len(src))`；不要把返回值误当成目标长度。 |
+| 17（选做） | C | 选 A 时让学员区分 Map index 的 value 与可寻址变量；选 B 时先分类这是编译失败还是运行时 panic，再看编译器第一条诊断。 |
