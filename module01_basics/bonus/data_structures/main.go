@@ -2,19 +2,19 @@ package main
 
 import "fmt"
 
-// Node definition for LinkedList
+// 链表节点定义
 type Node struct {
 	Value int
 	Next  *Node
 }
 
-// LinkedList definition
+// 链表定义
 type LinkedList struct {
 	Head *Node
 	Size int
 }
 
-// Add (Append)
+// Add（追加）
 func (list *LinkedList) Add(val int) {
 	newNode := &Node{Value: val}
 	if list.Head == nil {
@@ -29,7 +29,7 @@ func (list *LinkedList) Add(val int) {
 	list.Size++
 }
 
-// Remove
+// Remove（删除）
 func (list *LinkedList) Remove(val int) bool {
 	if list.Head == nil {
 		return false
@@ -51,7 +51,7 @@ func (list *LinkedList) Remove(val int) bool {
 	return false
 }
 
-// Print
+// Print（打印）
 func (list *LinkedList) Print() {
 	current := list.Head
 	for current != nil {
@@ -71,12 +71,12 @@ func main() {
 	ll.Remove(20)
 	ll.Print() // 10 -> 30 -> nil
 
-	// Stack using Slice
+	// 使用 Slice 实现栈
 	stack := []int{}
-	stack = append(stack, 1) // Push
+	stack = append(stack, 1) // 入栈
 	stack = append(stack, 2)
-	top := stack[len(stack)-1] // Peek
+	top := stack[len(stack)-1] // 查看栈顶
 	fmt.Println("Top:", top)
-	stack = stack[:len(stack)-1] // Pop
+	stack = stack[:len(stack)-1] // 出栈
 	fmt.Println("Stack after pop:", stack)
 }

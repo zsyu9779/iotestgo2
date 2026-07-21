@@ -3,14 +3,15 @@ package main
 import "fmt"
 
 func main() {
-	// 1. If with initialization
+	// 1. 带初始化语句的 if
 	outerScore := 50
 	if score := 85; score >= 60 {
 		fmt.Println("Passed with score:", score)
 	}
 	fmt.Println("outer score:", outerScore)
+	//fmt.Println("score:",score)
 
-	// 2. Switch initialization (No break needed; a case may contain multiple values)
+	// 2. 带初始化语句的 switch（不需要 break；一个 case 可以包含多个值）
 	role := "owner"
 	switch currentRole := role; currentRole {
 	case "admin", "owner":
@@ -30,8 +31,8 @@ func main() {
 		fmt.Println("Admin branch reached by fallthrough")
 	}
 
-	// 3. For loop (The only loop in Go)
-	// Java: for (int i = 0; i < 5; i++)
+	// 3. For 循环（Go 只有这一种循环关键字）
+	// Java 中相当于：for (int i = 0; i < 5; i++)
 	for i := 0; i < 5; i++ {
 		if i == 1 {
 			continue
@@ -51,6 +52,8 @@ func main() {
 	}
 	fmt.Println("infinite for stopped at:", attempts)
 
+	// TODO：补充 for range 示例
+
 	count := 2
 	switch {
 	case count == 0:
@@ -61,18 +64,18 @@ func main() {
 		fmt.Println("Expressionless switch: large")
 	}
 
-	// 4. Functions
+	// 4. 函数
 	sum, diff := calculate(10, 5)
 	fmt.Printf("Sum: %d, Diff: %d\n", sum, diff)
 
-	// Anonymous function / Closure
+	// 匿名函数 / 闭包
 	greet := func(n string) {
 		fmt.Println("Hello,", n)
 	}
 	greet("Closure")
 }
 
-// Function with multiple return values
+// 返回多个值的函数
 func calculate(a, b int) (int, int) {
 	return a + b, a - b
 }

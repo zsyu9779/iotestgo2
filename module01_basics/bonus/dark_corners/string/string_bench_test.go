@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-// Benchmark: += vs strings.Builder
+// 基准测试：比较 += 与 strings.Builder
 
 func BenchmarkStringPlusEqual(b *testing.B) {
 	var s string
@@ -36,11 +36,11 @@ func BenchmarkStringsBuilderNoGrow(b *testing.B) {
 // 运行：go test -bench=. -benchmem
 //
 // 预期结果：
-//   BenchmarkStringPlusEqual    极慢（大量分配）
-//   BenchmarkStringsBuilder     最快（预分配内存）
-//   BenchmarkStringsBuilderNoGrow 中间
+//   BenchmarkStringPlusEqual      极慢（大量分配）
+//   BenchmarkStringsBuilder       最快（预分配内存）
+//   BenchmarkStringsBuilderNoGrow 居中
 //
 // 教学要点：
-//   1. 循环中不要用 += 拼接字符串
-//   2. 单 goroutine 拼接可优先用 strings.Builder；strings.Builder 和 bytes.Buffer 都不能在无同步保护下并发使用
-//   3. 能预估大小的用 sb.Grow() 预分配
+//   1. 循环中不要用 += 拼接字符串。
+//   2. 单个 goroutine 拼接可优先用 strings.Builder；strings.Builder 和 bytes.Buffer 都不能在无同步保护下并发使用。
+//   3. 能预估大小时使用 sb.Grow() 预分配。

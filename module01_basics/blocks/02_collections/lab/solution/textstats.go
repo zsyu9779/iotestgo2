@@ -2,7 +2,6 @@ package textstats
 
 import (
 	"strings"
-	"unicode/utf8"
 )
 
 type Stats struct {
@@ -18,9 +17,10 @@ func Analyze(text string) Stats {
 	for _, word := range words {
 		frequencies[strings.ToLower(word)]++
 	}
+	runeArr := []rune(text)
 	return Stats{
 		Bytes:       len(text),
-		Runes:       utf8.RuneCountInString(text),
+		Runes:       len(runeArr),
 		Words:       len(words),
 		Frequencies: frequencies,
 	}

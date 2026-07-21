@@ -2,6 +2,17 @@ package textstats
 
 import "testing"
 
+func TestAnalyzeDemo(t *testing.T) {
+	input := "Go go 你好"
+	got := Analyze(input)
+
+	t.Logf("输入文本: %q", input)
+	t.Logf("字节数 Bytes: %d", got.Bytes)
+	t.Logf("字符数 Runes: %d", got.Runes)
+	t.Logf("单词数 Words: %d", got.Words)
+	t.Logf("词频 Frequencies: %#v", got.Frequencies)
+}
+
 func TestAnalyze(t *testing.T) {
 	got := Analyze("Go go 你好")
 	if got.Bytes != 12 {

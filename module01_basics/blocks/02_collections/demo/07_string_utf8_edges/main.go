@@ -29,5 +29,5 @@ func main() {
 
 	runes := []rune(text)
 	fmt.Printf("rune slice=%v second-rune=%c\n", runes, runes[1])
-	// String slicing uses byte offsets; use []rune when the operation is character-based.
+	// String 切片使用字节偏移；按字符处理时使用 []rune。
 }

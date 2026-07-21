@@ -23,7 +23,7 @@ func main() {
 		fmt.Printf("index=%d rune=%c code=%d\n", index, r, r)
 	}
 
-	// String indexes and slices use bytes; use range or []rune for characters.
+	// String 的下标和切片使用字节偏移；按字符处理时使用 range 或 []rune。
 	runes := []rune(text)
 	fmt.Printf("runes=%v first-rune=%c\n", runes, runes[0])
 

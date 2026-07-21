@@ -113,9 +113,9 @@ make module01-teaching-failures
 
 ## 14:05–14:50：Block 4 — Functions & Testing
 
-- **目标：**把函数作为值传递，用闭包捕获配置，用 `defer` 安排可观察的收尾顺序，并能阅读具名测试失败。
-- **讲师动作：**14:05–14:20 只演示函数值、闭包、`defer` 与 `-run`；14:20–14:45 让学员依次处理两个具名测试；14:45–14:50 对照三个 audit 事件。
-- **内容扩展：**在原有 Demo 后按需运行 `10_function_forms` 和 `11_defer_edges`；变参、函数类型、闭包状态和 defer 求值属于核心，复杂函数式模式继续可裁。
+- **目标：**完整阅读函数声明、可见性、多值/命名返回、裸 `return`、变参、函数类型、闭包和 `defer`，并能阅读具名测试失败。
+- **讲师动作：**14:05–14:20 依次演示函数声明与返回值、函数值/函数类型、闭包和 `defer`；14:20–14:45 让学员依次处理两个具名测试；14:45–14:50 对照三个 audit 事件。
+- **内容扩展：**运行 `10_function_forms` 和 `11_defer_edges`；公有/私有、多值返回、命名返回、`_`、变参、函数类型、闭包状态和 defer 求值都属于函数核心知识点，复杂函数式模式继续可裁。
 - **学员动作（25 分钟动手）：**先使 `TestFilterWithClosure` 通过，再使 `TestWithAuditRecordsEndAfterOperation` 通过，最后运行全包测试。
 - **可观察检查点：**`go test -tags=exercise ./module01_basics/blocks/04_functions_testing/lab/starter` PASS，audit 事件严格为 `start:average`、`operation`、`end:average`。
 - **常见延误：**`Filter` 硬编码阈值，`AtLeast` 使用 `>`，或在 `operation` 之后才注册 `defer`。

@@ -6,7 +6,7 @@ import (
 )
 
 // ---------------------------------------------------------
-// 1. 原始结构 (为了对比，我们重新定义一个类似的结构)
+// 1. 原始结构（为了对比，重新定义一个类似的结构）
 // ---------------------------------------------------------
 type Server struct {
 	Timeout    time.Duration
@@ -15,9 +15,9 @@ type Server struct {
 }
 
 // ---------------------------------------------------------
-// 2. 建造者模式 (Builder Pattern)
-// 优点：可读性高，链式调用，无顺序限制
-// 缺点：需要额外的 Builder 结构体，代码量稍多
+// 2. 建造者模式
+// 优点：可读性高，支持链式调用，不限制调用顺序。
+// 缺点：需要额外的 Builder 结构体，代码量稍多。
 // ---------------------------------------------------------
 
 type ServerBuilder struct {
@@ -55,8 +55,8 @@ func (b *ServerBuilder) Build() Server {
 }
 
 // ---------------------------------------------------------
-// 3. 选项模式 (Functional Options Pattern) - Go 语言中最推荐的写法
-// 优点：扩展性极强，API 干净，支持默认值，无顺序限制
+// 3. 选项模式（Functional Options Pattern）——Go 语言中常用的写法
+// 优点：扩展性强，API 简洁，支持默认值，不限制调用顺序。
 // ---------------------------------------------------------
 
 type Option func(*Server)
@@ -113,11 +113,11 @@ func TestBuilderPattern(t *testing.T) {
 }
 
 func TestFunctionalOptionsPattern(t *testing.T) {
-	// 选项模式：Go 社区标准写法
-	// 看起来非常像构造函数，但参数是可选的
+	// 选项模式：Go 社区常见写法。
+	// 看起来像构造函数，但参数是可选的。
 	server := NewServer(
 		WithLogLevel("ERROR"),
-		WithRetries(5), // 也可以随意顺序
+		WithRetries(5), // 顺序也可以调整
 		// WithTimeout 没传，就用默认值
 	)
 

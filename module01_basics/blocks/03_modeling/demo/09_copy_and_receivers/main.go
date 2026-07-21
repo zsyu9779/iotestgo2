@@ -45,5 +45,5 @@ func main() {
 
 	account := Account{Audit: Audit{CreatedBy: "teacher"}, ID: 7}
 	fmt.Printf("embedding promotes field access: id=%d created-by=%s\n", account.ID, account.CreatedBy)
-	// Embedding is composition and promotion, not Java-style inheritance.
+	// Embedding 是组合和提升，不是 Java 风格的继承。
 }

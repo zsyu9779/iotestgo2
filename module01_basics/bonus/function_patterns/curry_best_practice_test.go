@@ -7,9 +7,9 @@ import (
 )
 
 // ---------------------------------------------------------
-// 场景 1: 中间件 (Middleware) / 装饰器模式
+// 场景 1：中间件 / 装饰器模式
 // ---------------------------------------------------------
-// 这是 Go Web 框架（如 Gin, Echo）中最经典的应用。
+// 这是 Go Web 框架（如 Gin、Echo）中最经典的应用。
 // 本质上是：func(NextHandler) -> CurrentHandler
 
 type Handler func(string) string
@@ -19,9 +19,9 @@ func HelloHandler(name string) string {
 	return "Hello, " + name
 }
 
-// 柯里化：日志中间件
-// 它接受一个 logger 前缀，返回一个“装饰器函数”
-// 装饰器函数接受一个 Handler，返回一个新的 Handler
+// 柯里化：日志中间件。
+// 它接受一个日志前缀，返回一个“装饰器函数”。
+// 装饰器函数接受一个 Handler，返回一个新的 Handler。
 func WithLogging(prefix string) func(Handler) Handler {
 	return func(next Handler) Handler {
 		return func(name string) string {
@@ -56,9 +56,9 @@ func TestMiddleware(t *testing.T) {
 }
 
 // ---------------------------------------------------------
-// 场景 2: 延迟计算 / 模板生成
+// 场景 2：延迟计算 / 模板生成
 // ---------------------------------------------------------
-// 固定一部分公共参数，生成专门的工具函数
+// 固定一部分公共参数，生成专门的工具函数。
 
 func URLBuilder(baseURL string) func(path string) string {
 	return func(path string) string {

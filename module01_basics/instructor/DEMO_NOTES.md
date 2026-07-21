@@ -234,7 +234,7 @@ go test -tags=exercise ./module01_basics/blocks/03_modeling/lab/starter -run '^T
 
 ## Block 4：Functions & Testing（15 分钟）
 
-核心 Demo 保留函数值、闭包和 `defer`，并增加变参、命名函数类型、闭包状态和 defer 求值；柯里化、函数组合和并发继续移入可裁 Bonus。
+核心 Demo 保留函数值、闭包和 `defer`，并完整增加函数可见性、函数签名、多值/命名返回、裸返回、`_`、变参、命名函数类型、函数值指针、闭包状态和 defer 求值；柯里化、函数组合和并发继续移入可裁 Bonus。
 
 ```bash
 go run ./module01_basics/blocks/04_functions_testing/demo/09_advanced_functions
@@ -246,19 +246,25 @@ go test ./module01_basics/blocks/04_functions_testing/lab/solution -run '^TestFi
 ### 必须看到
 
 - `10_function_forms`：`closure state: 11 12` 与 `independent closure state: 11`，证明两个 counter 状态独立。
-- `11_defer_edges`：LIFO 段先输出 `defer second registered` 再输出 `defer first registered`，普通参数读取 `1`，闭包读取 `2`。
+- `10_function_forms`：还应看到 private/public、多值返回、命名返回、`_`、Slice 展开、函数值指针和 `new(Combiner)` 的输出。
+- `11_defer_edges`：LIFO 段先输出 `defer second registered` 再输出 `defer first registered`，普通参数读取 `1`，闭包读取 `2`；循环 Case 输出普通参数 `[1 0]`、闭包 `[1 1]`，说明 defer 注册顺序与读取时机是两件事。
 - `09_advanced_functions`：`75 passed: true`、`filtered: [60 75]`，以及 `start` 后才出现 `end`；**救援：**先让学员只预测谓词对 75 的结果和过滤后的顺序，再指出函数值是参数、`defer` 的 `end` 在当前函数返回时执行。
 
 ### 投影提示
 
 1. 将 `func(int) bool` 直接与 Java `Predicate<Integer>` 对比：Go 的函数值不需要额外函数式接口。
-2. 让学员预测 `atLeast(60)` 返回的闭包为何能继续访问 `min`，再观察 `passed(75)`。
-3. 在 `defer` 注册处指向“现在声明意图，函数返回前执行”，不延伸 panic/recover。
-4. 用 `-run` 说明测试名是反馈接口；失败时先读测试名，再读 actual/want，最后回到最小行为。
+2. 指向 `PublicFunctionDemo` 与小写 helper 的命名差异，说明 Go 的导出规则。
+3. 让学员对照 `addText`、`addTextNamed`、`sum(values...)`，分别说出多值返回、命名返回、裸返回和变参展开。
+4. 让学员预测 `atLeast(60)` 返回的闭包为何能继续访问 `min`，再观察 `passed(75)`。
+5. 在 `defer` 注册处指向“现在声明意图，函数返回前执行”，不延伸 panic/recover。
+6. 用 `-run` 说明测试名是反馈接口；失败时先读测试名，再读 actual/want，最后回到最小行为。
 
 | 暂停点 | 先问 | 预期结果 | 准确解释 | 常见误解 | 级别 |
 | --- | --- | --- | --- | --- | --- |
 | 两个 counter | 第二个 counter 会接着第一个计数吗？ | 不会，独立输出 11 | 每次调用工厂函数各自捕获一份状态 | 所有闭包共享同一个局部变量 | 核心 |
+| 公有/私有函数 | `PublicFunctionDemo` 和 `addText` 是否都能被其他包直接调用？ | 只有前者 | 首字母决定导出 | Go 使用 `public`/`private` 关键字 | 核心 |
+| 命名返回 | `addTextNamed` 的裸 `return` 返回什么？ | 当前 `result` 和 `err` | 命名返回值是函数内变量 | 裸 return 会重新计算表达式 | 核心 |
+| 变参展开 | `sum(values...)` 传入的是什么？ | Slice 元素展开为多个参数 | 变参函数体收到 Slice | `...` 是复制成数组 | 核心 |
 | defer LIFO | 哪个 defer 先执行？ | 后注册的先执行 | defer 栈按 LIFO 执行 | defer 按书写顺序执行 | 核心 |
 | 参数与闭包 | 为什么一个读 1、一个读 2？ | 普通参数 1，闭包 2 | 普通参数在注册时求值；闭包体在执行时读取 | 两者都在 defer 执行时才取值 | 核心 |
 
@@ -283,8 +289,10 @@ go test -tags=exercise ./module01_basics/blocks/04_functions_testing/lab/starter
 
 ### Block 4 内容扩展
 
-- **核心：**用 `10_function_forms` 展示命名函数类型、变参、Slice 展开、高阶函数和闭包状态隔离。
+- **核心：**用 `10_function_forms` 按顺序展示公有/私有函数、多值返回、命名返回、裸 `return`、`_`、变参、Slice 展开、函数参数、返回函数和命名函数类型。
+- **深挖：**展示函数值取地址、`new(Combiner)` 与 `*functionValue` 调用；强调这是函数值的指针，不是另一种“函数指针”类型。
 - **核心：**用 `11_defer_edges` 展示 LIFO、普通参数立即求值和闭包延迟读取。
+- **深挖：**用循环 Case 对照 defer 参数 `[1 0]` 与闭包 `[1 1]`，并根据 Go 版本说明循环变量语义，不把旧版本输出结论泛化。
 - **核心：**让学员运行并解释 `scores_additional_exercise_test.go`，把“补一个测试”纳入测试反馈循环。
 - **可裁：**柯里化、函数组合、Functional Options 和并发继续留在 Bonus；`panic/recover` 放到 Module 02。
 

@@ -31,8 +31,8 @@ func showMapIterationOrder() {
 func showNilMap() {
 	var m map[int]int
 	fmt.Println("nil map 长度:", len(m)) // OK: 0
-	fmt.Println("nil map 读取:", m[10])  // OK: 0（不 panic）
-	// m[10] = 1 // PANIC: assignment to entry in nil map
+	fmt.Println("nil map 读取:", m[10])  // 正常：0（不会 panic）
+	// m[10] = 1 // panic：不能向 nil map 写入元素
 
 	// 正确初始化
 	m = make(map[int]int)
@@ -55,7 +55,7 @@ func showMapValueNotAddressable() {
 	}
 	m := map[int]Item{1: {Value: "one"}}
 
-	// 编译错误：cannot assign to struct field m[1].Value in map
+	// 编译错误：不能直接给 map 中的结构体字段赋值
 	// m[1].Value = "two"
 
 	// 正确方式：取出 → 修改 → 写回

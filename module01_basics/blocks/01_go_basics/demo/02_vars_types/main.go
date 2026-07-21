@@ -15,20 +15,20 @@ type UserID int
 type UserIDAlias = int
 
 func main() {
-	// 1. Variable Declaration
+	// 1. 变量声明
 	var age int = 30
 	fmt.Println("Age:", age)
 
-	// Type Inference
-	name := "Gopher" // Short declaration (only inside functions)
+	// 类型推断
+	name := "Gopher" // 短变量声明只能出现在函数体内
 	fmt.Printf("Name: %s, Type: %T\n", name, name)
 
 	left, _, right := 1, 2, 3
 	fmt.Println("blank identifier:", left, right)
 
-	// 2. Constants & Iota
+	// 2. 常量与 iota
 	const pi = 3.14159
-	// pi = 3.14 // Error: cannot assign to pi
+	// pi = 3.14 // 编译错误：不能给常量 pi 重新赋值
 	const message = "abc"
 	const messageLength = len(message)
 	fmt.Println("const expression length:", messageLength)
@@ -58,14 +58,14 @@ func main() {
 	)
 	fmt.Println("iota reset:", resetA, resetB)
 
-	// 3. Basic Types
-	// Go has specific sized integers: int8, int16, int32, int64, uint...
+	// 3. 基本类型
+	// Go 提供明确位数的整数类型：int8、int16、int32、int64、uint 等。
 	var maxInt32 int32 = math.MaxInt32
-	var overflow int32 = maxInt32 + 1 // This wraps around in runtime if not constant, but let's just show types
+	var overflow int32 = maxInt32 + 1 // 非常量运行时计算会发生环绕，这里只观察类型
 	fmt.Println("Max Int32:", maxInt32)
 	fmt.Println("Overflow example (be careful):", overflow)
 
-	// 4. Type Conversion (Explicit only!)
+	// 4. 类型转换（必须显式转换）
 	var i int = 42
 	var f float64 = float64(i)
 	fmt.Println("Float:", f)
@@ -79,7 +79,7 @@ func main() {
 	truncated := int(floatValue)
 	fmt.Println("truncated float:", truncated)
 
-	// 5. Zero values: every declared variable starts with a useful default.
+	// 5. 零值：每个声明的变量都会从一个有意义的默认值开始。
 	var count int
 	var ratio float64
 	var enabled bool
