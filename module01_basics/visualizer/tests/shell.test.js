@@ -96,6 +96,20 @@ test("prediction markup separates choice, reveal, and next actions", () => {
 	assert.doesNotMatch(markup, /id="next-button"[^>]*disabled/);
 });
 
+test("animation lock is controller-owned so unlocking does not rerender the stage", () => {
+	let state = reduceState(createInitialState(), {
+		type: "SELECT_SCENE",
+		sceneId: "slice-shared",
+	});
+	state = { ...state, stepIndex: 1 };
+	state = reduceState(state, { type: "ANIMATION_START" });
+	const markup = renderAppMarkup(state);
+
+	assert.doesNotMatch(markup, /id="previous-button"[^>]*disabled/);
+	assert.doesNotMatch(markup, /id="replay-button"[^>]*disabled/);
+	assert.doesNotMatch(markup, /id="next-button"[^>]*disabled/);
+});
+
 test("stylesheet defines projection and narrow-screen layouts", () => {
 	const css = fs.readFileSync(path.join(visualizerRoot, "styles.css"), "utf8");
 	assert.match(css, /\.lesson-grid/);

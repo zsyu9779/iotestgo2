@@ -82,3 +82,64 @@ test("every Slice step renders a bounded accessible stage", () => {
 		}
 	}
 });
+
+test("LIFO execution marks B before A", () => {
+	const target = scene("defer-lifo");
+	const markup = renderStageMarkup(target, stepAtPhase(target, "execute-b"));
+
+	assert.match(
+		markup,
+		/data-defer-id="B"\s+data-status="executing"/,
+	);
+	assert.match(
+		markup,
+		/data-defer-id="A"\s+data-status="pending"/,
+	);
+	assert.match(markup, /data-output="work,B"/);
+	assert.match(markup, /后注册/);
+});
+
+test("LIFO completion exposes the full work B A timeline", () => {
+	const target = scene("defer-lifo");
+	const markup = renderStageMarkup(target, stepAtPhase(target, "complete"));
+
+	assert.match(markup, /data-output="work,B,A"/);
+	assert.match(markup, /work\s*→\s*B\s*→\s*A/);
+	assert.match(markup, /待执行调用（语义模型）/);
+});
+
+test("normal deferred call saves its argument at registration", () => {
+	const target = scene("defer-evaluation");
+	const markup = renderStageMarkup(
+		target,
+		stepAtPhase(target, "save-argument"),
+	);
+
+	assert.match(markup, /data-defer-id="normal"/);
+	assert.match(markup, /已保存参数：1/);
+	assert.match(markup, /data-value-cell="1"/);
+});
+
+test("evaluation result distinguishes closure read from saved argument", () => {
+	const target = scene("defer-evaluation");
+	const markup = renderStageMarkup(target, stepAtPhase(target, "complete"));
+
+	assert.match(markup, /闭包[^<]*2/);
+	assert.match(markup, /普通参数[^<]*1/);
+	assert.match(markup, /data-output="closure:2,argument:1"/);
+	assert.match(markup, /语义模型/);
+	assert.match(markup, /编译器优化不能改变结果/);
+});
+
+test("every Defer step renders a bounded accessible stage", () => {
+	for (const id of ["defer-lifo", "defer-evaluation"]) {
+		const target = scene(id);
+		for (const step of target.steps) {
+			const markup = renderStageMarkup(target, step);
+			assert.match(markup, /class="stage-visual/);
+			assert.match(markup, /role="img"/);
+			assert.match(markup, /aria-label="/);
+			assert.doesNotMatch(markup, /undefined|null/);
+		}
+	}
+});

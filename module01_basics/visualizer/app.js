@@ -53,6 +53,15 @@
 		}
 	}
 
+	function shouldAnimateTransition(previousState, nextState, action) {
+		if (!previousState || !nextState || previousState === nextState || !action) {
+			return false;
+		}
+		return ["NEXT", "PREVIOUS", "REPLAY", "SELECT_SCENE"].includes(
+			action.type,
+		);
+	}
+
 	function escapeHTML(value) {
 		return String(value)
 			.replaceAll("&", "&amp;")
@@ -403,6 +412,251 @@
 		`;
 	}
 
+	function renderDeferCard({ id, label, detail, status }) {
+		const statusLabels = {
+			pending: "等待执行",
+			executing: "正在执行",
+			done: "已执行",
+		};
+		return `
+			<div
+				class="defer-card is-${escapeHTML(status)}"
+				data-defer-id="${escapeHTML(id)}"
+				data-status="${escapeHTML(status)}"
+			>
+				<span class="defer-order">${escapeHTML(id)}</span>
+				<span class="defer-copy">
+					<strong>${escapeHTML(label)}</strong>
+					<small>${escapeHTML(detail)}</small>
+				</span>
+				<span class="defer-status">${escapeHTML(statusLabels[status])}</span>
+			</div>
+		`;
+	}
+
+	function renderOutputTimeline(items, emptyText) {
+		const output = items.join(",");
+		const visible = items.length
+			? items
+					.map(
+						(item) =>
+							`<span class="output-event">${escapeHTML(item)}</span>`,
+					)
+					.join('<span class="timeline-arrow">→</span>')
+			: `<span class="output-empty">${escapeHTML(emptyText)}</span>`;
+		return `
+			<div
+				class="output-timeline"
+				data-output="${escapeHTML(output)}"
+				aria-label="${escapeHTML(items.length ? items.join(" → ") : emptyText)}"
+			>
+				<span class="output-label">可观察输出</span>
+				<div class="output-events">${visible}</div>
+			</div>
+		`;
+	}
+
+	function renderDeferLIFO(stage) {
+		const phase = stage.phase;
+		const hasA = phase !== "empty";
+		const hasB = !["empty", "register-a"].includes(phase);
+		const outputsByPhase = {
+			empty: [],
+			"register-a": [],
+			"register-b": [],
+			work: ["work"],
+			"execute-b": ["work", "B"],
+			"execute-a": ["work", "B", "A"],
+			complete: ["work", "B", "A"],
+		};
+		const outputs = outputsByPhase[phase] || [];
+
+		let statusA = "pending";
+		let statusB = "pending";
+		if (phase === "execute-b") statusB = "executing";
+		if (phase === "execute-a") {
+			statusB = "done";
+			statusA = "executing";
+		}
+		if (phase === "complete") {
+			statusB = "done";
+			statusA = "done";
+		}
+
+		const summary =
+			phase === "complete"
+				? "函数体先输出 work，后注册的 B 先执行，A 最后执行。"
+				: hasB
+					? "A 与 B 已注册，B 位于待执行区顶部，因此会先执行。"
+					: hasA
+						? "A 已注册但尚未执行。"
+						: "进入函数，待执行调用区为空。";
+
+		return `
+			<div class="stage-visual defer-stage" role="img" aria-label="${escapeHTML(summary)}">
+				<div class="stage-caption">
+					<span class="stage-kicker">函数返回路径</span>
+					<span class="stage-status">后注册 · 先执行</span>
+				</div>
+				<div class="defer-layout">
+					<section class="function-frame">
+						<header>
+							<span>当前函数帧</span>
+							<strong>work()</strong>
+						</header>
+						<div class="execution-gate${outputs.length ? " is-returning" : ""}">
+							<span class="gate-dot"></span>
+							<strong>${outputs.length ? "准备返回" : "执行函数体"}</strong>
+							<small>${outputs.length ? "先清空待执行调用" : "defer 只注册，不立即调用"}</small>
+						</div>
+						${renderOutputTimeline(outputs, "还没有输出")}
+					</section>
+					<section class="defer-zone" aria-label="待执行调用">
+						<header class="defer-zone-title">
+							<span>待执行调用（语义模型）</span>
+							<strong>${Number(hasA) + Number(hasB)} 项</strong>
+						</header>
+						<div class="defer-cards">
+							${
+								hasB
+									? renderDeferCard({
+											id: "B",
+											label: 'print("B")',
+											detail: "第 2 个注册 · 位于顶部",
+											status: statusB,
+										})
+									: ""
+							}
+							${
+								hasA
+									? renderDeferCard({
+											id: "A",
+											label: 'print("A")',
+											detail: "第 1 个注册 · 位于底部",
+											status: statusA,
+										})
+									: '<p class="empty-zone">执行到 defer 时，调用卡片会在这里出现。</p>'
+							}
+						</div>
+						<p class="lifo-note">取出方向 ↑ 后注册的调用先被取出</p>
+					</section>
+				</div>
+			</div>
+		`;
+	}
+
+	function renderEvaluationCard({
+		id,
+		title,
+		detail,
+		status,
+		badge,
+	}) {
+		return `
+			<div
+				class="evaluation-card is-${escapeHTML(status)}"
+				data-defer-id="${escapeHTML(id)}"
+				data-status="${escapeHTML(status)}"
+			>
+				<span class="evaluation-badge">${escapeHTML(badge)}</span>
+				<span>
+					<strong>${escapeHTML(title)}</strong>
+					<small>${escapeHTML(detail)}</small>
+				</span>
+			</div>
+		`;
+	}
+
+	function renderDeferEvaluation(stage) {
+		const phase = stage.phase;
+		const value = [
+			"value-two",
+			"execute-closure",
+			"complete",
+		].includes(phase)
+			? 2
+			: 1;
+		const hasNormal = phase !== "value-one";
+		const hasClosure = !["value-one", "save-argument"].includes(phase);
+		const closureExecuting = phase === "execute-closure";
+		const isComplete = phase === "complete";
+		const outputs = closureExecuting
+			? ["closure:2"]
+			: isComplete
+				? ["closure:2", "argument:1"]
+				: [];
+
+		const summary = isComplete
+			? "闭包执行时读取 value 得到 2；普通调用使用注册时保存的参数 1。"
+			: value === 2
+				? "value 已变为 2，普通参数卡片仍保存 1，闭包将在执行时读取变量。"
+				: "value 当前是 1，注册普通调用时参数会立即求值。";
+
+		return `
+			<div class="stage-visual defer-stage evaluation-stage" role="img" aria-label="${escapeHTML(summary)}">
+				<div class="stage-caption">
+					<span class="stage-kicker">两个不同的读取时机</span>
+					<span class="stage-status">注册时 vs. 执行时</span>
+				</div>
+				<div class="evaluation-layout">
+					<section class="variable-frame">
+						<p class="variable-label">函数帧中的变量格</p>
+						<div class="value-cell${value === 2 ? " is-updated" : ""}" data-value-cell="${value}">
+							<span>value</span>
+							<strong>${value}</strong>
+						</div>
+						<p class="variable-note">${value === 2 ? "赋值已经发生" : "初始值"}</p>
+					</section>
+					<section class="evaluation-calls">
+						<p class="variable-label">待执行调用（语义模型）</p>
+						<div class="evaluation-cards">
+							${
+								hasClosure
+									? renderEvaluationCard({
+											id: "closure",
+											title: "闭包调用",
+											detail: "执行时读取 value",
+											status: closureExecuting
+												? "executing"
+												: isComplete
+													? "done"
+													: "pending",
+											badge: "读取变量",
+										})
+									: '<div class="evaluation-ghost">闭包尚未注册</div>'
+							}
+							${
+								hasNormal
+									? renderEvaluationCard({
+											id: "normal",
+											title: "普通调用",
+											detail: "已保存参数：1",
+											status: isComplete ? "done" : "pending",
+											badge: "参数快照",
+										})
+									: '<div class="evaluation-ghost">普通调用尚未注册</div>'
+							}
+						</div>
+					</section>
+				</div>
+				${renderOutputTimeline(outputs, "返回前才会产生输出")}
+				${
+					outputs.length
+						? `
+							<div class="evaluation-result">
+								${closureExecuting || isComplete ? '<span class="result-chip">闭包：2</span>' : ""}
+								${isComplete ? '<span class="result-chip">普通参数：1</span>' : ""}
+							</div>
+						`
+						: ""
+				}
+				<p class="implementation-note">
+					<strong>实现边界：</strong>卡片栈是语义模型；编译器可能开放编码或采用其他优化，但编译器优化不能改变结果。
+				</p>
+			</div>
+		`;
+	}
+
 	function renderStageMarkup(scene, step) {
 		if (!scene || !step || !step.stage) {
 			throw new Error("缺少舞台步骤数据");
@@ -412,6 +666,10 @@
 				return renderSliceShared(step.stage);
 			case "slice-append":
 				return renderSliceAppend(step.stage);
+			case "defer-lifo":
+				return renderDeferLIFO(step.stage);
+			case "defer-evaluation":
+				return renderDeferEvaluation(step.stage);
 			default:
 				return `
 					<div class="stage-visual stage-placeholder" role="img" aria-label="${escapeHTML(step.title)}">
@@ -521,21 +779,20 @@
 							id="previous-button"
 							type="button"
 							data-action="previous"
-							${state.stepIndex === 0 || state.isAnimating ? "disabled" : ""}
+							${state.stepIndex === 0 ? "disabled" : ""}
 						>← 上一步</button>
 						<button
 							class="control-button"
 							id="replay-button"
 							type="button"
 							data-action="replay"
-							${state.isAnimating ? "disabled" : ""}
 						>重播本步</button>
 						<button
 							class="control-button is-primary"
 							id="next-button"
 							type="button"
 							data-action="next"
-							${isPredictionBlocked || state.isAnimating ? "disabled" : ""}
+							${isPredictionBlocked ? "disabled" : ""}
 						>${isConclusion ? "返回场景目录" : "下一步 →"}</button>
 					</div>
 				</footer>
@@ -643,6 +900,7 @@
 		getCurrentStep,
 		isPredictionReady,
 		actionFromKey,
+		shouldAnimateTransition,
 		escapeHTML,
 		renderAppMarkup,
 		renderStageMarkup,
@@ -659,6 +917,7 @@
 		if (!appRoot) return;
 
 		let state = createInitialState();
+		let animationTimer = null;
 
 		function render() {
 			try {
@@ -671,7 +930,36 @@
 
 		function dispatch(action) {
 			if (!action) return;
-			state = reduceState(state, action);
+			const previousState = state;
+			const nextState = reduceState(previousState, action);
+			if (nextState === previousState) return;
+
+			if (animationTimer !== null) {
+				window.clearTimeout(animationTimer);
+				animationTimer = null;
+			}
+
+			if (shouldAnimateTransition(previousState, nextState, action)) {
+				state = reduceState(nextState, { type: "ANIMATION_START" });
+				appRoot.dataset.animating = "true";
+				appRoot.setAttribute("aria-busy", "true");
+				render();
+				const reducedMotion = window.matchMedia(
+					"(prefers-reduced-motion: reduce)",
+				).matches;
+				animationTimer = window.setTimeout(
+					() => {
+						state = reduceState(state, { type: "ANIMATION_END" });
+						animationTimer = null;
+						delete appRoot.dataset.animating;
+						appRoot.removeAttribute("aria-busy");
+					},
+					reducedMotion ? 0 : 620,
+				);
+				return;
+			}
+
+			state = nextState;
 			render();
 		}
 

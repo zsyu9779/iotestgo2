@@ -11,6 +11,7 @@ const {
 	getCurrentStep,
 	isPredictionReady,
 	actionFromKey,
+	shouldAnimateTransition,
 } = require("../app.js");
 
 test("defines the four approved classroom scenes", () => {
@@ -136,4 +137,41 @@ test("animation lock ignores navigation but still permits scene switching", () =
 	});
 	assert.equal(state.sceneId, "defer-lifo");
 	assert.equal(state.isAnimating, false);
+});
+
+test("locks only transitions that visibly replace or replay a step", () => {
+	let state = reduceState(createInitialState(), {
+		type: "SELECT_SCENE",
+		sceneId: "slice-shared",
+	});
+	let nextState = reduceState(state, { type: "NEXT" });
+	assert.equal(
+		shouldAnimateTransition(state, nextState, { type: "NEXT" }),
+		true,
+	);
+
+	state = { ...nextState, stepIndex: 2 };
+	nextState = reduceState(state, { type: "NEXT" });
+	assert.equal(nextState, state);
+	assert.equal(
+		shouldAnimateTransition(state, nextState, { type: "NEXT" }),
+		false,
+	);
+
+	nextState = reduceState(state, {
+		type: "SELECT_PREDICTION",
+		choiceId: "changes",
+	});
+	assert.equal(
+		shouldAnimateTransition(state, nextState, {
+			type: "SELECT_PREDICTION",
+		}),
+		false,
+	);
+
+	const replayed = reduceState(state, { type: "REPLAY" });
+	assert.equal(
+		shouldAnimateTransition(state, replayed, { type: "REPLAY" }),
+		true,
+	);
 });
