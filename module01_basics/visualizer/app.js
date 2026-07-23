@@ -63,7 +63,7 @@
 	}
 
 	function animationDelay(prefersReducedMotion) {
-		return prefersReducedMotion ? 0 : 620;
+		return prefersReducedMotion ? 0 : 720;
 	}
 
 	function escapeHTML(value) {
@@ -164,6 +164,7 @@
 			return `
 				<div class="array-slot">
 					<div
+						id="${escapeHTML(id)}-cell-${index}"
 						class="array-cell${state === "capacity" ? " is-capacity" : ""}${state === "mutated" ? " is-mutated" : ""}"
 						data-index="${index}"
 						data-state="${state}"
@@ -186,22 +187,32 @@
 		`;
 	}
 
-	function renderSliceHeader({ id, label, pointer, length, capacity, tone }) {
+	function renderSliceHeader({
+		id,
+		label,
+		pointer,
+		length,
+		capacity,
+		tone,
+		targetArrayId,
+	}) {
+		const pointerTarget = `${targetArrayId}-cell-${pointer}`;
+		const capacityText =
+			typeof capacity === "string" ? capacity : `= ${capacity}`;
 		return `
 			<div class="slice-header tone-${escapeHTML(tone)}" data-slice-id="${escapeHTML(id)}">
 				<div class="header-name">${escapeHTML(label)}</div>
 				<div class="header-field" aria-label="ptr → index ${pointer}"><span>ptr</span><strong>→ index ${pointer}</strong></div>
 				<div class="header-field" aria-label="len = ${length}"><span>len</span><strong>= ${length}</strong></div>
-				<div class="header-field" aria-label="cap = ${capacity}"><span>cap</span><strong>= ${capacity}</strong></div>
-				<svg
-					class="pointer-arrow"
-					data-pointer-target="${pointer}"
-					viewBox="0 0 120 18"
-					aria-hidden="true"
+				<div class="header-field" aria-label="cap ${capacityText}"><span>cap</span><strong>${escapeHTML(capacityText)}</strong></div>
+				<div
+					class="pointer-connector"
+					data-pointer-target="${escapeHTML(pointerTarget)}"
+					aria-label="${escapeHTML(label)} 的 ptr 指向 ${targetArrayId} 的 index ${pointer}"
 				>
-					<path d="M2 9 H106"></path>
-					<path d="M106 3 L118 9 L106 15 Z"></path>
-				</svg>
+					<span class="connector-line" aria-hidden="true">────────→</span>
+					<strong>${escapeHTML(targetArrayId)}[index ${pointer}]</strong>
+				</div>
 			</div>
 		`;
 	}
@@ -236,6 +247,7 @@
 							length: 4,
 							capacity: 4,
 							tone: "shared",
+							targetArrayId: "shared-array",
 						})}
 						${
 							hasView
@@ -246,6 +258,7 @@
 										length: 2,
 										capacity: 3,
 										tone: "active",
+										targetArrayId: "shared-array",
 									})
 								: '<div class="header-ghost">下一步将创建 view</div>'
 						}
@@ -313,6 +326,7 @@
 				length: 2,
 				capacity: 4,
 				tone: "shared",
+				targetArrayId: "spare-array",
 			},
 		];
 		if (hasReused) {
@@ -323,6 +337,7 @@
 				length: 3,
 				capacity: 4,
 				tone: "active",
+				targetArrayId: "spare-array",
 			});
 		}
 
@@ -334,6 +349,7 @@
 				length: 2,
 				capacity: 2,
 				tone: "shared",
+				targetArrayId: "full-array",
 			},
 		];
 		if (hasGrown) {
@@ -344,6 +360,7 @@
 				length: 3,
 				capacity: "≥ 3",
 				tone: "allocated",
+				targetArrayId: "grown-array",
 			});
 		}
 

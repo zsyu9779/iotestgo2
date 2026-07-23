@@ -121,6 +121,10 @@ test("stylesheet defines projection and narrow-screen layouts", () => {
 	assert.match(css, /@media\s*\(max-width:\s*880px\)/);
 	assert.match(css, /prefers-reduced-motion:\s*reduce/);
 	assert.match(css, /:focus-visible/);
+	assert.match(
+		css,
+		/#app\[data-animating="true"\]\s+\.slice-header/,
+	);
 });
 
 test("module README documents the offline classroom entry point", () => {

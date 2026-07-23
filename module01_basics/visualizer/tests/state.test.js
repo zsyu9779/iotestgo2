@@ -179,5 +179,5 @@ test("locks only transitions that visibly replace or replay a step", () => {
 
 test("reduced-motion mode removes the controller animation lock delay", () => {
 	assert.equal(animationDelay(true), 0);
-	assert.equal(animationDelay(false), 620);
+	assert.equal(animationDelay(false), 720);
 });

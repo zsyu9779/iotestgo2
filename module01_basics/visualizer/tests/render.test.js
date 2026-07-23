@@ -44,6 +44,16 @@ test("shared Slice view exposes independent len and cap values", () => {
 	assert.match(markup, /view/);
 	assert.match(markup, /len\s*=\s*2/);
 	assert.match(markup, /cap\s*=\s*3/);
+	assert.match(
+		markup,
+		/data-slice-id="base"[\s\S]*data-pointer-target="shared-array-cell-0"/,
+	);
+	assert.match(
+		markup,
+		/data-slice-id="view"[\s\S]*data-pointer-target="shared-array-cell-1"/,
+	);
+	assert.match(markup, /id="shared-array-cell-0"/);
+	assert.match(markup, /id="shared-array-cell-1"/);
 });
 
 test("append reallocation keeps old and new arrays distinct", () => {
@@ -57,7 +67,16 @@ test("append reallocation keeps old and new arrays distinct", () => {
 	assert.match(markup, /data-array-id="grown-array"/);
 	assert.match(markup, /容量 ≥ 3/);
 	assert.doesNotMatch(markup, /容量 = 4/);
+	assert.doesNotMatch(markup, />=\s*≥ 3</);
 	assert.match(markup, /复制到新存储/);
+	assert.match(
+		markup,
+		/data-slice-id="full"[\s\S]*data-pointer-target="full-array-cell-0"/,
+	);
+	assert.match(
+		markup,
+		/data-slice-id="grown"[\s\S]*data-pointer-target="grown-array-cell-0"/,
+	);
 });
 
 test("append verification shows independent old and new values", () => {

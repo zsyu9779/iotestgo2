@@ -385,7 +385,6 @@ button:focus-visible {
 	border: 1px solid var(--border);
 	border-radius: 0.9rem;
 	background: var(--surface-raised);
-	animation: header-arrive 520ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .slice-header.tone-shared {
@@ -429,23 +428,27 @@ button:focus-visible {
 	font-size: 0.82rem;
 }
 
-.pointer-arrow {
-	position: absolute;
-	top: 100%;
-	left: 1rem;
-	width: min(8rem, 40%);
-	height: 1.1rem;
-	overflow: visible;
+.pointer-connector {
+	display: flex;
+	grid-column: 1 / -1;
+	align-items: center;
+	gap: 0.5rem;
+	min-width: 0;
+	padding: 0.45rem 0.55rem 0;
+	border-top: 1px dashed currentColor;
 	color: var(--shared);
-	transform: rotate(90deg);
-	transform-origin: left center;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-size: 0.72rem;
 }
 
-.pointer-arrow path {
-	fill: currentColor;
-	stroke: currentColor;
-	stroke-width: 2;
-	vector-effect: non-scaling-stroke;
+.pointer-connector strong {
+	overflow-wrap: anywhere;
+}
+
+.connector-line {
+	flex: 1 1 3rem;
+	overflow: hidden;
+	white-space: nowrap;
 }
 
 .header-ghost {
@@ -517,7 +520,6 @@ button:focus-visible {
 	border-color: var(--active);
 	background: rgb(255 209 102 / 18%);
 	transform: translateY(-0.35rem);
-	animation: value-flip 620ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .array-index {
@@ -598,7 +600,6 @@ button:focus-visible {
 .array-block.is-new-allocation .array-cell {
 	border-color: var(--allocated);
 	background: rgb(106 169 255 / 11%);
-	animation: allocation-arrive 620ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .copy-bridge {
@@ -617,7 +618,6 @@ button:focus-visible {
 	place-items: center;
 	border: 1px solid var(--allocated);
 	border-radius: 50%;
-	animation: copy-travel 620ms ease both;
 }
 
 .copy-token:nth-child(2) {
@@ -736,7 +736,6 @@ button:focus-visible {
 	border-radius: 0.65rem;
 	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 	background: rgb(213 155 246 / 10%);
-	animation: output-arrive 480ms ease both;
 }
 
 .timeline-arrow,
@@ -762,7 +761,6 @@ button:focus-visible {
 	transition:
 		transform 480ms ease,
 		opacity 480ms ease;
-	animation: card-stack 480ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .defer-card.is-executing,
@@ -853,7 +851,6 @@ button:focus-visible {
 .value-cell.is-updated {
 	border-color: var(--active);
 	background: rgb(255 209 102 / 12%);
-	animation: value-update 620ms ease;
 }
 
 .value-cell span {
@@ -883,7 +880,6 @@ button:focus-visible {
 	border: 1px solid var(--deferred);
 	border-radius: 0.8rem;
 	background: rgb(213 155 246 / 8%);
-	animation: card-stack 480ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .evaluation-card > span:last-child {
@@ -929,6 +925,36 @@ button:focus-visible {
 
 .implementation-note strong {
 	color: var(--text);
+}
+
+#app[data-animating="true"] .slice-header {
+	animation: header-arrive 520ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+#app[data-animating="true"] .array-cell.is-mutated {
+	animation: value-flip 620ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+#app[data-animating="true"] .array-block.is-new-allocation .array-cell {
+	animation: allocation-arrive 620ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+#app[data-animating="true"] .copy-token {
+	animation: copy-travel 620ms ease both;
+}
+
+#app[data-animating="true"] .output-event,
+#app[data-animating="true"] .result-chip {
+	animation: output-arrive 480ms ease both;
+}
+
+#app[data-animating="true"] .defer-card,
+#app[data-animating="true"] .evaluation-card {
+	animation: card-stack 480ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+#app[data-animating="true"] .value-cell.is-updated {
+	animation: value-update 620ms ease;
 }
 
 @keyframes card-stack {
