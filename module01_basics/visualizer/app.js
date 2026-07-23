@@ -128,6 +128,299 @@
 			.join("");
 	}
 
+	function renderArrayCells({
+		id,
+		values,
+		capacity,
+		mutatedIndex = -1,
+		aliases = {},
+		newAllocation = false,
+	}) {
+		const cells = Array.from({ length: capacity }, (_, index) => {
+			const hasValue = index < values.length;
+			const value = hasValue ? values[index] : "";
+			const state =
+				index === mutatedIndex
+					? "mutated"
+					: hasValue
+						? "visible"
+						: "capacity";
+			const alias = aliases[index]
+				? `<span class="cell-alias">${escapeHTML(aliases[index])}</span>`
+				: "";
+			return `
+				<div class="array-slot">
+					<div
+						class="array-cell${state === "capacity" ? " is-capacity" : ""}${state === "mutated" ? " is-mutated" : ""}"
+						data-index="${index}"
+						data-state="${state}"
+					>
+						<span class="array-index">${index}</span>
+						<span class="array-value">${escapeHTML(value)}</span>
+					</div>
+					${alias}
+				</div>
+			`;
+		}).join("");
+
+		return `
+			<div
+				class="array-block${newAllocation ? " is-new-allocation" : ""}"
+				data-array-id="${escapeHTML(id)}"
+			>
+				<div class="array-cells">${cells}</div>
+			</div>
+		`;
+	}
+
+	function renderSliceHeader({ id, label, pointer, length, capacity, tone }) {
+		return `
+			<div class="slice-header tone-${escapeHTML(tone)}" data-slice-id="${escapeHTML(id)}">
+				<div class="header-name">${escapeHTML(label)}</div>
+				<div class="header-field" aria-label="ptr → index ${pointer}"><span>ptr</span><strong>→ index ${pointer}</strong></div>
+				<div class="header-field" aria-label="len = ${length}"><span>len</span><strong>= ${length}</strong></div>
+				<div class="header-field" aria-label="cap = ${capacity}"><span>cap</span><strong>= ${capacity}</strong></div>
+				<svg
+					class="pointer-arrow"
+					data-pointer-target="${pointer}"
+					viewBox="0 0 120 18"
+					aria-hidden="true"
+				>
+					<path d="M2 9 H106"></path>
+					<path d="M106 3 L118 9 L106 15 Z"></path>
+				</svg>
+			</div>
+		`;
+	}
+
+	function renderSliceShared(stage) {
+		const hasView = stage.phase !== "base";
+		const isMutated = ["mutated", "aliases"].includes(stage.phase);
+		const values = isMutated ? [1, 9, 3, 4] : [1, 2, 3, 4];
+		const aliases = isMutated
+			? {
+					1: "base[1] = view[0]",
+				}
+			: {};
+		const summary = isMutated
+			? "base 和 view 仍指向同一底层数组；共享单元的值已经从 2 变为 9。"
+			: hasView
+				? "base 与 view 拥有独立的 len 和 cap，但它们指向同一个底层数组。"
+				: "base 的 Slice Header 指向包含四个元素的底层数组。";
+
+		return `
+			<div class="stage-visual slice-shared-stage" role="img" aria-label="${escapeHTML(summary)}">
+				<div class="stage-caption">
+					<span class="stage-kicker">Slice Header</span>
+					<span class="stage-status">${hasView ? "两个 Header · 一个数组" : "一个 Header · 一个数组"}</span>
+				</div>
+				<div class="shared-layout">
+					<div class="header-stack">
+						${renderSliceHeader({
+							id: "base",
+							label: "base",
+							pointer: 0,
+							length: 4,
+							capacity: 4,
+							tone: "shared",
+						})}
+						${
+							hasView
+								? renderSliceHeader({
+										id: "view",
+										label: "view",
+										pointer: 1,
+										length: 2,
+										capacity: 3,
+										tone: "active",
+									})
+								: '<div class="header-ghost">下一步将创建 view</div>'
+						}
+					</div>
+					<div class="memory-zone">
+						<p class="memory-label">底层数组 · 同一存储区域</p>
+						${renderArrayCells({
+							id: "shared-array",
+							values,
+							capacity: 4,
+							mutatedIndex: isMutated ? 1 : -1,
+							aliases,
+						})}
+						<p class="memory-note">${escapeHTML(
+							isMutated
+								? "修改发生在数组元素上；base[1] 与 view[0] 同时观察到 9。"
+								: "Header 的 ptr 决定从数组哪里开始观察。",
+						)}</p>
+					</div>
+				</div>
+			</div>
+		`;
+	}
+
+	function renderAppendLane({
+		title,
+		tag,
+		headers,
+		arrays,
+		note,
+		tone,
+	}) {
+		return `
+			<section class="append-lane tone-${escapeHTML(tone)}">
+				<header class="lane-heading">
+					<span>${escapeHTML(tag)}</span>
+					<h3>${escapeHTML(title)}</h3>
+				</header>
+				<div class="lane-headers">
+					${headers
+						.map((header) => renderSliceHeader(header))
+						.join("")}
+				</div>
+				<div class="lane-arrays">${arrays.join("")}</div>
+				<p class="lane-note">${escapeHTML(note)}</p>
+			</section>
+		`;
+	}
+
+	function renderSliceAppend(stage) {
+		const phase = stage.phase;
+		const hasReused = phase !== "initial";
+		const hasGrown = [
+			"reallocated",
+			"separated",
+			"verified",
+		].includes(phase);
+		const isVerified = phase === "verified";
+
+		const spareHeaders = [
+			{
+				id: "spare",
+				label: "spare",
+				pointer: 0,
+				length: 2,
+				capacity: 4,
+				tone: "shared",
+			},
+		];
+		if (hasReused) {
+			spareHeaders.push({
+				id: "reused",
+				label: "reused",
+				pointer: 0,
+				length: 3,
+				capacity: 4,
+				tone: "active",
+			});
+		}
+
+		const fullHeaders = [
+			{
+				id: "full",
+				label: "full",
+				pointer: 0,
+				length: 2,
+				capacity: 2,
+				tone: "shared",
+			},
+		];
+		if (hasGrown) {
+			fullHeaders.push({
+				id: "grown",
+				label: "grown",
+				pointer: 0,
+				length: 3,
+				capacity: "≥ 3",
+				tone: "allocated",
+			});
+		}
+
+		const spareArray = renderArrayCells({
+			id: "spare-array",
+			values: hasReused ? [0, 0, 3] : [0, 0],
+			capacity: 4,
+			mutatedIndex: hasReused ? 2 : -1,
+		});
+		const fullArray = renderArrayCells({
+			id: "full-array",
+			values: isVerified ? [7, 0] : [0, 0],
+			capacity: 2,
+			mutatedIndex: isVerified ? 0 : -1,
+		});
+		const grownArray = hasGrown
+			? `
+				<div class="copy-bridge" aria-hidden="true">
+					<span class="copy-token">0</span>
+					<span class="copy-token">0</span>
+					<strong>复制到新存储 →</strong>
+				</div>
+				<p class="capacity-contract">新数组：容量 ≥ 3（具体倍率不是语言契约）</p>
+				${renderArrayCells({
+					id: "grown-array",
+					values: isVerified ? [9, 0, 3] : [0, 0, 3],
+					capacity: 3,
+					mutatedIndex: isVerified ? 0 : 2,
+					newAllocation: true,
+				})}
+			`
+			: "";
+
+		const summary = hasGrown
+			? "容量不足时，full 保留旧数组，grown 指向复制元素后的新数组。"
+			: "容量有余时 append 可以复用原数组；容量已满的 full 正在等待预测。";
+
+		return `
+			<div class="stage-visual slice-append-stage" role="img" aria-label="${escapeHTML(summary)}">
+				<div class="stage-caption">
+					<span class="stage-kicker">两条 append 轨道</span>
+					<span class="stage-status">${hasGrown ? "一条复用 · 一条搬家" : "先观察容量"}</span>
+				</div>
+				<div class="append-grid">
+					${renderAppendLane({
+						title: "容量有余",
+						tag: "len 2 · cap 4",
+						headers: spareHeaders,
+						arrays: [spareArray],
+						note: hasReused
+							? "reused 与 spare 指向同一数组；新元素进入空槽。"
+							: "数组中还有两个容量槽位。",
+						tone: "shared",
+					})}
+					${renderAppendLane({
+						title: "容量已满",
+						tag: "len 2 · cap 2",
+						headers: fullHeaders,
+						arrays: [fullArray, grownArray],
+						note: isVerified
+							? "旧数组是 7，新数组是 9：二者不再共享。"
+							: hasGrown
+								? "full 留在旧数组，grown 指向新数组。"
+								: "没有空槽；下一次 append 必须返回新的 Slice。",
+						tone: "allocated",
+					})}
+				</div>
+				${isVerified ? '<p class="separation-banner">验证完成：full 与 grown 不再共享底层数组</p>' : ""}
+			</div>
+		`;
+	}
+
+	function renderStageMarkup(scene, step) {
+		if (!scene || !step || !step.stage) {
+			throw new Error("缺少舞台步骤数据");
+		}
+		switch (step.stage.type) {
+			case "slice-shared":
+				return renderSliceShared(step.stage);
+			case "slice-append":
+				return renderSliceAppend(step.stage);
+			default:
+				return `
+					<div class="stage-visual stage-placeholder" role="img" aria-label="${escapeHTML(step.title)}">
+						舞台状态：${escapeHTML(step.stage.phase)}
+					</div>
+				`;
+		}
+	}
+
 	function renderPrediction(step, state) {
 		if (step.kind !== "prediction" || !step.prediction) return "";
 
@@ -208,7 +501,7 @@
 					</section>
 					<section class="stage" id="stage" aria-label="${escapeHTML(step.title)}">
 						<p class="panel-label">动画舞台</p>
-						<div class="stage-placeholder">舞台状态：${escapeHTML(step.stage.phase)}</div>
+						${renderStageMarkup(scene, step)}
 						${renderPrediction(step, state)}
 					</section>
 				</div>
@@ -352,6 +645,7 @@
 		actionFromKey,
 		escapeHTML,
 		renderAppMarkup,
+		renderStageMarkup,
 	};
 
 	root.VisualizerApp = api;
