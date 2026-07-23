@@ -114,7 +114,25 @@ test("stylesheet defines projection and narrow-screen layouts", () => {
 	const css = fs.readFileSync(path.join(visualizerRoot, "styles.css"), "utf8");
 	assert.match(css, /\.lesson-grid/);
 	assert.match(css, /grid-template-columns:\s*minmax\(18rem,\s*34%\)/);
+	assert.match(
+		css,
+		/\.code-line\s*\{[^}]*column-gap:\s*0\.75rem/s,
+	);
 	assert.match(css, /@media\s*\(max-width:\s*880px\)/);
 	assert.match(css, /prefers-reduced-motion:\s*reduce/);
 	assert.match(css, /:focus-visible/);
+});
+
+test("module README documents the offline classroom entry point", () => {
+	const readme = fs.readFileSync(
+		path.resolve(visualizerRoot, "..", "README.md"),
+		"utf8",
+	);
+	assert.match(readme, /## Slice 与 Defer 原理动画/);
+	assert.match(readme, /visualizer\/index\.html/);
+	assert.match(readme, /无需后端或网络/);
+	assert.match(readme, /→.*下一步/);
+	assert.match(readme, /←.*上一步/);
+	assert.match(readme, /R.*重播/);
+	assert.match(readme, /先预测/);
 });

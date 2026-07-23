@@ -62,6 +62,10 @@
 		);
 	}
 
+	function animationDelay(prefersReducedMotion) {
+		return prefersReducedMotion ? 0 : 620;
+	}
+
 	function escapeHTML(value) {
 		return String(value)
 			.replaceAll("&", "&amp;")
@@ -901,6 +905,7 @@
 		isPredictionReady,
 		actionFromKey,
 		shouldAnimateTransition,
+		animationDelay,
 		escapeHTML,
 		renderAppMarkup,
 		renderStageMarkup,
@@ -954,7 +959,7 @@
 						delete appRoot.dataset.animating;
 						appRoot.removeAttribute("aria-busy");
 					},
-					reducedMotion ? 0 : 620,
+					animationDelay(reducedMotion),
 				);
 				return;
 			}

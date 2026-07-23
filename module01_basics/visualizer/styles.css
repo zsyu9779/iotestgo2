@@ -293,6 +293,7 @@ button:focus-visible {
 .code-line {
 	display: grid;
 	grid-template-columns: 2.4rem minmax(0, 1fr);
+	column-gap: 0.75rem;
 	padding: 0.2rem 1rem;
 	white-space: pre-wrap;
 	overflow-wrap: anywhere;

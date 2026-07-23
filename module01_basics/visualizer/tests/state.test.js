@@ -12,6 +12,7 @@ const {
 	isPredictionReady,
 	actionFromKey,
 	shouldAnimateTransition,
+	animationDelay,
 } = require("../app.js");
 
 test("defines the four approved classroom scenes", () => {
@@ -174,4 +175,9 @@ test("locks only transitions that visibly replace or replay a step", () => {
 		shouldAnimateTransition(state, replayed, { type: "REPLAY" }),
 		true,
 	);
+});
+
+test("reduced-motion mode removes the controller animation lock delay", () => {
+	assert.equal(animationDelay(true), 0);
+	assert.equal(animationDelay(false), 620);
 });

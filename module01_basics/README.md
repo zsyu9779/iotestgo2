@@ -75,6 +75,21 @@ go run ./module01_basics/blocks/04_functions_testing/demo/11_defer_edges
 go test ./module01_basics/bonus/function_patterns
 ```
 
+## Slice 与 Defer 原理动画
+
+直接在浏览器中打开
+[`module01_basics/visualizer/index.html`](visualizer/index.html)。页面无需后端或网络，
+包含 Slice 共享、`append` 扩容、Defer LIFO 和 Defer 求值时机四个逐步场景。
+代码只负责定位，动画舞台负责展示 Slice Header、底层数组、函数帧和待执行调用。
+
+- `→` 或空格：下一步
+- `←`：上一步
+- `R`：重播当前步
+
+课堂建议先停在每个场景的“先预测”步骤，收集学生判断后再点击“揭晓答案”。
+动画中的 Defer 卡片区是解释语言语义的概念模型；编译器可以采用不同优化，
+但不能改变页面展示的可观察结果。
+
 课堂结束前完成 [Exit Quiz](assessments/exit_quiz.md)，把不确定的题号记入课后复习清单。
 
 ## 课后：独立迁移到 Task Manager
