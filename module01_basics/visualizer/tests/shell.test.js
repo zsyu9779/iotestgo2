@@ -145,3 +145,20 @@ test("animation styles run only during controller-owned transitions", () => {
 	);
 	assert.match(css, /#app\[data-animating="true"\]/);
 });
+
+test("module README documents the runtime structures and implementation boundary", () => {
+	const readme = fs.readFileSync(
+		path.resolve(visualizerRoot, "..", "README.md"),
+		"utf8",
+	);
+	for (const term of [
+		"Slice Descriptor",
+		"runtime.growslice",
+		"runtime._defer",
+		"open-coded defer",
+		"示意地址",
+	]) {
+		assert.match(readme, new RegExp(term.replace(".", "\\.")));
+	}
+	assert.doesNotMatch(readme, /四个逐步场景|先预测|揭晓答案/);
+});

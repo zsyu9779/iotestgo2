@@ -75,20 +75,26 @@ go run ./module01_basics/blocks/04_functions_testing/demo/11_defer_edges
 go test ./module01_basics/bonus/function_patterns
 ```
 
-## Slice 与 Defer 原理动画
+## Slice 与 Defer 运行时解剖实验室
 
 直接在浏览器中打开
 [`module01_basics/visualizer/index.html`](visualizer/index.html)。页面无需后端或网络，
-包含 Slice 共享、`append` 扩容、Defer LIFO 和 Defer 求值时机四个逐步场景。
-代码只负责定位，动画舞台负责展示 Slice Header、底层数组、函数帧和待执行调用。
+不展示示例代码，而是把源码中看不到的底层结构分成两个实验室，每个实验室 8 步：
+
+- **Slice Descriptor 与扩容**：展开 `array`、`len`、`cap` 三个机器字，追踪指针到连续内存，
+  再逐步展示原地 `append` 与 `runtime.growslice`、内存分配、旧元素复制和新 Descriptor 返回。
+- **经典 `runtime._defer` 链表与返回**：展开节点的 `heap`、`sp`、`pc`、`fn`、`link`
+  字段，观察 `g._defer` 如何按头插法注册，又如何在 `deferreturn` 中逐个脱链并形成 LIFO。
+
+页面中的十六进制值是**示意地址**，用于讲清指针运算，不是浏览器读取到的 Go 进程地址。
+Defer 实验室明确采用经典链表模型；现代 Go 编译器可能使用 `open-coded defer`，
+因此它讲解的是这套真实运行时数据结构的工作方式，不代表每一次编译都会创建链表节点。
 
 - `→` 或空格：下一步
 - `←`：上一步
 - `R`：重播当前步
 
-课堂建议先停在每个场景的“先预测”步骤，收集学生判断后再点击“揭晓答案”。
-动画中的 Defer 卡片区是解释语言语义的概念模型；编译器可以采用不同优化，
-但不能改变页面展示的可观察结果。
+讲师可按底部按钮逐步播放；每一步只突出当前发生变化的字段、指针或 runtime 操作。
 
 课堂结束前完成 [Exit Quiz](assessments/exit_quiz.md)，把不确定的题号记入课后复习清单。
 
