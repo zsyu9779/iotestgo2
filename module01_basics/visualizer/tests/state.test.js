@@ -148,6 +148,17 @@ test("animation lock ignores navigation but permits lab switching", () => {
 	assert.equal(state.isAnimating, false);
 });
 
+test("return-to-menu remains available during an animation", () => {
+	let state = reduceState(createInitialState(), {
+		type: "SELECT_LAB",
+		labId: "slice-runtime",
+	});
+	state = reduceState(state, { type: "ANIMATION_START" });
+	assert.equal(state.isAnimating, true);
+	state = reduceState(state, { type: "RESET_TO_MENU" });
+	assert.deepEqual(state, createInitialState());
+});
+
 test("maps classroom keyboard controls", () => {
 	assert.deepEqual(actionFromKey("ArrowRight"), { type: "NEXT" });
 	assert.deepEqual(actionFromKey(" "), { type: "NEXT" });

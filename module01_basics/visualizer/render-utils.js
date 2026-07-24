@@ -29,6 +29,7 @@
 				<strong class="field-name">${escapeHTML(name)}</strong>
 				<code class="field-value">${escapeHTML(value)}</code>
 				<small class="field-width">${width} B${label ? ` · ${escapeHTML(label)}` : ""}</small>
+				${active ? '<span class="field-state">当前字段</span>' : ""}
 			</div>
 		`;
 	}

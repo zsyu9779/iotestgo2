@@ -117,6 +117,43 @@ test("pipeline identifies active, completed, and pending runtime calls", () => {
 		/data-call="memmove"[^>]*data-status="pending"/,
 	);
 	assert.match(html, /不是语言保证/);
+	assert.match(html, /mallocgc\(32 B, nil, false\)/);
+});
+
+test("growslice copies old values before the append caller writes the new value", () => {
+	const copy = markup(renderSliceLab(step("slice-runtime", "copy")));
+	assert.doesNotMatch(copy, /class="cell-value">30</);
+	assert.match(copy, /复制源/);
+	assert.match(copy, /已复制/);
+
+	const returned = markup(
+		renderSliceLab(step("slice-runtime", "return-descriptor")),
+	);
+	assert.match(returned, /caller store/);
+	assert.match(returned, /s\[2\] = 30/);
+	assert.match(returned, /class="memory-cell is-written/);
+});
+
+test("Slice bounds use half-open intervals", () => {
+	const html = markup(renderSliceLab(step("slice-runtime", "descriptor")));
+	assert.match(html, /len 范围：\[0, 4\)/);
+	assert.match(html, /cap 范围：\[0, 4\)/);
+	assert.doesNotMatch(html, /0…4/);
+});
+
+test("declared active targets receive visible non-color labels", () => {
+	const address = markup(renderSliceLab(step("slice-runtime", "address")));
+	assert.match(
+		address,
+		/data-memory-target="base-array-2"[\s\S]*正在读取/,
+	);
+
+	const allocate = markup(renderSliceLab(step("slice-runtime", "allocate")));
+	assert.match(
+		allocate,
+		/data-array-id="new-array"[^>]*data-active-target="true"/,
+	);
+	assert.match(allocate, /新分配/);
 });
 
 test("final growth step keeps old and new allocations distinct", () => {
@@ -160,6 +197,12 @@ test("classic defer nodes expose the selected runtime fields", () => {
 	assert.match(html, /rangefunc/);
 	assert.match(html, /head/);
 	assert.match(html, /本场景不展开/);
+	assert.match(html, /data-field="heap"[\s\S]*true/);
+});
+
+test("empty defer frame renders a single terminal nil node", () => {
+	const html = renderDeferLab(step("defer-runtime", "frame")).stage;
+	assert.equal((html.match(/class="nil-node"/g) || []).length, 1);
 });
 
 test("second registration forms a real head-linked list", () => {
@@ -197,6 +240,7 @@ test("deferreturn removes the head before invoking fn", () => {
 	);
 	assert.match(d2, /head = D2\.link/);
 	assert.match(d2, /call D2\.fn/);
+	assert.match(d2, /历史快照：_defer 已由 popDefer 清理/);
 
 	const d1 = markup(
 		renderDeferLab(step("defer-runtime", "execute-d1")),
@@ -224,7 +268,8 @@ test("panic step is visibly bounded without expanding recover", () => {
 		renderDeferLab(step("defer-runtime", "panic-entry")),
 	);
 	assert.match(html, /data-panic-entry="true"/);
-	assert.match(html, /_panic\.next\(\)/);
+	assert.match(html, /_panic\.nextDefer\(\)/);
+	assert.doesNotMatch(html, /_panic\.next\(\)/);
 	assert.match(html, /不展开 _panic 与 recover/);
 });
 

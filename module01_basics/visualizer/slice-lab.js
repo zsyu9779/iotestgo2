@@ -77,16 +77,38 @@
 	}
 
 	function renderMemoryArray(array, state) {
+		const activeTargets = new Set(state.activeTargets || []);
+		const isActiveArray = activeTargets.has(array.id);
 		const cells = Array.from({ length: array.capacity }, (_, index) => {
 			const hasValue = index < array.values.length;
 			const value = hasValue ? array.values[index] : "空槽";
 			const byteOffset = index * state.elementSize;
 			const address = addHexAddress(array.baseAddress, byteOffset);
-			const states = [];
-			if (!hasValue) states.push("capacity");
-			if (array.writtenIndex === index) states.push("written");
-			if (state.selectedIndex === index) states.push("reading");
-			const stateName = states.at(-1) || "stored";
+			const targetKey = `${array.id}[${index}]`;
+			const isTargeted = activeTargets.has(targetKey);
+			const isCopyCell =
+				state.phase === "copy" &&
+				index < (state.copyCount || 0) &&
+				["old-array", "new-array"].includes(array.id);
+			let stateName = hasValue ? "stored" : "capacity";
+			let stateLabel = "";
+			if (isTargeted) {
+				stateName = "targeted";
+				stateLabel = "当前目标";
+			}
+			if (isCopyCell) {
+				stateName =
+					array.id === "old-array" ? "copy-source" : "copied";
+				stateLabel = array.id === "old-array" ? "复制源" : "已复制";
+			}
+			if (state.selectedIndex === index) {
+				stateName = "reading";
+				stateLabel = "正在读取";
+			}
+			if (array.writtenIndex === index) {
+				stateName = "written";
+				stateLabel = "调用方写入";
+			}
 			return `
 				<div
 					id="${escapeHTML(array.id)}-${index}"
@@ -94,11 +116,13 @@
 					data-memory-target="${escapeHTML(array.id)}-${index}"
 					data-address="${escapeHTML(address)}"
 					data-state="${escapeHTML(stateName)}"
+					${isTargeted ? 'data-active-target="true"' : ""}
 				>
 					<span class="cell-offset">+${byteOffset} B</span>
 					<strong class="cell-value">${escapeHTML(value)}</strong>
 					<code class="cell-address">${escapeHTML(address)}</code>
 					<small>index ${index}</small>
+					${stateLabel ? `<span class="cell-state-label">${escapeHTML(stateLabel)}</span>` : ""}
 				</div>
 			`;
 		}).join("");
@@ -106,15 +130,25 @@
 		const capacityNote = array.capacityNote
 			? `<p class="allocation-note">${escapeHTML(array.capacityNote)}</p>`
 			: "";
+		const arrayStateLabel =
+			isActiveArray && array.allocation === "new"
+				? '<span class="allocation-state">新分配</span>'
+				: isActiveArray
+					? '<span class="allocation-state">当前对象</span>'
+					: "";
 		return `
 			<section
 				class="memory-allocation"
 				data-array-id="${escapeHTML(array.id)}"
 				data-allocation="${escapeHTML(array.allocation)}"
+				${isActiveArray ? 'data-active-target="true"' : ""}
 			>
 				<header>
 					<strong>${escapeHTML(array.id)}</strong>
-					<code>base ${escapeHTML(array.baseAddress)}</code>
+					<span class="allocation-meta">
+						${arrayStateLabel}
+						<code>base ${escapeHTML(array.baseAddress)}</code>
+					</span>
 				</header>
 				<div class="memory-cells">${cells}</div>
 				${capacityNote}
@@ -171,8 +205,8 @@
 				(descriptor) => `
 					<div class="descriptor-bounds" data-bounds-for="${escapeHTML(descriptor.id)}">
 						<strong>${escapeHTML(descriptor.id)}</strong>
-						<span class="len-bound">len 范围：0…${descriptor.length}</span>
-						<span class="cap-bound">cap 范围：0…${descriptor.capacity}</span>
+						<span class="len-bound">len 范围：[0, ${descriptor.length})</span>
+						<span class="cap-bound">cap 范围：[0, ${descriptor.capacity})</span>
 					</div>
 				`,
 			)

@@ -28,7 +28,13 @@
 
 	const grownArrayCopied = {
 		...grownArrayEmpty,
+		values: [10, 20],
+	};
+
+	const grownArrayComplete = {
+		...grownArrayEmpty,
 		values: [10, 20, 30],
+		writtenIndex: 2,
 	};
 
 	const sliceSteps = [
@@ -208,9 +214,9 @@
 			title: "计算 newCap，并由 mallocgc 分配",
 			operation: {
 				name: "nextslicecap → mallocgc",
-				call: "newCap = 4; mallocgc(4 × 8 B, intType, ...)",
+				call: "newCap = 4; mallocgc(32 B, nil, false)",
 				summary:
-					"本次 Go 1.25.11 路径得到 newCap=4；不能把它推广成固定翻倍规则。",
+					"int 不含指针，因此本次 Go 1.25.11 路径用 nil 类型参数分配 32 字节；newCap=4 不是固定规则。",
 				pipeline: [
 					["runtime.growslice", "done"],
 					["nextslicecap", "done"],
@@ -239,12 +245,12 @@
 		},
 		{
 			id: "copy",
-			title: "memmove 复制旧元素，再写入新元素",
+			title: "memmove 只复制旧元素",
 			operation: {
 				name: "memmove",
 				call: "memmove(0x4000, 0x2000, 2 × 8 B)",
 				summary:
-					"旧数组的有效元素按字节复制到新分配；追加值写到下标 2。",
+					"growslice 只把旧数组的有效元素复制到新内存；追加值此时尚未写入。",
 				pipeline: [
 					["runtime.growslice", "done"],
 					["nextslicecap", "done"],
@@ -272,18 +278,19 @@
 		},
 		{
 			id: "return-descriptor",
-			title: "growslice 返回新的 Descriptor",
+			title: "growslice 返回后，append 写入新元素",
 			operation: {
-				name: "return from runtime.growslice",
-				call: "slice{array: 0x4000, len: 3, cap: 4}",
+				name: "return → caller store",
+				call: "s = growslice(...); s[2] = 30",
 				summary:
-					"旧 Descriptor 仍指向旧内存；旧内存只有在不可达后才有资格被 GC 回收。",
+					"growslice 返回新 Descriptor 后，append 的调用方才把 30 写入下标 2；旧内存不可达后才可回收。",
 				pipeline: [
 					["runtime.growslice", "done"],
 					["nextslicecap", "done"],
 					["mallocgc", "done"],
 					["memmove", "done"],
-					["return", "active"],
+					["return", "done"],
+					["caller store", "active"],
 				],
 			},
 			state: {
@@ -306,8 +313,8 @@
 						activeField: "array",
 					},
 				],
-				arrays: [fullOldArray, grownArrayCopied],
-				activeTargets: ["grown.array", "new-array[0]"],
+				arrays: [fullOldArray, grownArrayComplete],
+				activeTargets: ["grown.array", "new-array[2]"],
 				gcNote: "旧内存仅在不可达后才有资格被 GC 回收。",
 			},
 		},
@@ -324,7 +331,7 @@
 		return {
 			id,
 			address,
-			heap: false,
+			heap: true,
 			sp: "0x8f00",
 			pc,
 			fn,
@@ -503,7 +510,7 @@
 			title: "panic 是另一条遍历入口",
 			operation: {
 				name: "panic unwind",
-				call: "_panic.next() walks pending defers",
+				call: "_panic.nextDefer() walks pending defers",
 				summary:
 					"异常返回也会处理待执行记录；本实验室不展开 _panic 与 recover 状态机。",
 			},

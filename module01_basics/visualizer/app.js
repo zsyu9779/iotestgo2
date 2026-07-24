@@ -71,7 +71,9 @@
 		if (!state || !action || !action.type) return state;
 		if (
 			state.isAnimating &&
-			!["ANIMATION_END", "SELECT_LAB"].includes(action.type)
+			!["ANIMATION_END", "SELECT_LAB", "RESET_TO_MENU"].includes(
+				action.type,
+			)
 		) {
 			return state;
 		}

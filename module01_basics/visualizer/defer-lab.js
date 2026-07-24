@@ -52,13 +52,16 @@
 	}
 
 	function renderInspector(state) {
+		const linkedNodes = state.nodes.filter(
+			(node) => node.status !== "detached" && node.status !== "executing",
+		);
 		const structures =
-			state.nodes.length > 0
-				? state.nodes.map(renderNodeInspector).join("")
+			linkedNodes.length > 0
+				? linkedNodes.map(renderNodeInspector).join("")
 				: `
 					<div class="empty-structure">
-						<strong>当前没有 _defer 节点</strong>
-						<span>执行 deferproc 后，这里会出现真实字段。</span>
+						<strong>当前链表中没有 _defer 节点</strong>
+						<span>已脱链节点会由 popDefer 清理，不再作为当前结构展示。</span>
 					</div>
 				`;
 		return `
@@ -116,20 +119,16 @@
 	}
 
 	function renderChainNode(node) {
-		const target = node.link || "nil";
-		return `
-			<article
-				class="defer-node is-${escapeHTML(node.status)}"
-				data-node-id="${escapeHTML(node.id)}"
-				data-address="${escapeHTML(node.address)}"
-				data-status="${escapeHTML(node.status)}"
-				data-structure="runtime._defer"
-				data-link-target="${escapeHTML(target)}"
-			>
-				<header>
-					<strong>${escapeHTML(node.id)}</strong>
-					<code>${escapeHTML(node.address)}</code>
-				</header>
+		const isHistorical = ["detached", "executing"].includes(node.status);
+		const target = isHistorical ? "cleared" : node.link || "nil";
+		const body = isHistorical
+			? `
+				<div class="saved-call">
+					<span>saved fn</span><code>${escapeHTML(node.fn)}</code>
+				</div>
+				<small>历史快照：_defer 已由 popDefer 清理</small>
+			`
+			: `
 				<div><span>sp</span><code>${escapeHTML(node.sp)}</code></div>
 				<div><span>pc</span><code>${escapeHTML(node.pc)}</code></div>
 				<div><span>fn</span><code>${escapeHTML(node.fn)}</code></div>
@@ -137,6 +136,22 @@
 					<span>link</span><code>${escapeHTML(target)}</code>
 				</div>
 				<small>${escapeHTML(statusLabels[node.status] || node.status)}</small>
+			`;
+		return `
+			<article
+				class="defer-node is-${escapeHTML(node.status)}${isHistorical ? " is-historical" : ""}"
+				data-node-id="${escapeHTML(node.id)}"
+				data-address="${escapeHTML(node.address)}"
+				data-status="${escapeHTML(node.status)}"
+				data-structure="runtime._defer"
+				data-link-target="${escapeHTML(target)}"
+				${isHistorical ? 'data-historical="true"' : ""}
+			>
+				<header>
+					<strong>${escapeHTML(node.id)}</strong>
+					<code>${isHistorical ? "已脱链" : escapeHTML(node.address)}</code>
+				</header>
+				${body}
 			</article>
 		`;
 	}
@@ -191,7 +206,7 @@
 		const nodes =
 			state.nodes.length > 0
 				? state.nodes.map(renderChainNode).join("")
-				: '<div class="nil-node" data-node-id="nil">nil</div>';
+				: "";
 		const completion = state.completion
 			? `<p class="completion-note">${escapeHTML(state.completion)}</p>`
 			: "";
