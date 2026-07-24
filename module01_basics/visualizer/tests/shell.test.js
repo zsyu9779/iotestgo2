@@ -144,6 +144,9 @@ test("animation styles run only during controller-owned transitions", () => {
 		"utf8",
 	);
 	assert.match(css, /#app\[data-animating="true"\]/);
+	assert.match(css, /\.memory-cell\.is-copy-source/);
+	assert.match(css, /\.memory-cell\.is-copied/);
+	assert.match(css, /animation-delay:\s*120ms/);
 });
 
 test("module README documents the runtime structures and implementation boundary", () => {

@@ -67,6 +67,12 @@
 		return prefersReducedMotion ? 0 : 900;
 	}
 
+	function clearAnimationAttributes(appRoot) {
+		if (!appRoot) return;
+		delete appRoot.dataset.animating;
+		appRoot.removeAttribute("aria-busy");
+	}
+
 	function reduceState(state, action) {
 		if (!state || !action || !action.type) return state;
 		if (
@@ -280,6 +286,7 @@
 		actionFromKey,
 		shouldAnimateTransition,
 		animationDelay,
+		clearAnimationAttributes,
 		renderLabFragments,
 		renderAppMarkup,
 	};
@@ -329,13 +336,13 @@
 				animationTimer = window.setTimeout(() => {
 					state = reduceState(state, { type: "ANIMATION_END" });
 					animationTimer = null;
-					delete appRoot.dataset.animating;
-					appRoot.removeAttribute("aria-busy");
+					clearAnimationAttributes(appRoot);
 				}, animationDelay(reducedMotion));
 				return;
 			}
 
 			state = nextState;
+			clearAnimationAttributes(appRoot);
 			render();
 		}
 

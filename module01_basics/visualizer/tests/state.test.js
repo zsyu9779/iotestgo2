@@ -12,6 +12,7 @@ const {
 	actionFromKey,
 	shouldAnimateTransition,
 	animationDelay,
+	clearAnimationAttributes,
 } = require("../app.js");
 
 test("defines only the two runtime laboratories", () => {
@@ -157,6 +158,19 @@ test("return-to-menu remains available during an animation", () => {
 	assert.equal(state.isAnimating, true);
 	state = reduceState(state, { type: "RESET_TO_MENU" });
 	assert.deepEqual(state, createInitialState());
+});
+
+test("leaving an animation clears busy state from the app root", () => {
+	const removed = [];
+	const root = {
+		dataset: { animating: "true" },
+		removeAttribute(name) {
+			removed.push(name);
+		},
+	};
+	clearAnimationAttributes(root);
+	assert.equal("animating" in root.dataset, false);
+	assert.deepEqual(removed, ["aria-busy"]);
 });
 
 test("maps classroom keyboard controls", () => {

@@ -892,11 +892,23 @@ code {
 
 #app[data-animating="true"] .memory-cell.is-reading,
 #app[data-animating="true"] .memory-cell.is-written,
+#app[data-animating="true"] .memory-cell.is-copy-source,
+#app[data-animating="true"] .memory-cell.is-copied,
 #app[data-animating="true"] .defer-node.is-head,
 #app[data-animating="true"] .defer-node.is-selected,
 #app[data-animating="true"] .defer-node.is-executing,
 #app[data-animating="true"] .runtime-pipeline li[data-status="active"] {
 	animation: runtime-emphasis 850ms ease both;
+}
+
+#app[data-animating="true"] .memory-cell.is-copy-source:nth-child(2),
+#app[data-animating="true"] .memory-cell.is-copied:nth-child(2) {
+	animation-delay: 120ms;
+}
+
+#app[data-animating="true"] .memory-cell.is-copy-source,
+#app[data-animating="true"] .memory-cell.is-copied {
+	animation-duration: 700ms;
 }
 
 #app[data-animating="true"] .pointer-link path,
