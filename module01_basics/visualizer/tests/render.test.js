@@ -3,162 +3,138 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 
-const scenes = require("../scenes.js");
-const { renderStageMarkup } = require("../app.js");
+const labs = require("../scenes.js");
 
-function scene(id) {
-	const result = scenes.find((item) => item.id === id);
-	assert.ok(result, `scene ${id} must exist`);
+let renderSliceLab;
+try {
+	({ renderSliceLab } = require("../slice-lab.js"));
+} catch {
+	renderSliceLab = undefined;
+}
+
+function lab(id) {
+	const result = labs.find((item) => item.id === id);
+	assert.ok(result, `lab ${id} must exist`);
 	return result;
 }
 
-function stepAtPhase(target, phase) {
-	const result = target.steps.find((item) => item.stage.phase === phase);
-	assert.ok(result, `phase ${phase} must exist`);
+function step(labId, stepId) {
+	const result = lab(labId).steps.find((item) => item.id === stepId);
+	assert.ok(result, `step ${labId}/${stepId} must exist`);
 	return result;
 }
 
-test("shared Slice reveal renders one mutated backing cell and two headers", () => {
-	const target = scene("slice-shared");
-	const markup = renderStageMarkup(target, stepAtPhase(target, "mutated"));
+function markup(rendered) {
+	return `${rendered.inspector}${rendered.stage}${rendered.operation}`;
+}
 
-	assert.match(markup, /role="img"/);
-	assert.match(markup, /data-slice-id="base"/);
-	assert.match(markup, /data-slice-id="view"/);
-	assert.match(
-		markup,
-		/data-index="1"\s+data-state="mutated"/,
-	);
-	assert.match(markup, />9</);
-	assert.match(markup, /base\[1\]/);
-	assert.match(markup, /view\[0\]/);
+test("exports the Slice runtime laboratory renderer", () => {
+	assert.equal(typeof renderSliceLab, "function");
 });
 
-test("shared Slice view exposes independent len and cap values", () => {
-	const target = scene("slice-shared");
-	const markup = renderStageMarkup(target, stepAtPhase(target, "view"));
-
-	assert.match(markup, /base/);
-	assert.match(markup, /len\s*=\s*4/);
-	assert.match(markup, /cap\s*=\s*4/);
-	assert.match(markup, /view/);
-	assert.match(markup, /len\s*=\s*2/);
-	assert.match(markup, /cap\s*=\s*3/);
+test("descriptor step renders the real arm64 three-word layout", () => {
+	const html = markup(renderSliceLab(step("slice-runtime", "descriptor")));
+	assert.match(html, /data-structure="runtime\.slice"/);
+	assert.match(html, /data-byte-size="24"/);
 	assert.match(
-		markup,
-		/data-slice-id="base"[\s\S]*data-pointer-target="shared-array-cell-0"/,
+		html,
+		/data-field="array"[^>]*data-offset="0"[^>]*data-width="8"/,
 	);
 	assert.match(
-		markup,
-		/data-slice-id="view"[\s\S]*data-pointer-target="shared-array-cell-1"/,
+		html,
+		/data-field="len"[^>]*data-offset="8"[^>]*data-width="8"/,
 	);
-	assert.match(markup, /id="shared-array-cell-0"/);
-	assert.match(markup, /id="shared-array-cell-1"/);
+	assert.match(
+		html,
+		/data-field="cap"[^>]*data-offset="16"[^>]*data-width="8"/,
+	);
+	assert.match(html, /Go 1\.25\.11 · darwin\/arm64/);
+	assert.match(html, /示意地址/);
 });
 
-test("append reallocation keeps old and new arrays distinct", () => {
-	const target = scene("slice-append");
-	const markup = renderStageMarkup(
-		target,
-		stepAtPhase(target, "reallocated"),
-	);
-
-	assert.match(markup, /data-array-id="full-array"/);
-	assert.match(markup, /data-array-id="grown-array"/);
-	assert.match(markup, /容量 ≥ 3/);
-	assert.doesNotMatch(markup, /容量 = 4/);
-	assert.doesNotMatch(markup, />=\s*≥ 3</);
-	assert.match(markup, /复制到新存储/);
-	assert.match(
-		markup,
-		/data-slice-id="full"[\s\S]*data-pointer-target="full-array-cell-0"/,
-	);
-	assert.match(
-		markup,
-		/data-slice-id="grown"[\s\S]*data-pointer-target="grown-array-cell-0"/,
-	);
+test("memory cells expose address, offset, value, and concrete targets", () => {
+	const html = markup(renderSliceLab(step("slice-runtime", "address")));
+	assert.match(html, /data-memory-target="base-array-2"/);
+	assert.match(html, /data-address="0x1010"/);
+	assert.match(html, /\+16 B/);
+	assert.match(html, />3</);
+	assert.match(html, /0x1000 \+ 2 × 8 B = 0x1010/);
 });
 
-test("append verification shows independent old and new values", () => {
-	const target = scene("slice-append");
-	const markup = renderStageMarkup(target, stepAtPhase(target, "verified"));
-
-	assert.match(markup, /data-array-id="full-array"/);
-	assert.match(markup, />7</);
-	assert.match(markup, /data-array-id="grown-array"/);
-	assert.match(markup, />9</);
-	assert.match(markup, /不再共享/);
+test("reslice step exposes the pointer and bound formulas", () => {
+	const html = markup(renderSliceLab(step("slice-runtime", "reslice")));
+	assert.match(html, /new\.array = old\.array \+ low × elementSize/);
+	assert.match(html, /new\.len = high - low/);
+	assert.match(html, /new\.cap = oldCap - low/);
+	assert.match(html, /data-descriptor-id="old"/);
+	assert.match(html, /data-descriptor-id="view"/);
+	assert.match(html, /0x1008/);
+	assert.match(html, /data-memory-target="base-array-1"/);
 });
 
-test("every Slice step renders a bounded accessible stage", () => {
-	for (const id of ["slice-shared", "slice-append"]) {
-		const target = scene(id);
-		for (const step of target.steps) {
-			const markup = renderStageMarkup(target, step);
-			assert.match(markup, /class="stage-visual/);
-			assert.match(markup, /aria-label="/);
-			assert.doesNotMatch(markup, /undefined|null/);
-		}
+test("append fast path explicitly bypasses growslice", () => {
+	const html = markup(
+		renderSliceLab(step("slice-runtime", "append-in-place")),
+	);
+	assert.match(html, /data-branch="reuse"/);
+	assert.match(html, /newLen &lt;= cap/);
+	assert.match(html, /不调用 runtime\.growslice/);
+	assert.match(html, /data-state="written"/);
+	assert.match(html, /data-memory-target="spare-array-2"/);
+});
+
+test("growth path names the real runtime operations", () => {
+	for (const [id, token] of [
+		["growslice", "runtime.growslice"],
+		["allocate", "mallocgc"],
+		["copy", "memmove"],
+	]) {
+		assert.match(
+			markup(renderSliceLab(step("slice-runtime", id))),
+			new RegExp(token),
+		);
 	}
 });
 
-test("LIFO execution marks B before A", () => {
-	const target = scene("defer-lifo");
-	const markup = renderStageMarkup(target, stepAtPhase(target, "execute-b"));
-
+test("pipeline identifies active, completed, and pending runtime calls", () => {
+	const html = markup(renderSliceLab(step("slice-runtime", "allocate")));
 	assert.match(
-		markup,
-		/data-defer-id="B"\s+data-status="executing"/,
+		html,
+		/data-call="runtime\.growslice"[^>]*data-status="done"/,
 	);
 	assert.match(
-		markup,
-		/data-defer-id="A"\s+data-status="pending"/,
+		html,
+		/data-call="mallocgc"[^>]*data-status="active"/,
 	);
-	assert.match(markup, /data-output="work,B"/);
-	assert.match(markup, /后注册/);
-});
-
-test("LIFO completion exposes the full work B A timeline", () => {
-	const target = scene("defer-lifo");
-	const markup = renderStageMarkup(target, stepAtPhase(target, "complete"));
-
-	assert.match(markup, /data-output="work,B,A"/);
-	assert.match(markup, /work\s*→\s*B\s*→\s*A/);
-	assert.match(markup, /待执行调用（语义模型）/);
-});
-
-test("normal deferred call saves its argument at registration", () => {
-	const target = scene("defer-evaluation");
-	const markup = renderStageMarkup(
-		target,
-		stepAtPhase(target, "save-argument"),
+	assert.match(
+		html,
+		/data-call="memmove"[^>]*data-status="pending"/,
 	);
-
-	assert.match(markup, /data-defer-id="normal"/);
-	assert.match(markup, /已保存参数：1/);
-	assert.match(markup, /data-value-cell="1"/);
+	assert.match(html, /不是语言保证/);
 });
 
-test("evaluation result distinguishes closure read from saved argument", () => {
-	const target = scene("defer-evaluation");
-	const markup = renderStageMarkup(target, stepAtPhase(target, "complete"));
-
-	assert.match(markup, /闭包[^<]*2/);
-	assert.match(markup, /普通参数[^<]*1/);
-	assert.match(markup, /data-output="closure:2,argument:1"/);
-	assert.match(markup, /语义模型/);
-	assert.match(markup, /编译器优化不能改变结果/);
+test("final growth step keeps old and new allocations distinct", () => {
+	const html = markup(
+		renderSliceLab(step("slice-runtime", "return-descriptor")),
+	);
+	assert.match(html, /data-allocation="old"/);
+	assert.match(html, /data-allocation="new"/);
+	assert.match(html, /data-descriptor-id="old"/);
+	assert.match(html, /data-descriptor-id="grown"/);
+	assert.match(html, /旧内存仅在不可达后才有资格被 GC 回收/);
 });
 
-test("every Defer step renders a bounded accessible stage", () => {
-	for (const id of ["defer-lifo", "defer-evaluation"]) {
-		const target = scene(id);
-		for (const step of target.steps) {
-			const markup = renderStageMarkup(target, step);
-			assert.match(markup, /class="stage-visual/);
-			assert.match(markup, /role="img"/);
-			assert.match(markup, /aria-label="/);
-			assert.doesNotMatch(markup, /undefined|null/);
+test("every Slice step returns all three named fragments", () => {
+	for (const current of lab("slice-runtime").steps) {
+		const rendered = renderSliceLab(current);
+		assert.deepEqual(Object.keys(rendered), [
+			"inspector",
+			"stage",
+			"operation",
+		]);
+		for (const fragment of Object.values(rendered)) {
+			assert.equal(typeof fragment, "string");
+			assert.doesNotMatch(fragment, /undefined|null/);
 		}
 	}
 });
