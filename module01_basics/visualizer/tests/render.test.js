@@ -6,10 +6,16 @@ const assert = require("node:assert/strict");
 const labs = require("../scenes.js");
 
 let renderSliceLab;
+let renderDeferLab;
 try {
 	({ renderSliceLab } = require("../slice-lab.js"));
 } catch {
 	renderSliceLab = undefined;
+}
+try {
+	({ renderDeferLab } = require("../defer-lab.js"));
+} catch {
+	renderDeferLab = undefined;
 }
 
 function lab(id) {
@@ -136,5 +142,103 @@ test("every Slice step returns all three named fragments", () => {
 			assert.equal(typeof fragment, "string");
 			assert.doesNotMatch(fragment, /undefined|null/);
 		}
+	}
+});
+
+test("exports the classic Defer linked-list renderer", () => {
+	assert.equal(typeof renderDeferLab, "function");
+});
+
+test("classic defer nodes expose the selected runtime fields", () => {
+	const html = markup(
+		renderDeferLab(step("defer-runtime", "register-d1")),
+	);
+	assert.match(html, /data-structure="runtime\._defer"/);
+	for (const field of ["heap", "sp", "pc", "fn", "link"]) {
+		assert.match(html, new RegExp(`data-field="${field}"`));
+	}
+	assert.match(html, /rangefunc/);
+	assert.match(html, /head/);
+	assert.match(html, /本场景不展开/);
+});
+
+test("second registration forms a real head-linked list", () => {
+	const html = markup(
+		renderDeferLab(step("defer-runtime", "register-d2")),
+	);
+	assert.match(html, /data-g-defer-head="0x3100"/);
+	assert.match(
+		html,
+		/data-node-id="D2"[^>]*data-address="0x3100"/,
+	);
+	assert.match(html, /data-link-target="0x3000"/);
+	assert.match(html, /data-chain="D2-&gt;D1-&gt;nil"/);
+	assert.match(html, /D2[\s\S]*D1[\s\S]*nil/);
+});
+
+test("stack frame binds defer records by SP", () => {
+	const html = markup(
+		renderDeferLab(step("defer-runtime", "deferreturn")),
+	);
+	assert.match(html, /data-frame="work"/);
+	assert.match(html, /data-register="sp"[\s\S]*0x8f00/);
+	assert.match(html, /data-register="return-pc"[\s\S]*0x401240/);
+	assert.match(html, /match head\.sp with frame\.SP/);
+});
+
+test("deferreturn removes the head before invoking fn", () => {
+	const d2 = markup(
+		renderDeferLab(step("defer-runtime", "execute-d2")),
+	);
+	assert.match(d2, /data-g-defer-head="0x3000"/);
+	assert.match(
+		d2,
+		/data-node-id="D2"[^>]*data-status="executing"/,
+	);
+	assert.match(d2, /head = D2\.link/);
+	assert.match(d2, /call D2\.fn/);
+
+	const d1 = markup(
+		renderDeferLab(step("defer-runtime", "execute-d1")),
+	);
+	assert.match(d1, /data-g-defer-head="nil"/);
+	assert.match(
+		d1,
+		/data-node-id="D2"[^>]*data-status="detached"/,
+	);
+	assert.match(
+		d1,
+		/data-node-id="D1"[^>]*data-status="executing"/,
+	);
+});
+
+test("completed return explains the structural source of LIFO", () => {
+	const html = markup(renderDeferLab(step("defer-runtime", "return")));
+	assert.match(html, /data-g-defer-head="nil"/);
+	assert.match(html, /链表已清空/);
+	assert.match(html, /头插、头取/);
+});
+
+test("panic step is visibly bounded without expanding recover", () => {
+	const html = markup(
+		renderDeferLab(step("defer-runtime", "panic-entry")),
+	);
+	assert.match(html, /data-panic-entry="true"/);
+	assert.match(html, /_panic\.next\(\)/);
+	assert.match(html, /不展开 _panic 与 recover/);
+});
+
+test("every Defer step carries the classic implementation boundary", () => {
+	for (const current of lab("defer-runtime").steps) {
+		const rendered = renderDeferLab(current);
+		const html = markup(rendered);
+		assert.deepEqual(Object.keys(rendered), [
+			"inspector",
+			"stage",
+			"operation",
+		]);
+		assert.match(html, /经典 _defer 链表实现模型/);
+		assert.match(html, /open-coded defer/);
+		assert.doesNotMatch(html, /undefined/);
 	}
 });
