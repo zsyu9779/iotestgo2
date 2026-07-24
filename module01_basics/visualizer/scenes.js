@@ -1,315 +1,547 @@
 "use strict";
 
-(function exposeScenes(root) {
-	const scenes = [
+(function exposeRuntimeLabs(root) {
+	const sliceBaseArray = {
+		id: "base-array",
+		baseAddress: "0x1000",
+		values: [1, 2, 3, 4],
+		capacity: 4,
+		allocation: "shared",
+	};
+
+	const fullOldArray = {
+		id: "old-array",
+		baseAddress: "0x2000",
+		values: [10, 20],
+		capacity: 2,
+		allocation: "old",
+	};
+
+	const grownArrayEmpty = {
+		id: "new-array",
+		baseAddress: "0x4000",
+		values: [],
+		capacity: 4,
+		capacityNote: "本次 Go 1.25.11 路径得到 4；增长算法不是语言保证",
+		allocation: "new",
+	};
+
+	const grownArrayCopied = {
+		...grownArrayEmpty,
+		values: [10, 20, 30],
+	};
+
+	const sliceSteps = [
 		{
-			id: "slice-shared",
-			chapter: "Slice",
-			eyebrow: "视图与共享",
-			title: "两个 Slice，共享一个数组",
-			description: "观察两个独立的 Slice Header 如何指向同一段底层数组。",
-			code: [
-				"base := []int{1, 2, 3, 4}",
-				"view := base[1:3]",
-				"view[0] = 9",
-				"fmt.Println(base)",
-			],
-			steps: [
-				{
-					kind: "observe",
-					line: 0,
-					title: "创建 base",
-					narration: "一个 Slice Header 指向底层数组的第一个元素。",
-					stage: { type: "slice-shared", phase: "base" },
-				},
-				{
-					kind: "observe",
-					line: 1,
-					title: "创建 view",
-					narration: "新的 Header 从数组下标 1 开始观察，Header 独立，数组仍然共享。",
-					stage: { type: "slice-shared", phase: "view" },
-				},
-				{
-					kind: "prediction",
-					line: 2,
-					title: "先预测",
-					narration: "修改 view[0] 后，base 会变化吗？",
-					prediction: {
-						choices: [
-							{ id: "changes", label: "base 会变化" },
-							{ id: "unchanged", label: "base 不会变化" },
-						],
-						correctChoiceId: "changes",
-						explanation:
-							"base[1] 与 view[0] 对应同一个底层数组单元，所以修改会同时被两个视图观察到。",
+			id: "descriptor",
+			title: "Slice 是一个 24 字节 Descriptor",
+			operation: {
+				name: "runtime.slice",
+				call: "array | len | cap",
+				summary:
+					"arm64 下三个字段各占 8 字节。Descriptor 本身不包含数组元素。",
+			},
+			state: {
+				phase: "descriptor",
+				elementSize: 8,
+				descriptors: [
+					{
+						id: "base",
+						address: "0x7000",
+						array: "0x1000",
+						length: 4,
+						capacity: 4,
+						activeField: "array",
 					},
-					stage: { type: "slice-shared", phase: "view" },
-				},
-				{
-					kind: "reveal",
-					line: 2,
-					title: "修改共享单元",
-					narration: "值 2 变为 9，两条指针保持不动。",
-					stage: { type: "slice-shared", phase: "mutated" },
-				},
-				{
-					kind: "observe",
-					line: 3,
-					title: "看见同一个位置",
-					narration: "base[1] 与 view[0] 是两个索引表达式，却落在同一个数组单元。",
-					stage: { type: "slice-shared", phase: "aliases" },
-				},
-				{
-					kind: "conclusion",
-					line: 3,
-					title: "Header 是值，数组可共享",
-					narration: "复制或分片会得到新的 Slice Header，不会自动复制底层数组元素。",
-					stage: { type: "slice-shared", phase: "aliases" },
-				},
-			],
+				],
+				arrays: [sliceBaseArray],
+				activeTargets: ["base.array", "base-array[0]"],
+			},
 		},
 		{
-			id: "slice-append",
-			chapter: "Slice",
-			eyebrow: "容量与 append",
-			title: "append：复用还是搬家",
-			description: "把容量有余与容量已满放在同一舞台，比较共享关系的变化。",
-			code: [
-				"spare := make([]int, 2, 4)",
-				"reused := append(spare, 3)",
-				"full := make([]int, 2, 2)",
-				"grown := append(full, 3)",
-				"full[0], grown[0] = 7, 9",
-			],
-			steps: [
-				{
-					kind: "observe",
-					line: 0,
-					title: "并排观察两种容量",
-					narration: "spare 还有两个空槽；full 的 len 已经等于 cap。",
-					stage: { type: "slice-append", phase: "initial" },
-				},
-				{
-					kind: "observe",
-					line: 1,
-					title: "容量有余：复用",
-					narration: "新元素落入原数组空槽，reused 继续指向原数组。",
-					stage: { type: "slice-append", phase: "reused" },
-				},
-				{
-					kind: "prediction",
-					line: 3,
-					title: "先预测",
-					narration: "full 已经没有空槽，append 还能继续写入原数组吗？",
-					prediction: {
-						choices: [
-							{ id: "move", label: "需要新的数组" },
-							{ id: "reuse", label: "继续复用原数组" },
-						],
-						correctChoiceId: "move",
-						explanation:
-							"新长度超过原容量，append 必须返回一个指向新存储区域的 Slice。",
+			id: "address",
+			title: "array 指针参与元素地址计算",
+			operation: {
+				name: "element address",
+				call: "0x1000 + 2 × 8 B = 0x1010",
+				summary:
+					"读取下标 2 时，运行时按元素宽度从 array 指针计算目标地址。",
+			},
+			state: {
+				phase: "address",
+				elementSize: 8,
+				selectedIndex: 2,
+				descriptors: [
+					{
+						id: "base",
+						address: "0x7000",
+						array: "0x1000",
+						length: 4,
+						capacity: 4,
+						activeField: "array",
 					},
-					stage: { type: "slice-append", phase: "before-growth" },
-				},
-				{
-					kind: "reveal",
-					line: 3,
-					title: "容量不足：分配并复制",
-					narration: "出现容量不小于新长度的数组，已有元素被复制过去，新元素随后落位。",
-					stage: { type: "slice-append", phase: "reallocated" },
-				},
-				{
-					kind: "observe",
-					line: 3,
-					title: "两个 Header 分开指向",
-					narration: "full 留在旧数组，grown 指向新数组。",
-					stage: { type: "slice-append", phase: "separated" },
-				},
-				{
-					kind: "observe",
-					line: 4,
-					title: "修改验证分离",
-					narration: "旧数组第一个元素变为 7，新数组第一个元素变为 9，彼此不再影响。",
-					stage: { type: "slice-append", phase: "verified" },
-				},
-				{
-					kind: "conclusion",
-					line: 4,
-					title: "必须接收 append 的返回值",
-					narration: "返回的新 Slice 是否继续共享原数组，取决于 append 时容量是否足够。",
-					stage: { type: "slice-append", phase: "verified" },
-				},
-			],
+				],
+				arrays: [sliceBaseArray],
+				activeTargets: ["base.array", "base-array[2]"],
+			},
 		},
 		{
-			id: "defer-lifo",
-			chapter: "Defer",
-			eyebrow: "注册与返回",
-			title: "后注册，先执行",
-			description: "跟随代码执行线，观察待执行调用如何在返回前逆序取出。",
-			code: [
-				"func work() {",
-				"    defer print(\"A\")",
-				"    defer print(\"B\")",
-				"    print(\"work\")",
-				"}",
-			],
-			steps: [
-				{
-					kind: "observe",
-					line: 0,
-					title: "进入函数",
-					narration: "函数帧已建立，待执行调用区还是空的。",
-					stage: { type: "defer-lifo", phase: "empty" },
-				},
-				{
-					kind: "observe",
-					line: 1,
-					title: "注册 A",
-					narration: "A 现在不会打印，它先进入待执行调用区。",
-					stage: { type: "defer-lifo", phase: "register-a" },
-				},
-				{
-					kind: "observe",
-					line: 2,
-					title: "注册 B",
-					narration: "B 后注册，位于 A 上方。",
-					stage: { type: "defer-lifo", phase: "register-b" },
-				},
-				{
-					kind: "prediction",
-					line: 4,
-					title: "先预测",
-					narration: "函数返回前会先执行 A 还是 B？",
-					prediction: {
-						choices: [
-							{ id: "b-first", label: "先执行 B" },
-							{ id: "a-first", label: "先执行 A" },
-						],
-						correctChoiceId: "b-first",
-						explanation: "已注册的 Defer 调用按逆序执行，所以 B 先于 A。",
+			id: "reslice",
+			title: "重新切片只生成新的 Descriptor",
+			operation: {
+				name: "reslice",
+				call: "new.array = old.array + low × elementSize",
+				summary:
+					"low=1、high=3；底层连续内存没有复制，只有三个字段被重新计算。",
+				formulas: [
+					"new.array = old.array + low × elementSize",
+					"new.len = high - low",
+					"new.cap = oldCap - low",
+				],
+			},
+			state: {
+				phase: "reslice",
+				elementSize: 8,
+				low: 1,
+				high: 3,
+				descriptors: [
+					{
+						id: "old",
+						address: "0x7000",
+						array: "0x1000",
+						length: 4,
+						capacity: 4,
 					},
-					stage: { type: "defer-lifo", phase: "register-b" },
-				},
-				{
-					kind: "reveal",
-					line: 3,
-					title: "先完成函数体",
-					narration: "普通语句先输出 work，然后到达准备返回关口。",
-					stage: { type: "defer-lifo", phase: "work" },
-				},
-				{
-					kind: "observe",
-					line: 4,
-					title: "B 先执行",
-					narration: "最后注册的 B 先从待执行区取出。",
-					stage: { type: "defer-lifo", phase: "execute-b" },
-				},
-				{
-					kind: "observe",
-					line: 4,
-					title: "A 再执行",
-					narration: "A 随后执行，所有待执行调用完成后函数才真正返回。",
-					stage: { type: "defer-lifo", phase: "execute-a" },
-				},
-				{
-					kind: "conclusion",
-					line: 4,
-					title: "后注册的先执行",
-					narration: "多个 Defer 调用的可观察执行顺序是 LIFO。",
-					stage: { type: "defer-lifo", phase: "complete" },
-				},
-			],
+					{
+						id: "view",
+						address: "0x7020",
+						array: "0x1008",
+						length: 2,
+						capacity: 3,
+						activeField: "array",
+					},
+				],
+				arrays: [sliceBaseArray],
+				activeTargets: ["view.array", "base-array[1]"],
+			},
 		},
 		{
-			id: "defer-evaluation",
-			chapter: "Defer",
-			eyebrow: "求值时机",
-			title: "参数快照与闭包读取",
-			description: "区分 defer 语句执行时的参数求值与闭包体执行时的变量读取。",
-			code: [
-				"value := 1",
-				"defer print(value)",
-				"defer func() { print(value) }()",
-				"value = 2",
-				"// return",
-			],
-			steps: [
-				{
-					kind: "observe",
-					line: 0,
-					title: "创建变量",
-					narration: "函数帧中的变量格 value 当前保存 1。",
-					stage: { type: "defer-evaluation", phase: "value-one" },
-				},
-				{
-					kind: "observe",
-					line: 1,
-					title: "普通参数立即求值",
-					narration: "注册普通调用时，参数已经求值，卡片保存 arg = 1。",
-					stage: { type: "defer-evaluation", phase: "save-argument" },
-				},
-				{
-					kind: "observe",
-					line: 2,
-					title: "注册闭包",
-					narration: "闭包卡片保留访问 value 的能力，函数体尚未执行。",
-					stage: { type: "defer-evaluation", phase: "register-closure" },
-				},
-				{
-					kind: "observe",
-					line: 3,
-					title: "变量变为 2",
-					narration: "value 的变量格更新为 2；普通调用已经保存的参数不变。",
-					stage: { type: "defer-evaluation", phase: "value-two" },
-				},
-				{
-					kind: "prediction",
-					line: 4,
-					title: "先预测",
-					narration: "两个调用分别会打印什么？",
-					prediction: {
-						choices: [
-							{
-								id: "closure-2-arg-1",
-								label: "闭包 2，普通参数 1",
-							},
-							{ id: "both-2", label: "两者都是 2" },
-						],
-						correctChoiceId: "closure-2-arg-1",
-						explanation:
-							"普通参数已在注册时保存 1；闭包执行时读取变量格，得到 2。",
+			id: "append-in-place",
+			title: "容量足够：直接写入容量槽",
+			operation: {
+				name: "append fast path",
+				call: "newLen = 3; newLen <= cap",
+				summary:
+					"不调用 runtime.growslice；写入原连续内存，并返回 len 更新后的 Descriptor。",
+				branch: "reuse",
+			},
+			state: {
+				phase: "append-in-place",
+				elementSize: 8,
+				descriptors: [
+					{
+						id: "before",
+						address: "0x7100",
+						array: "0x1800",
+						length: 2,
+						capacity: 4,
 					},
-					stage: { type: "defer-evaluation", phase: "value-two" },
-				},
-				{
-					kind: "reveal",
-					line: 4,
-					title: "闭包先读取 2",
-					narration: "后注册的闭包先执行，此刻读取 value，输出 2。",
-					stage: { type: "defer-evaluation", phase: "execute-closure" },
-				},
-				{
-					kind: "observe",
-					line: 4,
-					title: "普通调用输出 1",
-					narration: "普通调用使用注册时保存的参数 1。",
-					stage: { type: "defer-evaluation", phase: "complete" },
-				},
-				{
-					kind: "conclusion",
-					line: 4,
-					title: "两个时间点",
-					narration: "defer 语句执行时求参数；真正执行时才运行闭包体。",
-					stage: { type: "defer-evaluation", phase: "complete" },
-				},
-			],
+					{
+						id: "returned",
+						address: "0x7120",
+						array: "0x1800",
+						length: 3,
+						capacity: 4,
+						activeField: "len",
+					},
+				],
+				arrays: [
+					{
+						id: "spare-array",
+						baseAddress: "0x1800",
+						values: [10, 20, 30],
+						capacity: 4,
+						allocation: "reused",
+						writtenIndex: 2,
+					},
+				],
+				activeTargets: ["returned.len", "spare-array[2]"],
+			},
+		},
+		{
+			id: "growslice",
+			title: "容量不足：进入 runtime.growslice",
+			operation: {
+				name: "runtime.growslice",
+				call:
+					"growslice(oldPtr=0x2000, newLen=3, oldCap=2, num=1, et=int)",
+				summary:
+					"newLen 已超过 oldCap，编译器生成的慢路径必须请求新的存储。",
+				pipeline: [
+					["runtime.growslice", "active"],
+					["nextslicecap", "pending"],
+					["mallocgc", "pending"],
+					["memmove", "pending"],
+					["return", "pending"],
+				],
+			},
+			state: {
+				phase: "growslice",
+				elementSize: 8,
+				newLength: 3,
+				descriptors: [
+					{
+						id: "old",
+						address: "0x7200",
+						array: "0x2000",
+						length: 2,
+						capacity: 2,
+						activeField: "cap",
+					},
+				],
+				arrays: [fullOldArray],
+				activeTargets: ["old.cap"],
+			},
+		},
+		{
+			id: "allocate",
+			title: "计算 newCap，并由 mallocgc 分配",
+			operation: {
+				name: "nextslicecap → mallocgc",
+				call: "newCap = 4; mallocgc(4 × 8 B, intType, ...)",
+				summary:
+					"本次 Go 1.25.11 路径得到 newCap=4；不能把它推广成固定翻倍规则。",
+				pipeline: [
+					["runtime.growslice", "done"],
+					["nextslicecap", "done"],
+					["mallocgc", "active"],
+					["memmove", "pending"],
+					["return", "pending"],
+				],
+			},
+			state: {
+				phase: "allocate",
+				elementSize: 8,
+				newLength: 3,
+				newCapacity: 4,
+				descriptors: [
+					{
+						id: "old",
+						address: "0x7200",
+						array: "0x2000",
+						length: 2,
+						capacity: 2,
+					},
+				],
+				arrays: [fullOldArray, grownArrayEmpty],
+				activeTargets: ["new-array"],
+			},
+		},
+		{
+			id: "copy",
+			title: "memmove 复制旧元素，再写入新元素",
+			operation: {
+				name: "memmove",
+				call: "memmove(0x4000, 0x2000, 2 × 8 B)",
+				summary:
+					"旧数组的有效元素按字节复制到新分配；追加值写到下标 2。",
+				pipeline: [
+					["runtime.growslice", "done"],
+					["nextslicecap", "done"],
+					["mallocgc", "done"],
+					["memmove", "active"],
+					["return", "pending"],
+				],
+			},
+			state: {
+				phase: "copy",
+				elementSize: 8,
+				copyCount: 2,
+				descriptors: [
+					{
+						id: "old",
+						address: "0x7200",
+						array: "0x2000",
+						length: 2,
+						capacity: 2,
+					},
+				],
+				arrays: [fullOldArray, grownArrayCopied],
+				activeTargets: ["old-array", "new-array"],
+			},
+		},
+		{
+			id: "return-descriptor",
+			title: "growslice 返回新的 Descriptor",
+			operation: {
+				name: "return from runtime.growslice",
+				call: "slice{array: 0x4000, len: 3, cap: 4}",
+				summary:
+					"旧 Descriptor 仍指向旧内存；旧内存只有在不可达后才有资格被 GC 回收。",
+				pipeline: [
+					["runtime.growslice", "done"],
+					["nextslicecap", "done"],
+					["mallocgc", "done"],
+					["memmove", "done"],
+					["return", "active"],
+				],
+			},
+			state: {
+				phase: "return-descriptor",
+				elementSize: 8,
+				descriptors: [
+					{
+						id: "old",
+						address: "0x7200",
+						array: "0x2000",
+						length: 2,
+						capacity: 2,
+					},
+					{
+						id: "grown",
+						address: "0x7240",
+						array: "0x4000",
+						length: 3,
+						capacity: 4,
+						activeField: "array",
+					},
+				],
+				arrays: [fullOldArray, grownArrayCopied],
+				activeTargets: ["grown.array", "new-array[0]"],
+				gcNote: "旧内存仅在不可达后才有资格被 GC 回收。",
+			},
 		},
 	];
 
-	root.VISUALIZER_SCENES = scenes;
+	function deferNode({
+		id,
+		address,
+		pc,
+		fn,
+		link,
+		status,
+	}) {
+		return {
+			id,
+			address,
+			heap: false,
+			sp: "0x8f00",
+			pc,
+			fn,
+			link,
+			status,
+		};
+	}
+
+	const d1Linked = deferNode({
+		id: "D1",
+		address: "0x3000",
+		pc: "0x401140",
+		fn: "deferredFnA",
+		link: null,
+		status: "linked",
+	});
+
+	const d2Head = deferNode({
+		id: "D2",
+		address: "0x3100",
+		pc: "0x401180",
+		fn: "deferredFnB",
+		link: "0x3000",
+		status: "head",
+	});
+
+	const deferFrame = {
+		id: "work",
+		sp: "0x8f00",
+		returnPC: "0x401240",
+	};
+
+	const deferSteps = [
+		{
+			id: "frame",
+			title: "函数栈帧与 goroutine 已建立",
+			operation: {
+				name: "enter frame",
+				call: "g._defer = nil",
+				summary:
+					"当前函数拥有自己的 SP 和返回位置；goroutine 的 defer 链表头为空。",
+			},
+			state: {
+				phase: "frame",
+				goroutine: { id: "g17", deferHead: null },
+				frame: deferFrame,
+				nodes: [],
+			},
+		},
+		{
+			id: "register-d1",
+			title: "创建 D1，并写入链表头",
+			operation: {
+				name: "deferproc",
+				call: "D1.link = g._defer; g._defer = D1",
+				summary:
+					"节点保存注册栈帧、程序位置和函数值；D1.link 为 nil。",
+				atomic: ["D1.link = nil", "g._defer = D1"],
+			},
+			state: {
+				phase: "register-d1",
+				goroutine: { id: "g17", deferHead: "0x3000" },
+				frame: deferFrame,
+				nodes: [{ ...d1Linked, status: "head" }],
+			},
+		},
+		{
+			id: "register-d2",
+			title: "D2 以头插法链接到 D1",
+			operation: {
+				name: "deferproc",
+				call: "D2.link = g._defer; g._defer = D2",
+				summary:
+					"后注册的 D2 成为链表头，D2.link 保存此前的头指针 0x3000。",
+				atomic: ["D2.link = g._defer", "g._defer = D2"],
+			},
+			state: {
+				phase: "register-d2",
+				goroutine: { id: "g17", deferHead: "0x3100" },
+				frame: deferFrame,
+				nodes: [d2Head, d1Linked],
+			},
+		},
+		{
+			id: "deferreturn",
+			title: "正常返回进入 deferreturn",
+			operation: {
+				name: "runtime.deferreturn",
+				call: "find head node with sp == frame.SP",
+				summary:
+					"返回路径从 g._defer 头部检查属于当前栈帧的记录。",
+				atomic: ["head = g._defer", "match head.sp with frame.SP"],
+			},
+			state: {
+				phase: "deferreturn",
+				goroutine: { id: "g17", deferHead: "0x3100" },
+				frame: deferFrame,
+				nodes: [
+					{ ...d2Head, status: "selected" },
+					d1Linked,
+				],
+			},
+		},
+		{
+			id: "execute-d2",
+			title: "先脱链 D2，再调用 D2.fn",
+			operation: {
+				name: "pop head D2",
+				call: "head = D2.link; call D2.fn",
+				summary:
+					"头指针先移动到 D1，D2 从链表脱离，然后执行保存的函数值。",
+				atomic: [
+					"fn = D2.fn",
+					"head = D2.link",
+					"g._defer = head",
+					"call D2.fn",
+				],
+			},
+			state: {
+				phase: "execute-d2",
+				goroutine: { id: "g17", deferHead: "0x3000" },
+				frame: deferFrame,
+				nodes: [
+					{ ...d2Head, status: "executing" },
+					{ ...d1Linked, status: "head" },
+				],
+			},
+		},
+		{
+			id: "execute-d1",
+			title: "再脱链 D1，头指针变为 nil",
+			operation: {
+				name: "pop head D1",
+				call: "head = D1.link; call D1.fn",
+				summary:
+					"D1.link 为 nil，因此移除 D1 后，goroutine 的 defer 链表清空。",
+				atomic: [
+					"fn = D1.fn",
+					"head = D1.link",
+					"g._defer = nil",
+					"call D1.fn",
+				],
+			},
+			state: {
+				phase: "execute-d1",
+				goroutine: { id: "g17", deferHead: null },
+				frame: deferFrame,
+				nodes: [
+					{ ...d2Head, status: "detached" },
+					{ ...d1Linked, status: "executing" },
+				],
+			},
+		},
+		{
+			id: "return",
+			title: "链表清空，函数完成返回",
+			operation: {
+				name: "return",
+				call: "g._defer == nil",
+				summary:
+					"LIFO 不是抽象卡片规则，而是头插、头取数据结构产生的顺序。",
+			},
+			state: {
+				phase: "return",
+				goroutine: { id: "g17", deferHead: null },
+				frame: { ...deferFrame, status: "returning" },
+				nodes: [
+					{ ...d2Head, status: "detached" },
+					{ ...d1Linked, status: "detached" },
+				],
+				completion: "链表已清空",
+			},
+		},
+		{
+			id: "panic-entry",
+			title: "panic 是另一条遍历入口",
+			operation: {
+				name: "panic unwind",
+				call: "_panic.next() walks pending defers",
+				summary:
+					"异常返回也会处理待执行记录；本实验室不展开 _panic 与 recover 状态机。",
+			},
+			state: {
+				phase: "panic-entry",
+				goroutine: { id: "g17", deferHead: "0x3100" },
+				frame: { ...deferFrame, status: "panicking" },
+				nodes: [d2Head, d1Linked],
+				panicBoundary: true,
+			},
+		},
+	];
+
+	const labs = [
+		{
+			id: "slice-runtime",
+			kind: "slice",
+			chapter: "Slice",
+			eyebrow: "Descriptor · growslice",
+			title: "Slice Descriptor 与扩容",
+			description:
+				"拆开三个机器字、连续内存、指针运算和 runtime.growslice 调用链。",
+			steps: sliceSteps,
+		},
+		{
+			id: "defer-runtime",
+			kind: "defer",
+			chapter: "Defer",
+			eyebrow: "_defer · linked list",
+			title: "经典 _defer 链表与返回",
+			description:
+				"展开 goroutine 头指针、真实节点字段、头插注册和头取执行。",
+			steps: deferSteps,
+		},
+	];
+
+	root.RUNTIME_LABS = labs;
 	if (typeof module !== "undefined" && module.exports) {
-		module.exports = scenes;
+		module.exports = labs;
 	}
 })(typeof globalThis !== "undefined" ? globalThis : window);

@@ -3,100 +3,149 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 
-const scenes = require("../scenes.js");
+const labs = require("../scenes.js");
 const {
 	createInitialState,
 	reduceState,
-	getCurrentScene,
+	getCurrentLab,
 	getCurrentStep,
-	isPredictionReady,
 	actionFromKey,
 	shouldAnimateTransition,
 	animationDelay,
 } = require("../app.js");
 
-test("defines the four approved classroom scenes", () => {
+test("defines only the two runtime laboratories", () => {
 	assert.deepEqual(
-		scenes.map((scene) => scene.id),
-		["slice-shared", "slice-append", "defer-lifo", "defer-evaluation"],
+		labs.map((lab) => lab.id),
+		["slice-runtime", "defer-runtime"],
+	);
+	assert.deepEqual(
+		labs.map((lab) => lab.kind),
+		["slice", "defer"],
 	);
 
-	for (const scene of scenes) {
-		assert.ok(scene.code.length >= 4);
-		assert.ok(scene.steps.length >= 6);
-		assert.equal(
-			scene.steps.filter((step) => step.kind === "prediction").length,
-			1,
-		);
-		assert.equal(scene.steps.at(-1).kind, "conclusion");
-		for (const step of scene.steps) {
+	for (const lab of labs) {
+		assert.equal(lab.steps.length, 8);
+		assert.equal(new Set(lab.steps.map((step) => step.id)).size, 8);
+		for (const step of lab.steps) {
 			assert.equal(typeof step.title, "string");
-			assert.equal(typeof step.narration, "string");
-			assert.ok(step.line >= 0 && step.line < scene.code.length);
+			assert.equal(typeof step.operation.name, "string");
+			assert.equal(typeof step.operation.summary, "string");
+			assert.equal(typeof step.state.phase, "string");
 		}
 	}
 });
 
-test("prediction cannot advance until it is selected and revealed", () => {
-	let state = reduceState(createInitialState(), {
-		type: "SELECT_SCENE",
-		sceneId: "slice-shared",
-	});
-	const scene = getCurrentScene(state);
-	const predictionIndex = scene.steps.findIndex(
-		(step) => step.kind === "prediction",
+test("runtime labs contain no code-example or prediction contract", () => {
+	const serialized = JSON.stringify(labs);
+	assert.doesNotMatch(
+		serialized,
+		/prediction|choices|correctChoiceId|predictionChoice/,
 	);
-	state = { ...state, stepIndex: predictionIndex };
+	for (const lab of labs) assert.equal("code" in lab, false);
+});
 
-	assert.equal(isPredictionReady(state), false);
-	assert.deepEqual(reduceState(state, { type: "NEXT" }), state);
-
-	state = reduceState(state, {
-		type: "SELECT_PREDICTION",
-		choiceId: "changes",
-	});
-	assert.equal(isPredictionReady(state), true);
-	assert.equal(reduceState(state, { type: "NEXT" }).stepIndex, predictionIndex);
-
-	state = reduceState(state, { type: "REVEAL" });
-	assert.equal(state.predictionRevealed, true);
-	assert.equal(
-		reduceState(state, { type: "NEXT" }).stepIndex,
-		predictionIndex + 1,
+test("uses the approved eight-step Slice runtime sequence", () => {
+	assert.deepEqual(
+		labs[0].steps.map((step) => step.id),
+		[
+			"descriptor",
+			"address",
+			"reslice",
+			"append-in-place",
+			"growslice",
+			"allocate",
+			"copy",
+			"return-descriptor",
+		],
 	);
 });
 
-test("previous and scene switching reset transient prediction state", () => {
+test("uses the approved eight-step classic Defer sequence", () => {
+	assert.deepEqual(
+		labs[1].steps.map((step) => step.id),
+		[
+			"frame",
+			"register-d1",
+			"register-d2",
+			"deferreturn",
+			"execute-d2",
+			"execute-d1",
+			"return",
+			"panic-entry",
+		],
+	);
+});
+
+test("teacher controls move deterministically through a lab", () => {
 	let state = reduceState(createInitialState(), {
-		type: "SELECT_SCENE",
-		sceneId: "defer-lifo",
+		type: "SELECT_LAB",
+		labId: "slice-runtime",
+	});
+	assert.equal(state.stepIndex, 0);
+	assert.equal(getCurrentLab(state).id, "slice-runtime");
+	assert.equal(getCurrentStep(state).id, "descriptor");
+
+	state = reduceState(state, { type: "NEXT" });
+	assert.equal(state.stepIndex, 1);
+	state = reduceState(state, { type: "PREVIOUS" });
+	assert.equal(state.stepIndex, 0);
+
+	state = {
+		...state,
+		stepIndex: getCurrentLab(state).steps.length - 1,
+	};
+	state = reduceState(state, { type: "NEXT" });
+	assert.equal(state.labId, null);
+	assert.equal(state.stepIndex, 0);
+});
+
+test("rejects unknown labs and resets transient state when switching", () => {
+	const initial = createInitialState();
+	assert.deepEqual(
+		reduceState(initial, { type: "SELECT_LAB", labId: "missing" }),
+		initial,
+	);
+
+	let state = reduceState(initial, {
+		type: "SELECT_LAB",
+		labId: "slice-runtime",
 	});
 	state = {
 		...state,
-		stepIndex: 3,
-		predictionChoice: "b-first",
-		predictionRevealed: true,
+		stepIndex: 5,
+		replayNonce: 3,
+		error: "old",
 	};
-
-	state = reduceState(state, { type: "PREVIOUS" });
-	assert.equal(state.stepIndex, 2);
-	assert.equal(state.predictionChoice, null);
-	assert.equal(state.predictionRevealed, false);
-
 	state = reduceState(state, {
-		type: "SELECT_SCENE",
-		sceneId: "slice-append",
+		type: "SELECT_LAB",
+		labId: "defer-runtime",
 	});
-	assert.equal(state.sceneId, "slice-append");
-	assert.equal(state.stepIndex, 0);
-	assert.equal(state.predictionChoice, null);
-	assert.equal(state.predictionRevealed, false);
+	assert.deepEqual(state, {
+		labId: "defer-runtime",
+		stepIndex: 0,
+		isAnimating: false,
+		replayNonce: 0,
+		error: null,
+	});
 });
 
-test("selectors return null while the scene menu is active", () => {
-	const state = createInitialState();
-	assert.equal(getCurrentScene(state), null);
-	assert.equal(getCurrentStep(state), null);
+test("animation lock ignores navigation but permits lab switching", () => {
+	let state = reduceState(createInitialState(), {
+		type: "SELECT_LAB",
+		labId: "slice-runtime",
+	});
+	state = reduceState(state, { type: "ANIMATION_START" });
+	assert.equal(state.isAnimating, true);
+	assert.deepEqual(reduceState(state, { type: "NEXT" }), state);
+	assert.deepEqual(reduceState(state, { type: "REPLAY" }), state);
+
+	state = reduceState(state, {
+		type: "SELECT_LAB",
+		labId: "defer-runtime",
+	});
+	assert.equal(state.labId, "defer-runtime");
+	assert.equal(state.isAnimating, false);
 });
 
 test("maps classroom keyboard controls", () => {
@@ -108,76 +157,23 @@ test("maps classroom keyboard controls", () => {
 	assert.equal(actionFromKey("Enter"), null);
 });
 
-test("next from a conclusion returns to the scene menu", () => {
+test("only visible step transitions request animation", () => {
 	let state = reduceState(createInitialState(), {
-		type: "SELECT_SCENE",
-		sceneId: "defer-lifo",
+		type: "SELECT_LAB",
+		labId: "slice-runtime",
 	});
-	state = {
-		...state,
-		stepIndex: getCurrentScene(state).steps.length - 1,
-	};
-
-	state = reduceState(state, { type: "NEXT" });
-	assert.equal(state.sceneId, null);
-	assert.equal(state.stepIndex, 0);
-});
-
-test("animation lock ignores navigation but still permits scene switching", () => {
-	let state = reduceState(createInitialState(), {
-		type: "SELECT_SCENE",
-		sceneId: "slice-shared",
-	});
-	state = reduceState(state, { type: "ANIMATION_START" });
-	assert.equal(state.isAnimating, true);
-	assert.deepEqual(reduceState(state, { type: "NEXT" }), state);
-
-	state = reduceState(state, {
-		type: "SELECT_SCENE",
-		sceneId: "defer-lifo",
-	});
-	assert.equal(state.sceneId, "defer-lifo");
-	assert.equal(state.isAnimating, false);
-});
-
-test("locks only transitions that visibly replace or replay a step", () => {
-	let state = reduceState(createInitialState(), {
-		type: "SELECT_SCENE",
-		sceneId: "slice-shared",
-	});
-	let nextState = reduceState(state, { type: "NEXT" });
+	const next = reduceState(state, { type: "NEXT" });
 	assert.equal(
-		shouldAnimateTransition(state, nextState, { type: "NEXT" }),
+		shouldAnimateTransition(state, next, { type: "NEXT" }),
 		true,
 	);
-
-	state = { ...nextState, stepIndex: 2 };
-	nextState = reduceState(state, { type: "NEXT" });
-	assert.equal(nextState, state);
 	assert.equal(
-		shouldAnimateTransition(state, nextState, { type: "NEXT" }),
+		shouldAnimateTransition(state, state, { type: "NEXT" }),
 		false,
-	);
-
-	nextState = reduceState(state, {
-		type: "SELECT_PREDICTION",
-		choiceId: "changes",
-	});
-	assert.equal(
-		shouldAnimateTransition(state, nextState, {
-			type: "SELECT_PREDICTION",
-		}),
-		false,
-	);
-
-	const replayed = reduceState(state, { type: "REPLAY" });
-	assert.equal(
-		shouldAnimateTransition(state, replayed, { type: "REPLAY" }),
-		true,
 	);
 });
 
-test("reduced-motion mode removes the controller animation lock delay", () => {
+test("reduced motion removes the controller delay", () => {
 	assert.equal(animationDelay(true), 0);
-	assert.equal(animationDelay(false), 720);
+	assert.equal(animationDelay(false), 900);
 });
