@@ -9,134 +9,139 @@ const {
 	createInitialState,
 	reduceState,
 	renderAppMarkup,
-	escapeHTML,
+	renderLabFragments,
 } = require("../app.js");
+const { escapeHTML } = require("../render-utils.js");
 
 const visualizerRoot = path.resolve(__dirname, "..");
 
-test("escapes text before inserting it into markup", () => {
+test("escapes text used in runtime structure markup", () => {
 	assert.equal(
 		escapeHTML('<img src=x onerror="x">'),
 		"&lt;img src=x onerror=&quot;x&quot;&gt;",
 	);
 });
 
-test("offline HTML shell uses local classic scripts", () => {
-	const html = fs.readFileSync(path.join(visualizerRoot, "index.html"), "utf8");
-	assert.match(html, /lang="zh-CN"/);
-	assert.match(html, /id="app"/);
-	assert.match(html, /src="\.\/scenes\.js"/);
-	assert.match(html, /src="\.\/app\.js"/);
-	assert.doesNotMatch(html, /type="module"/);
-	assert.doesNotMatch(html, /https?:\/\//);
+test("offline shell loads only local classic runtime-lab scripts in order", () => {
+	const html = fs.readFileSync(
+		path.join(visualizerRoot, "index.html"),
+		"utf8",
+	);
+	const files = [
+		"render-utils.js",
+		"scenes.js",
+		"slice-lab.js",
+		"defer-lab.js",
+		"app.js",
+	];
+	let previousIndex = -1;
+	for (const file of files) {
+		const index = html.indexOf(`src="./${file}"`);
+		assert.ok(index > previousIndex, `${file} must load in dependency order`);
+		previousIndex = index;
+	}
+	assert.doesNotMatch(html, /type="module"|https?:\/\//);
 });
 
-test("menu markup exposes four native scene buttons", () => {
-	const markup = renderAppMarkup({
-		sceneId: null,
-		stepIndex: 0,
-		predictionChoice: null,
-		predictionRevealed: false,
-		isAnimating: false,
-		replayNonce: 0,
-		error: null,
-	});
-	assert.equal((markup.match(/data-scene-id=/g) || []).length, 4);
-	assert.equal((markup.match(/<button/g) || []).length, 4);
-	assert.match(markup, /Slice/);
-	assert.match(markup, /Defer/);
+test("menu exposes only the two runtime laboratories", () => {
+	assert.equal(typeof renderAppMarkup, "function");
+	const markup = renderAppMarkup(createInitialState());
+	assert.equal((markup.match(/data-lab-id=/g) || []).length, 2);
+	assert.match(markup, /Slice Descriptor 与扩容/);
+	assert.match(markup, /经典 _defer 链表与返回/);
+	assert.doesNotMatch(markup, /先预测|揭晓答案/);
 });
 
-test("lesson shell contains code, stage, note, progress, and controls", () => {
+test("lesson shell is organized around runtime structures", () => {
 	const state = reduceState(createInitialState(), {
-		type: "SELECT_SCENE",
-		sceneId: "slice-shared",
+		type: "SELECT_LAB",
+		labId: "slice-runtime",
 	});
 	const markup = renderAppMarkup(state);
-
 	for (const id of [
-		"scene-nav",
-		"code-panel",
-		"stage",
-		"teaching-note",
+		"lab-nav",
+		"structure-inspector",
+		"runtime-stage",
+		"operation-panel",
 		"previous-button",
 		"replay-button",
 		"next-button",
 	]) {
 		assert.match(markup, new RegExp(`id="${id}"`));
 	}
-	assert.match(markup, /aria-current="step"/);
-	assert.match(markup, /1 \/ 6/);
+	assert.match(markup, /第 1 \/ 8 步/);
+	assert.doesNotMatch(
+		markup,
+		/code-panel|prediction-choice|data-choice-id|揭晓答案/,
+	);
 });
 
-test("prediction markup separates choice, reveal, and next actions", () => {
-	let state = reduceState(createInitialState(), {
-		type: "SELECT_SCENE",
-		sceneId: "slice-shared",
-	});
-	state = { ...state, stepIndex: 2 };
+test("lab renderer routes three fragments to the three workbench regions", () => {
+	for (const labId of ["slice-runtime", "defer-runtime"]) {
+		const state = reduceState(createInitialState(), {
+			type: "SELECT_LAB",
+			labId,
+		});
+		const fragments = renderLabFragments(state);
+		assert.deepEqual(Object.keys(fragments), [
+			"inspector",
+			"stage",
+			"operation",
+		]);
+		const markup = renderAppMarkup(state);
+		assert.match(
+			markup,
+			new RegExp(
+				`id="structure-inspector"[\\s\\S]*${labId === "slice-runtime" ? "runtime\\.slice" : "runtime\\._defer"}`,
+			),
+		);
+		assert.match(markup, /id="runtime-stage"/);
+		assert.match(markup, /id="operation-panel"/);
+	}
+});
 
+test("first step disables previous and final step returns to directory", () => {
+	let state = reduceState(createInitialState(), {
+		type: "SELECT_LAB",
+		labId: "defer-runtime",
+	});
 	let markup = renderAppMarkup(state);
-	assert.equal((markup.match(/data-choice-id=/g) || []).length, 2);
-	assert.match(markup, /data-action="reveal"[^>]*disabled/);
-	assert.match(markup, /id="next-button"[^>]*disabled/);
+	assert.match(markup, /id="previous-button"[^>]*disabled/);
 
-	state = reduceState(state, {
-		type: "SELECT_PREDICTION",
-		choiceId: "changes",
-	});
+	state = { ...state, stepIndex: 7 };
 	markup = renderAppMarkup(state);
-	assert.doesNotMatch(markup, /data-action="reveal"[^>]*disabled/);
-	assert.match(markup, /id="next-button"[^>]*disabled/);
-
-	state = reduceState(state, { type: "REVEAL" });
-	markup = renderAppMarkup(state);
-	assert.match(markup, /回答正确/);
-	assert.match(markup, /同一个底层数组单元/);
-	assert.doesNotMatch(markup, /id="next-button"[^>]*disabled/);
+	assert.match(markup, /id="next-button"[\s\S]*返回实验室目录/);
 });
 
-test("animation lock is controller-owned so unlocking does not rerender the stage", () => {
-	let state = reduceState(createInitialState(), {
-		type: "SELECT_SCENE",
-		sceneId: "slice-shared",
-	});
-	state = { ...state, stepIndex: 1 };
-	state = reduceState(state, { type: "ANIMATION_START" });
-	const markup = renderAppMarkup(state);
-
-	assert.doesNotMatch(markup, /id="previous-button"[^>]*disabled/);
-	assert.doesNotMatch(markup, /id="replay-button"[^>]*disabled/);
-	assert.doesNotMatch(markup, /id="next-button"[^>]*disabled/);
-});
-
-test("stylesheet defines projection and narrow-screen layouts", () => {
-	const css = fs.readFileSync(path.join(visualizerRoot, "styles.css"), "utf8");
-	assert.match(css, /\.lesson-grid/);
-	assert.match(css, /grid-template-columns:\s*minmax\(18rem,\s*34%\)/);
-	assert.match(
-		css,
-		/\.code-line\s*\{[^}]*column-gap:\s*0\.75rem/s,
-	);
-	assert.match(css, /@media\s*\(max-width:\s*880px\)/);
-	assert.match(css, /prefers-reduced-motion:\s*reduce/);
-	assert.match(css, /:focus-visible/);
-	assert.match(
-		css,
-		/#app\[data-animating="true"\]\s+\.slice-header/,
-	);
-});
-
-test("module README documents the offline classroom entry point", () => {
-	const readme = fs.readFileSync(
-		path.resolve(visualizerRoot, "..", "README.md"),
+test("stylesheet defines three-column and narrow-screen runtime layouts", () => {
+	const css = fs.readFileSync(
+		path.join(visualizerRoot, "styles.css"),
 		"utf8",
 	);
-	assert.match(readme, /## Slice 与 Defer 原理动画/);
-	assert.match(readme, /visualizer\/index\.html/);
-	assert.match(readme, /无需后端或网络/);
-	assert.match(readme, /→.*下一步/);
-	assert.match(readme, /←.*上一步/);
-	assert.match(readme, /R.*重播/);
-	assert.match(readme, /先预测/);
+	assert.match(css, /\.runtime-workbench/);
+	assert.match(
+		css,
+		/grid-template-columns:[^;]*minmax\(16rem,[^;]*minmax\(30rem,[^;]*minmax\(16rem/s,
+	);
+	for (const selector of [
+		".field-row",
+		".memory-cell",
+		".descriptor-bounds",
+		".defer-node",
+		".nil-node",
+		".runtime-pipeline",
+	]) {
+		assert.match(css, new RegExp(selector.replace(".", "\\.")));
+	}
+	assert.match(css, /@media\s*\(max-width:\s*900px\)/);
+	assert.match(css, /prefers-reduced-motion:\s*reduce/);
+	assert.match(css, /:focus-visible/);
+});
+
+test("animation styles run only during controller-owned transitions", () => {
+	const css = fs.readFileSync(
+		path.join(visualizerRoot, "styles.css"),
+		"utf8",
+	);
+	assert.match(css, /#app\[data-animating="true"\]/);
 });

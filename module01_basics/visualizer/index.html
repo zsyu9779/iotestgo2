@@ -6,15 +6,18 @@
 	<meta name="color-scheme" content="dark">
 	<meta
 		name="description"
-		content="用于课堂逐步讲解 Go Slice 与 Defer 底层原理的离线动画页面。"
+		content="逐步拆解 Go Slice Descriptor、扩容调用链与经典 Defer 链表的离线课堂实验室。"
 	>
-	<title>Go Slice 与 Defer 原理演示</title>
+	<title>Go Runtime 解剖实验室</title>
 	<link rel="stylesheet" href="./styles.css">
 </head>
 <body>
 	<main id="app" class="app-shell" aria-live="polite"></main>
 	<noscript>此演示需要启用 JavaScript。</noscript>
+	<script src="./render-utils.js"></script>
 	<script src="./scenes.js"></script>
+	<script src="./slice-lab.js"></script>
+	<script src="./defer-lab.js"></script>
 	<script src="./app.js"></script>
 </body>
 </html>
