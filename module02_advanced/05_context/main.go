@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	// 1. WithCancel
+	// 1. 使用 WithCancel 传播取消信号。
 	ctx, cancel := context.WithCancel(context.Background())
 	go func(ctx context.Context) {
 		for {
@@ -27,7 +27,7 @@ func main() {
 	cancel()
 	time.Sleep(1 * time.Second)
 
-	// 2. WithTimeout
+	// 2. 使用 WithTimeout 控制最长等待时间。
 	fmt.Println("\n--- Timeout Example ---")
 	ctx2, cancel2 := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel2()

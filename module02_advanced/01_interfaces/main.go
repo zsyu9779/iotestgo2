@@ -2,12 +2,12 @@ package main
 
 import "fmt"
 
-// 1. Interface Definition
+// 1. 定义接口。
 type Animal interface {
 	Speak() string
 }
 
-// 2. Implementation (Implicit)
+// 2. 通过方法集隐式实现接口。
 type Dog struct {
 	Name string
 }
@@ -24,7 +24,7 @@ func (c Cat) Speak() string {
 	return "Meow!"
 }
 
-// 3. Polymorphism
+// 3. 使用接口实现多态。
 func MakeSound(a Animal) {
 	fmt.Println(a.Speak())
 }
@@ -36,10 +36,10 @@ func main() {
 	MakeSound(d)
 	MakeSound(c)
 
-	// 4. Empty Interface & Type Assertion
+	// 4. 空接口和类型断言。
 	var any interface{} = "I am a string"
 
-	// Type Assertion
+	// 类型断言。
 	str, ok := any.(string)
 	if ok {
 		fmt.Println("It's a string:", str)
@@ -47,7 +47,7 @@ func main() {
 		fmt.Println("Not a string")
 	}
 
-	// Type Switch
+	// 类型 switch。
 	switch v := any.(type) {
 	case int:
 		fmt.Println("Integer:", v)

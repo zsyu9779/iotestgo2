@@ -25,7 +25,7 @@ func (c *SafeCounter) Value() int {
 }
 
 func main() {
-	// 1. Mutex
+	// 1. 使用 Mutex 保护共享计数器。
 	counter := SafeCounter{}
 	var wg sync.WaitGroup
 
@@ -40,7 +40,7 @@ func main() {
 	wg.Wait()
 	fmt.Println("Counter Value (Mutex):", counter.Value())
 
-	// 2. Atomic
+	// 2. 使用 Atomic 完成简单计数。
 	var ops uint64
 	var wg2 sync.WaitGroup
 	for i := 0; i < 1000; i++ {
@@ -53,7 +53,7 @@ func main() {
 	wg2.Wait()
 	fmt.Println("Ops Value (Atomic):", ops)
 
-	// Race condition example (if run with go run -race)
+	// 竞态示例：可使用 go run -race 检测。
 	// var x int
 	// go func() { x++ }()
 	// fmt.Println(x)

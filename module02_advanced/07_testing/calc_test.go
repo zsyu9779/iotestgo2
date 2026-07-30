@@ -9,7 +9,7 @@ func TestAdd(t *testing.T) {
 	}
 }
 
-// Table-Driven Test
+// 表格驱动测试。
 func TestAddTable(t *testing.T) {
 	tests := []struct {
 		a, b, want int
@@ -46,7 +46,7 @@ func TestAddSubtests(t *testing.T) {
 	})
 }
 
-// Parallel subtests
+// 并行子测试。
 func TestAddParallel(t *testing.T) {
 	cases := []struct {
 		name string

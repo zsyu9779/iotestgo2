@@ -1,6 +1,6 @@
 package main
 
-// Add returns the sum of a and b
+// Add 返回 a 和 b 的和。
 func Add(a, b int) int {
 	return a + b
 }

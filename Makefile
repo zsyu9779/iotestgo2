@@ -1,7 +1,7 @@
-.PHONY: help fmt-check test-basic test-race run-basic-hello run-task-manager run-log-analyzer run-user-center run-blog-api run-compute-server run-compute-client ecommerce-up ecommerce-down module01-verify module01-demo-contracts module01-teaching-failures module01-audit module01-lab-01 module01-lab-02 module01-lab-03 module01-lab-04 module01-integrated-lab module01-homework-solution
+.PHONY: help fmt-check test-basic test-race run-basic-hello run-task-manager run-log-analyzer run-user-center run-blog-api run-compute-server run-compute-client ecommerce-up ecommerce-down module01-verify module01-demo-contracts module01-teaching-failures module01-audit module01-lab-01 module01-lab-02 module01-lab-03 module01-lab-04 module01-integrated-lab module01-homework-solution module02-verify module02-demo-contracts module02-integrated-lab module02-audit
 
 help:
-	@echo "Targets: fmt-check test-basic test-race module01-verify"
+	@echo "Targets: fmt-check test-basic test-race module01-verify module02-verify"
 
 fmt-check:
 	@formatted_files="$$(mktemp)"; \
@@ -76,3 +76,14 @@ module01-teaching-failures:
 	bash module01_basics/teaching_failures/verify.sh
 
 module01-audit: module01-verify module01-demo-contracts module01-teaching-failures
+
+module02-integrated-lab:
+	go test -race ./module02_advanced/project_log_analyzer
+
+module02-demo-contracts:
+	bash module02_advanced/scripts/demo_contracts.sh
+
+module02-verify:
+	bash module02_advanced/scripts/grade.sh
+
+module02-audit: module02-verify module02-demo-contracts module02-integrated-lab

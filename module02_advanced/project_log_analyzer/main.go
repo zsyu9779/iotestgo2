@@ -8,14 +8,14 @@ import (
 	"time"
 )
 
-// Simulated Log Entry
+// LogEntry 表示一条模拟日志。
 type LogEntry struct {
 	ID      int
 	Content string
-	Level   string // INFO, ERROR, WARN
+	Level   string // INFO、ERROR、WARN
 }
 
-// LogGenerator simulates reading from a large file
+// LogGenerator 模拟从大文件读取日志，并在取消时停止发送。
 func LogGenerator(ctx context.Context, out chan<- LogEntry, count int) {
 	defer close(out)
 	for id := 1; id <= count; id++ {
@@ -23,7 +23,6 @@ func LogGenerator(ctx context.Context, out chan<- LogEntry, count int) {
 		case <-ctx.Done():
 			return
 		default:
-			// Simulate random logs
 			level := "INFO"
 			r := rand.Intn(10)
 			if r > 8 {
@@ -37,26 +36,46 @@ func LogGenerator(ctx context.Context, out chan<- LogEntry, count int) {
 				Content: fmt.Sprintf("Log message content %d", id),
 				Level:   level,
 			}
-			out <- log
-			// time.Sleep(1 * time.Millisecond) // Removed sleep for benchmark
+			select {
+			case <-ctx.Done():
+				return
+			case out <- log:
+			}
 		}
 	}
 }
 
-// LogProcessor processes logs
+// LogProcessor 兼容旧的课堂示例，处理不会被取消的输入。
 func LogProcessor(id int, in <-chan LogEntry, errorsCh chan<- LogEntry, wg *sync.WaitGroup) {
+	logProcessor(context.Background(), in, errorsCh, wg)
+}
+
+// logProcessor 处理输入，并响应 Context 取消。
+func logProcessor(ctx context.Context, in <-chan LogEntry, errorsCh chan<- LogEntry, wg *sync.WaitGroup) {
 	defer wg.Done()
-	for log := range in {
-		// Simulate processing
-		// time.Sleep(1 * time.Millisecond) // Removed sleep for benchmark
-		if log.Level == "ERROR" {
-			// fmt.Printf("[Processor %d] Found ERROR: %s\n", id, log.Content) // Remove print for benchmark
-			errorsCh <- log
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case log, ok := <-in:
+			if !ok {
+				return
+			}
+			if log.Level == "ERROR" {
+				select {
+				case <-ctx.Done():
+					return
+				case errorsCh <- log:
+				}
+			}
 		}
 	}
 }
 
 func CountErrors(entries []LogEntry, numProcessors int) int {
+	if numProcessors < 1 {
+		return 0
+	}
 	logsCh := make(chan LogEntry, len(entries))
 	errorsCh := make(chan LogEntry, len(entries))
 
@@ -80,42 +99,47 @@ func CountErrors(entries []LogEntry, numProcessors int) int {
 	return count
 }
 
-func RunPipeline(numProcessors int, logCount int) int {
-	// Channels
-	logsCh := make(chan LogEntry, 100)
-	errorsCh := make(chan LogEntry, 100)
-
-	// Context for cancellation
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	// 1. Start Generator (Producer)
-	go LogGenerator(ctx, logsCh, logCount)
-
-	// 2. Start Processors (Consumers)
-	var wg sync.WaitGroup
-	for i := 1; i <= numProcessors; i++ {
-		wg.Add(1)
-		go LogProcessor(i, logsCh, errorsCh, &wg)
+// Analyze 消费日志输入，返回 ERROR 数量，并保证取消和关闭顺序明确。
+func Analyze(ctx context.Context, source <-chan LogEntry, numProcessors int) (int, error) {
+	if numProcessors < 1 {
+		return 0, fmt.Errorf("worker 数量必须大于 0")
+	}
+	if err := ctx.Err(); err != nil {
+		return 0, err
 	}
 
-	// 3. Error Collector
-	errorCount := 0
-	var collectorWg sync.WaitGroup
-	collectorWg.Add(1)
+	errorsCh := make(chan LogEntry, numProcessors)
+	var workers sync.WaitGroup
+	for i := 0; i < numProcessors; i++ {
+		workers.Add(1)
+		go logProcessor(ctx, source, errorsCh, &workers)
+	}
+
+	countCh := make(chan int, 1)
 	go func() {
-		defer collectorWg.Done()
+		count := 0
 		for range errorsCh {
-			errorCount++
+			count++
 		}
+		countCh <- count
 	}()
 
-	// Wait for processors to finish
-	wg.Wait()
-	close(errorsCh) // Close error channel so collector can finish
+	workers.Wait()
+	close(errorsCh)
+	count := <-countCh
+	if err := ctx.Err(); err != nil {
+		return count, err
+	}
+	return count, nil
+}
 
-	collectorWg.Wait() // Wait for collector
-	return errorCount
+func RunPipeline(numProcessors int, logCount int) int {
+	logsCh := make(chan LogEntry, 100)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go LogGenerator(ctx, logsCh, logCount)
+	count, _ := Analyze(ctx, logsCh, numProcessors)
+	return count
 }
 
 func main() {

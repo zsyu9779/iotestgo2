@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-// Custom Error
+// MyError 是一个自定义错误类型。
 type MyError struct {
 	Code int
 	Msg  string
@@ -23,25 +23,23 @@ func doTask(fail bool) error {
 }
 
 func main() {
-	// 1. Defer (LIFO)
-	// Java: finally { cleanup(); }
+	// 1. defer 按后进先出顺序执行。
 	defer fmt.Println("Deferred 1: Cleanup resources")
 	defer fmt.Println("Deferred 2: Closing file")
 	fmt.Println("Main execution started")
 
-	// 2. Error Handling
+	// 2. 显式处理错误返回值。
 	err := doTask(true)
 	if err != nil {
 		fmt.Println("Handled error:", err)
-		// Check specific error type
+		// 检查具体错误类型。
 		var myErr *MyError
 		if errors.As(err, &myErr) {
 			fmt.Println("Custom error code:", myErr.Code)
 		}
 	}
 
-	// 3. Panic & Recover
-	// Java: throw new RuntimeException() ... catch
+	// 3. panic 和 recover 只作为边界兜底。
 	safeFunction()
 	fmt.Println("Main continues after recover")
 }
@@ -54,5 +52,5 @@ func safeFunction() {
 	}()
 	fmt.Println("About to panic...")
 	panic("Something went terribly wrong!")
-	// fmt.Println("This won't be executed")
+	// fmt.Println("这行不会执行")
 }

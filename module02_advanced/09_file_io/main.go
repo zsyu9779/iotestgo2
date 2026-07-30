@@ -7,16 +7,15 @@ import (
 	"os"
 )
 
-// This module covers low-level File I/O operations in Go.
-// It corresponds to the 'myio/myfile' section from the original iotestgo.
+// 本示例介绍 Go 的底层文件 I/O，对应原项目中的 myio/myfile 部分。
 
 func main() {
-	// Prepare a directory for our file operations
+	// 准备文件操作目录。
 	dir := "test_files"
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		panic(err)
 	}
-	defer os.RemoveAll(dir) // Cleanup
+	defer os.RemoveAll(dir) // 教学示例结束后清理临时目录。
 
 	filename := dir + "/example.txt"
 	copyFilename := dir + "/example_copy.txt"
@@ -38,7 +37,7 @@ func main() {
 }
 
 func basicWrite(filename string) {
-	// os.Create creates or truncates the named file.
+	// os.Create 创建文件，已存在时会截断文件。
 	f, err := os.Create(filename)
 	if err != nil {
 		fmt.Println("Create error:", err)
@@ -46,16 +45,16 @@ func basicWrite(filename string) {
 	}
 	defer f.Close()
 
-	// WriteString
+	// 写入字符串。
 	f.WriteString("Hello, World!\n")
-	// Write bytes
+	// 写入字节。
 	f.Write([]byte("This is a low-level file I/O demo.\n"))
 
 	fmt.Printf("Wrote content to %s\n", filename)
 }
 
 func basicRead(filename string) {
-	// os.Open opens the named file for reading.
+	// os.Open 以只读方式打开文件。
 	f, err := os.Open(filename)
 	if err != nil {
 		fmt.Println("Open error:", err)
@@ -63,12 +62,12 @@ func basicRead(filename string) {
 	}
 	defer f.Close()
 
-	// Read into a buffer
+	// 读入缓冲区。
 	buf := make([]byte, 1024)
 	for {
 		n, err := f.Read(buf)
 		if n > 0 {
-			// Write to stdout directly
+			// 直接写入标准输出。
 			os.Stdout.Write(buf[:n])
 		}
 		if err == io.EOF {
@@ -94,7 +93,7 @@ func fileCopy(srcName, dstName string) {
 	}
 	defer dst.Close()
 
-	// Copy using a buffer
+	// 使用缓冲区复制文件。
 	buf := make([]byte, 1024)
 	for {
 		n, err := src.Read(buf)
@@ -125,17 +124,16 @@ func bufferedCopy(srcName, dstName string) {
 	}
 	defer dst.Close()
 
-	// Use bufio for buffered I/O
+	// 使用 bufio 完成缓冲 I/O。
 	reader := bufio.NewReader(src)
 	writer := bufio.NewWriter(dst)
 
-	// io.Copy uses buffers internally, but here we demonstrate manual buffered read/write logic or just io.Copy with buffered streams
-	// For demonstration, let's use the standard io.Copy which works great with bufio types too
+	// io.Copy 内部也会使用缓冲，这里用 bufio 类型展示接口组合。
 	n, err := io.Copy(writer, reader)
 	if err != nil {
 		panic(err)
 	}
-	writer.Flush() // Don't forget to flush the writer!
+	writer.Flush() // 不要忘记刷新写缓冲。
 	fmt.Printf("Buffered copied %d bytes to %s\n", n, dstName)
 }
 
@@ -146,7 +144,7 @@ func seekAndRead(filename string) {
 	}
 	defer f.Close()
 
-	// Seek to offset 7 (skip "Hello, ")
+	// 跳到偏移量 7，跳过 "Hello, "。
 	_, err = f.Seek(7, io.SeekStart)
 	if err != nil {
 		panic(err)
@@ -154,5 +152,5 @@ func seekAndRead(filename string) {
 
 	buf := make([]byte, 5)
 	io.ReadAtLeast(f, buf, 5)
-	fmt.Printf("Read after seek(7): %s\n", string(buf)) // Should be "World"
+	fmt.Printf("Read after seek(7): %s\n", string(buf)) // 预期读取到 "World"。
 }

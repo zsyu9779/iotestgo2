@@ -8,24 +8,22 @@ import (
 )
 
 func worker(id int, wg *sync.WaitGroup) {
-	defer wg.Done() // Notify when done
+	defer wg.Done() // 通知任务已完成。
 	fmt.Printf("Worker %d starting\n", id)
-	time.Sleep(time.Second) // Simulate work
+	time.Sleep(time.Second) // 模拟工作。
 	fmt.Printf("Worker %d done\n", id)
 }
 
 func main() {
-	// GOMAXPROCS
+	// 查看可用 CPU 数量。
 	fmt.Println("CPUs:", runtime.NumCPU())
 
-	// 1. Goroutine
-	// Java: new Thread(() -> { ... }).start();
+	// 1. 启动 Goroutine。
 	go func() {
 		fmt.Println("Hello from detached goroutine")
 	}()
 
-	// 2. WaitGroup
-	// Java: CountDownLatch
+	// 2. 使用 WaitGroup 等待任务完成。
 	var wg sync.WaitGroup
 
 	for i := 1; i <= 3; i++ {

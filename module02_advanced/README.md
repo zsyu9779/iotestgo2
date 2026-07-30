@@ -1,70 +1,64 @@
-# Module 02: Go 语言进阶
+# Module 02：Go 进阶——抽象、并发与工程化
 
-本模块深入探讨 Go 语言的高级特性，超越基本语法，重点关注并发编程、系统交互和运行时控制。
+Module 02 面向已经完成 Module 01、能够阅读 Java 基础代码的学员。课程主线是：
 
-> 教学说明：本模块代码优先服务课堂理解，部分实现会使用内存数据、固定 token、简化错误处理或本地模拟组件。讲课时应明确这些是教学简化，不是生产写法。
+> 接口与错误建模 → Goroutine 与 Channel → Context 与并发安全 → Testing 与 Reflection → 综合流水线。
 
-## 目录结构
+代码中的固定数据、Sleep、打印输出和内存对象主要用于课堂理解，不能直接视为生产实现。生产代码还需要完整的错误处理、资源管理、日志、监控和部署约束。
 
-### 01_interfaces/
-- **main.go**: 接口定义与实现
-- 学习内容：接口的多态性、空接口、类型断言、组合
+## 学习结果
 
-### 02_errors_defer/
-- **main.go**: 错误处理与 Defer
-- 学习内容：自定义错误、panic 与 recover、defer 执行顺序
+完成本模块后，你能够：
 
-### 03_goroutines/
-- **main.go**: 协程基础
-- 学习内容：go 关键字、协程生命周期、并发执行
+- 使用隐式接口、类型断言和错误包装表达行为契约；
+- 使用 Goroutine、WaitGroup、Channel 和 close 组织并发任务；
+- 使用 Context 实现取消、超时和请求生命周期传播；
+- 使用 Mutex、RWMutex、Atomic 和 race detector 处理共享状态；
+- 编写表格驱动测试、Benchmark，并使用 Reflection 读取和修改值；
+- 完成一个可取消、可测试、无竞态的并发日志分析流水线。
 
-### 04_channels/
-- **main.go**: 通道操作
-- 学习内容：无缓冲与缓冲通道、select 多路复用、关闭通道
+## 课程入口
 
-### 05_context/
-- **main.go**: 上下文管理
-- 学习内容：Context 超时控制、取消信号、值传递
+- [讲师 Runbook](instructor/RUNBOOK.md)
+- [讲师 Demo Notes](instructor/DEMO_NOTES.md)
+- [课堂评分表](instructor/RUBRIC.md)
+- [Entry Quiz](assessments/entry_quiz.md)
+- [Exit Quiz](assessments/exit_quiz.md)
+- [Homework](homework/README.md)
 
-### 06_concurrency_safety/
-- **main.go**: 并发安全
-- 学习内容：sync.Mutex、sync.RWMutex、sync.WaitGroup、原子操作
+## 全日路径
 
-### 07_testing/
-- **calc.go**, **calc_test.go**: 单元测试
-- 学习内容：Go 测试框架、表格驱动测试、基准测试 (Benchmark)
+| 阶段 | 主题 | 入口 |
+|---|---|---|
+| Block 1 | 接口、错误与 defer | [Block README](blocks/01_interfaces_errors/README.md) |
+| Block 2 | Goroutine 与 Channel | [Block README](blocks/02_goroutines_channels/README.md) |
+| Block 3 | Context 与并发安全 | [Block README](blocks/03_context_concurrency/README.md) |
+| Block 4 | Testing 与 Reflection | [Block README](blocks/04_testing_reflection/README.md) |
+| 综合 Lab | 并发日志分析器 | [Block README](blocks/05_integrated_lab/README.md) |
 
-### 08_os_interaction/
-- **main.go**: 系统交互
-- 学习内容：信号处理 (Signal)、执行外部命令、环境变量
+## 常用验收命令
 
-### 09_file_io/
-- **main.go**: 文件 I/O 操作 (对应原 myio)
-- 学习内容：os.Open/Create, bufio 读写, io.Copy, Seek 与 ReadAt
+从仓库根目录运行：
 
-### 10_reflection/
-- **main.go**: 反射机制 (对应原 myref)
-- 学习内容：reflect.TypeOf/ValueOf, 动态修改字段值, 动态调用方法
+```bash
+make module02-demo-contracts
+make module02-integrated-lab
+make module02-verify
+```
 
-### 11_runtime_control/
-- **main.go**: 运行时控制 (对应原 myruntime)
-- 学习内容：runtime.GOMAXPROCS, runtime.Gosched, CPU 核心数获取
+Module 02 的默认验收不会运行故意 panic、死锁或竞态的教学失败案例。故意失败只能通过显式教学命令调用。
 
-### 12_stdlib_utils/
-- **main.go**: 标准库工具
-- 学习内容：常用标准库 (sort, time, json) 的使用技巧
+## 课后作业
 
-### project_log_analyzer/
-- **main.go**, **benchmark_test.go**: 日志分析器项目
-- 学习内容：综合运用 Goroutines 和 Channels 实现并发日志处理流水线
+完成 [可取消的并发文件扫描器](homework/README.md)。作业要求使用标准库、Context、Worker、表格测试和 race detector，不直接复制综合 Lab 的实现。
 
-## 学习目标
+## Bonus
 
-1. 深入理解 Go 接口与多态
-2. 掌握健壮的错误处理机制
-3. 熟练运用 Goroutine 和 Channel 进行并发编程
-4. 学会使用 Context 管理并发任务
-5. 理解并发安全与锁机制
-6. 掌握 Go 测试与性能基准测试
-7. 熟悉系统级交互与文件 I/O 操作
-8. 理解反射与运行时控制的高级特性
+以下内容不占用核心 310 分钟：
+
+- [Bonus 总览](bonus/README.md)
+- `embed`：编译时嵌入静态资源；
+- `go:generate`：代码生成与外部工具依赖；
+- OS 命令、信号处理和跨平台边界；
+- 文件 I/O、runtime 控制和标准库工具；
+- pprof、DeepEqual 和并发 map dark corners。

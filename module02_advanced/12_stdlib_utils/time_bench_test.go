@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// Benchmark: time.LoadLocation 缓存 vs 每次调用
+// Benchmark：比较缓存 time.LoadLocation 和每次调用的差异。
 //
 // 教学要点：time.LoadLocation 每次调用可能读文件，要缓存 *time.Location
 
@@ -23,10 +23,9 @@ func BenchmarkLoadLocationCached(b *testing.B) {
 	}
 }
 
-// 运行：go test -bench=. -benchmem
+// 运行：go test -bench=. -benchmem。
 //
-// 预期结果：
-//   Cached 版本快 10-100 倍（无文件 IO）
+// 预期结果：缓存版本通常更快，因为避免了重复的文件 I/O。
 //
 // 修复模板：
 //   var shanghaiLoc *time.Location

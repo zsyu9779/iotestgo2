@@ -27,7 +27,7 @@ func showNilVsEmptyByteSlice() {
 	fmt.Println("→ bytes.Equal 认为 nil 和 empty 相等，DeepEqual 认为不等")
 }
 
-// ===== Benchmark：手写 Equals vs DeepEqual =====
+// ===== Benchmark：手写 Equals 与 DeepEqual 对比 =====
 
 type S struct {
 	A int
@@ -62,11 +62,9 @@ func BenchmarkDeepEqual(b *testing.B) {
 	}
 }
 
-// 运行：go test -bench=. -benchmem
+// 运行：go test -bench=. -benchmem。
 //
-// 预期结果：
-//   ManualEquals  > 10x faster than DeepEqual
-//   DeepEqual 使用反射，有大量分配
+// 预期结果：手写比较通常更快，DeepEqual 会使用反射并产生额外开销。
 //
 // 教学要点：
 //   1. slice/map 不能用 == 比较

@@ -5,8 +5,7 @@ import (
 	"reflect"
 )
 
-// This module covers Go Reflection.
-// It corresponds to the 'myref' section from the original iotestgo.
+// 本示例介绍 Go Reflection，对应原项目中的 myref 部分。
 
 type Person struct {
 	ID   int
@@ -62,16 +61,16 @@ func inspectStruct(i interface{}) {
 func modifyValue(ptr interface{}, newValue int) {
 	v := reflect.ValueOf(ptr)
 
-	// Check if it's a pointer
+	// 检查是否为指针。
 	if v.Kind() != reflect.Ptr {
 		fmt.Println("Expected a pointer")
 		return
 	}
 
-	// Get the element pointed to
+	// 获取指针指向的值。
 	elem := v.Elem()
 
-	// Check if it's settable
+	// 检查值是否可设置。
 	if elem.CanSet() && elem.Kind() == reflect.Int {
 		elem.SetInt(int64(newValue))
 	}
@@ -82,7 +81,7 @@ func callMethod(i interface{}, methodName string) {
 	method := v.MethodByName(methodName)
 
 	if method.IsValid() {
-		method.Call(nil) // Call with no arguments
+		method.Call(nil) // 无参数调用方法。
 	} else {
 		fmt.Println("Method not found")
 	}
