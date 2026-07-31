@@ -218,6 +218,10 @@ make teaching-failures      # 验证“应该失败”的 Case 确实按预期�
 4. Reflection 按老项目覆盖面补齐可见性、可写性和方法集。
 5. File/OS 只补现代工程边界，不回迁硬编码路径和 `ioutil`。
 
+### Module 2 迁移状态
+
+Module 2 已按四个连续 Block、独立综合 Lab、独立 Homework 和 Bonus 完成结构迁移。上述接口方法集、Channel 状态、`sync.Once`、Reflection 边界及 File/OS 工程边界均进入对应 Demo 或 Bonus；旧的编号目录不再作为课程入口。
+
 ---
 
 ## Module 3：net 包与 Gin

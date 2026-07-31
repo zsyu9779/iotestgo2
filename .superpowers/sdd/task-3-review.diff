@@ -1,0 +1,231 @@
+# Review package: b8083da..5275c40
+
+## Commits
+5275c40 feat: add module01 collection edge cases
+
+## Files changed
+ module01_basics/blocks/02_collections/README.md                   | 6 ++++--
+ .../blocks/02_collections/demo/04_arrays_slices/main.go           | 5 +++++
+ .../blocks/02_collections/demo/05_maps_strings/main.go            | 5 +++++
+ module01_basics/instructor/DEMO_NOTES.md                          | 8 +++++++-
+ module01_basics/instructor/RUNBOOK.md                             | 6 +++---
+ module01_basics/instructor/scripts/verify_demo_contracts.sh       | 6 ++++++
+ 6 files changed, 30 insertions(+), 6 deletions(-)
+
+## Diff
+diff --git a/module01_basics/blocks/02_collections/README.md b/module01_basics/blocks/02_collections/README.md
+index e9ad17e..2684c9a 100644
+--- a/module01_basics/blocks/02_collections/README.md
++++ b/module01_basics/blocks/02_collections/README.md
+@@ -1,19 +1,21 @@
+ # Block 2：Collections
+ 
+ ## 学习结果
+ 
+ 完成本区块后，你能够：
+ 
+ - 说明 Array 的值语义与 Slice 共享底层数组带来的行为差异。
+ - 使用 `len`、`cap` 和 `append`，并识别 Slice 扩容可能改变底层数组。
++- 使用 `copy(dst, src)`，说明复制方向、返回数量及目标 Slice 保留的零值位置。
+ - 初始化和读写 Map，使用 comma-ok 区分“不存在”与“零值”，并理解 Map 迭代无序。
++- 初始化嵌套 Map 的每一层后再写入内层 key。
+ - 区分 String 的 byte 数与 rune 数，正确统计中英文文本和词频。
+ 
+ ## 时间盒：75 分钟
+ 
+ - 讲师 Demo：25 分钟
+ - 学员结对实现：40 分钟
+ - 测试与复盘：10 分钟
+ 
+ ## 前置知识
+ 
+@@ -22,34 +24,34 @@
+ ## Java 对比
+ 
+ | Java | Go |
+ | --- | --- |
+ | 数组是引用类型 | Array 是值，赋值或传参会复制全部元素 |
+ | `ArrayList` 隐藏容量管理 | Slice 用 `len` 和 `cap` 暴露长度与容量，`append` 可能扩容 |
+ | `HashMap.get` 常与 `containsKey` 配合 | Map 查询可用 `value, ok := m[key]` 同时得到值和存在性 |
+ | 不应依赖 `HashMap` 迭代顺序 | Go Map 迭代顺序不保证 |
+ | `String.length()` 计算 UTF-16 code unit | `len(string)` 计算 UTF-8 字节，rune 计数需单独处理 |
+ 
+-Slice 不是“数组引用”的简单别名；它是描述底层数组一段区域的值。Map 读取不存在的 key 会得到值类型的零值，需要 comma-ok 才能判断 key 是否真实存在。
++Slice 不是“数组引用”的简单别名；它是描述底层数组一段区域的值。`copy(dst, src)` 的第一个参数是目标 Slice，返回实际复制数量（最多为两个长度中的较小值），不会自动扩展 `dst`。Map 读取不存在的 key 会得到值类型的零值，需要 comma-ok 才能判断 key 是否真实存在；嵌套 Map 必须逐层 `make` 后才能写入内层 key。
+ 
+ ## 讲师 Demo
+ 
+ 按顺序运行并讲解：
+ 
+ ```bash
+ go run ./module01_basics/blocks/02_collections/demo/04_arrays_slices
+ go run ./module01_basics/blocks/02_collections/demo/05_maps_strings
+ go run ./module01_basics/blocks/02_collections/demo/06_slice_map_edges
+ go run ./module01_basics/blocks/02_collections/demo/07_string_utf8_edges
+ ```
+ 
+-第一个 Demo 对比 Array 复制、Slice 分片和共享修改，并观察 `append` 前后的 `len` 与 `cap`。第二个 Demo 展示 Map 初始化、comma-ok、`delete`、String 不可变性以及 byte 与 rune 的差异。
++第一个 Demo 对比 Array 复制、Slice 分片和共享修改，并观察 `append` 前后的 `len` 与 `cap`，再用 `copy(dst, src)` 观察复制方向、数量和目标 Slice 的零值。第二个 Demo 展示 Map 初始化、comma-ok、`delete`、逐层初始化嵌套 Map、String 不可变性以及 byte 与 rune 的差异。
+ 
+ 新增 Demo 补充早期项目中的基础边界：Array 的 `range` 值副本、Slice 在容量充足或不足时的底层数组行为、nil Slice 与 nil Map 的区别、Map 中 Struct 值的写回、Map 遍历无序，以及 String 常用操作和 `range string` 的 byte offset/rune 关系。
+ 
+ ## 核心语义陷阱
+ 
+ - [Map 边界演示](../../bonus/dark_corners/map/main.go)：nil Map 能读不能写、Map 迭代顺序不保证、Map 中 Struct 值需要取出修改再写回，或改用指针值。
+ - [String/UTF-8 边界演示](../../bonus/dark_corners/string/main.go)：byte、rune、字符串遍历和字符串长度的差异。
+ 
+ 这两份材料现在是 Block 2 的课堂深挖入口，不再只是课后 Bonus。讲师至少应从每份材料中选择一个现象让学员预测输出；Go 版本相关的行为要先标明版本。
+ 
+diff --git a/module01_basics/blocks/02_collections/demo/04_arrays_slices/main.go b/module01_basics/blocks/02_collections/demo/04_arrays_slices/main.go
+index 5f1d602..e564d66 100644
+--- a/module01_basics/blocks/02_collections/demo/04_arrays_slices/main.go
++++ b/module01_basics/blocks/02_collections/demo/04_arrays_slices/main.go
+@@ -31,11 +31,16 @@ func main() {
+ 	fmt.Println("Original Slice after sub-slice mod:", slice) // [1 999 3 4 5]
+ 
+ 	// append may reuse the underlying array or allocate a new one; never rely on
+ 	// a particular growth factor when explaining this behavior.
+ 
+ 	// 3. Making Slices
+ 	// make([]type, len, cap)
+ 	dynamicSlice := make([]int, 0, 5)
+ 	dynamicSlice = append(dynamicSlice, 1)
+ 	fmt.Println("Dynamic Slice:", dynamicSlice)
++
++	source := []int{10, 20, 30}
++	destination := make([]int, 5)
++	copied := copy(destination, source)
++	fmt.Printf("copy count=%d dst=%v src=%v\n", copied, destination, source)
+ }
+diff --git a/module01_basics/blocks/02_collections/demo/05_maps_strings/main.go b/module01_basics/blocks/02_collections/demo/05_maps_strings/main.go
+index 90f38ff..730a70d 100644
+--- a/module01_basics/blocks/02_collections/demo/05_maps_strings/main.go
++++ b/module01_basics/blocks/02_collections/demo/05_maps_strings/main.go
+@@ -24,20 +24,25 @@ func main() {
+ 	fmt.Println("Map:", scores)
+ 
+ 	var nilScores map[string]int
+ 	fmt.Println("Nil map read:", nilScores["Alice"])
+ 	// nilScores["Alice"] = 1 // panic: assignment to entry in nil map
+ 
+ 	for name, score := range scores {
+ 		fmt.Println("Map iteration (order is not guaranteed):", name, score)
+ 	}
+ 
++	nested := make(map[int]map[int]string)
++	nested[1] = make(map[int]string)
++	nested[1][2] = "ready"
++	fmt.Println("nested map value:", nested[1][2])
++
+ 	// 2. Strings
+ 	// Strings are immutable byte sequences with their own distinct string type.
+ 	str := "Hello, 世界"
+ 	fmt.Println("Length (bytes):", len(str)) // 13 (Hello, = 7 + 世界 = 6)
+ 
+ 	// Rune (Unicode Code Point)
+ 	runes := []rune(str)
+ 	fmt.Println("Length (runes):", len(runes)) // 9
+ 	fmt.Printf("First char: %c\n", runes[0])
+ 	fmt.Printf("Last char: %c\n", runes[len(runes)-1])
+diff --git a/module01_basics/instructor/DEMO_NOTES.md b/module01_basics/instructor/DEMO_NOTES.md
+index f7d8636..ac2831b 100644
+--- a/module01_basics/instructor/DEMO_NOTES.md
++++ b/module01_basics/instructor/DEMO_NOTES.md
+@@ -84,33 +84,39 @@ go run ./module01_basics/blocks/02_collections/demo/06_slice_map_edges
+ go run ./module01_basics/blocks/02_collections/demo/07_string_utf8_edges
+ ```
+ 
+ ### 投影提示
+ 
+ 1. 在修改 `arrCopy[0]` 和 `subSlice[0]` 前暂停，让学员分别预测原值是否改变：Array 赋值复制元素，Slice 描述符副本仍可共享底层数组。
+ 2. 在 `append` 前后同时读 `len` 和 `cap`；只说“可能换底层数组”，不承诺固定扩容倍数。
+ 3. 对 Map 提问：成绩 0 和不存在的学生如何区分？答案必须包含 comma-ok。
+ 4. 对 `"Hello, 世界"` 先收集 `len` 预测，再比较 13 bytes 与 9 runes。
+ 
++| 暂停点 | 先问 | 预期结果 | 准确解释 | 常见误解 | 级别 |
++| --- | --- | --- | --- | --- | --- |
++| `copy(destination, source)` | 返回值和剩余两个位置是什么？ | 3，剩余为 0 | 复制数量为 min(len(dst), len(src)) | copy 会自动扩展 dst | 核心 |
++| 嵌套 Map | 只 make 外层能否直接写内层？ | 不能，会 panic | 每层 Map 都要初始化 | 外层 make 会递归初始化 | 深挖 |
++
+ ### 失败演示与救援
+ 
+ ```bash
+ go test -tags=exercise ./module01_basics/blocks/02_collections/lab/starter -run '^TestAnalyze$'
+ ```
+ 
+ 把第一个失败字段当作当前任务，不同时修四个计数。如 Map 赋值 panic，询问 `Frequencies` 是 nil 还是已经 `make`；如 byte/rune 混淆，让学员单独打印 `len("你")` 和 `utf8.RuneCountInString("你")`。
+ 
+ ### Block 2 内容扩展
+ 
+ - **核心：**用 `06_slice_map_edges` 展示 Array 的 range 值副本、Slice 共享和容量变化、nil Slice/nil Map、comma-ok、Map Struct 写回。
++- **核心：**在 `04_arrays_slices` 用 `copy(destination, source)` 说明目标在前、返回复制数量和未覆盖位置保持零值。
+ - **核心：**用 `07_string_utf8_edges` 展示 `Contains`、`Split`、`Join`、`TrimSpace`、`Fields`、大小写转换和 `range string`。
+-- **深挖：**穿插 [Map dark corner](../bonus/dark_corners/map/main.go) 的 Map 顺序、nil Map、不可寻址值；穿插 [String dark corner](../bonus/dark_corners/string/main.go) 的 byte/rune 细节。
++- **深挖：**在 `05_maps_strings` 说明嵌套 Map 必须逐层初始化；穿插 [Map dark corner](../bonus/dark_corners/map/main.go) 的 Map 顺序、nil Map、不可寻址值；穿插 [String dark corner](../bonus/dark_corners/string/main.go) 的 byte/rune 细节。
+ - **可裁：**`unsafe.Pointer`、指针运算和复杂 Map 指针场景不进入核心课堂。
+ 
+ ## Block 3：Modeling（20 分钟）
+ 
+ ```bash
+ go run ./module01_basics/blocks/03_modeling/demo/06_pointers
+ go run ./module01_basics/blocks/03_modeling/demo/07_structs_methods
+ go run ./module01_basics/blocks/03_modeling/demo/08_struct_zero_values
+ go run ./module01_basics/blocks/03_modeling/demo/09_copy_and_receivers
+ ```
+diff --git a/module01_basics/instructor/RUNBOOK.md b/module01_basics/instructor/RUNBOOK.md
+index 660b03b..0200186 100644
+--- a/module01_basics/instructor/RUNBOOK.md
++++ b/module01_basics/instructor/RUNBOOK.md
+@@ -60,27 +60,27 @@
+ - **可观察检查点：**`go test -tags=exercise ./module01_basics/blocks/01_go_basics/lab/starter` PASS，且学员能解释 60、90、-1 和 101 的路径。
+ - **常见延误：**从低到高写过宽分支，或返回临时文本错误而不是 `ErrScoreOutOfRange`。
+ - **可裁内容：**精确删除位运算、第二个 iota 重置块、类型别名、标签、`goto`、switch 初始化作用域细节、String 转换成功路径和 Bonus 表驱动测试讨论；用户补充的隐式 ConstSpec/iota Case 不可裁，保留 `break`/`continue`、多值 `case`、`fallthrough` 语义、Atoi 错误路径、错误返回与边界测试。
+ 
+ ## 10:35–10:45：短休息
+ 
+ 准时停止投影和编码，10:45 直接从 Array 副本对比开始。休息不是可裁内容，不用它补 Block 1。
+ 
+ ## 10:45–12:00：Block 2 — Collections
+ 
+-- **目标：**通过中英文文本统计验证 Array 值语义、Slice 共享、Map comma-ok 与 UTF-8 byte/rune 行为。
++- **目标：**通过中英文文本统计验证 Array 值语义、Slice 共享与 `copy`、Map comma-ok 与 UTF-8 byte/rune 行为。
+ - **讲师动作：**10:45–11:10 运行两个 Collections Demo 并先让学员预测输出；11:10–11:50 巡视 `Analyze`实现；11:50–12:00 对比一个中文字符的 byte 和 rune 计数。
+-- **内容扩展：**在两个原有 Demo 后按需运行 `06_slice_map_edges` 和 `07_string_utf8_edges`；Array range、nil Slice/Map、String 基础和 `range string` 属于核心，Map/String dark corner 属于穿插深挖。
++- **内容扩展：**在两个原有 Demo 后按需运行 `06_slice_map_edges` 和 `07_string_utf8_edges`；Array range、nil Slice/Map、`copy` 的方向和数量、String 基础和 `range string` 属于核心，嵌套 Map 初始化及 Map/String dark corner 属于穿插深挖。
+ - **学员动作（40 分钟动手）：**实现 `Analyze`，用 `strings.Fields`、`strings.ToLower` 和 `utf8.RuneCountInString` 完成计数，反复运行练习测试。
+ - **可观察检查点：**`go test -tags=exercise ./module01_basics/blocks/02_collections/lab/starter` PASS；`"Go go 你好"` 的结果为 12 bytes、8 runes、3 words 和 `go:2`。
+ - **常见延误：**把 `len(text)` 当作字符数，未初始化 Map，或自行删标点而改变了分词契约。
+-- **可裁内容：**精确删除 Slice 容量增长策略推演、Map 深层陷阱和 String benchmark；保留 Slice 共享、comma-ok 和 byte/rune。
++- **可裁内容：**精确删除 Slice 容量增长策略推演、嵌套 Map 初始化、Map 深层陷阱和 String benchmark；保留 Slice 共享、`copy`、comma-ok 和 byte/rune。
+ 
+ ## 12:00–13:00：午休
+ 
+ 关闭上午问题停车场的现场讨论，只留下文字记录。13:00 按新的 65 分钟时间盒开始，不用午休补课。
+ 
+ ## 13:00–14:05：Block 3 — Modeling
+ 
+ - **目标：**用 Struct、构造函数惯例、指针接收者和值快照建立保持不变量的 `Student`。
+ - **讲师动作：**13:00–13:20 用值传递与指针修改 Demo 对比 Java 引用；13:20–13:55 巡视建模练习；13:55–14:05 用“修改 Snapshot”的测试复盘接收者选择。
+ - **内容扩展：**在两个原有 Demo 后按需运行 `08_struct_zero_values` 和 `09_copy_and_receivers`；Struct 零值、值复制和接收者选择属于核心，Embedding 作为组合语义深挖。
+diff --git a/module01_basics/instructor/scripts/verify_demo_contracts.sh b/module01_basics/instructor/scripts/verify_demo_contracts.sh
+index 001d19a..2074551 100755
+--- a/module01_basics/instructor/scripts/verify_demo_contracts.sh
++++ b/module01_basics/instructor/scripts/verify_demo_contracts.sh
+@@ -28,11 +28,17 @@ assert_contains "$control_output" 'switch init: owner has full access'
+ assert_contains "$control_output" 'loop body: 0'
+ assert_contains "$control_output" 'loop body: 2'
+ assert_contains "$control_output" 'infinite for stopped at: 3'
+ assert_contains "$control_output" 'Admin branch reached by fallthrough'
+ 
+ string_output="$(go run ./module01_basics/blocks/01_go_basics/demo/05_strings_basics)"
+ assert_contains "$string_output" 'bytes round trip: Go语言'
+ assert_contains "$string_output" 'Atoi success: 42'
+ assert_contains "$string_output" 'Atoi error: true'
+ 
++slice_output="$(go run ./module01_basics/blocks/02_collections/demo/04_arrays_slices)"
++assert_contains "$slice_output" 'copy count=3 dst=[10 20 30 0 0] src=[10 20 30]'
++
++map_output="$(go run ./module01_basics/blocks/02_collections/demo/05_maps_strings)"
++assert_contains "$map_output" 'nested map value: ready'
++
+ printf 'module01 demo contracts: PASS\n'

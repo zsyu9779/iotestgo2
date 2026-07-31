@@ -1,0 +1,190 @@
+# Review package: 3ff7057..a7b2557
+
+## Commits
+a7b2557 docs: extend module01 semantic assessments
+
+## Files changed
+ module01_basics/assessments/answer_key.md |  5 ++-
+ module01_basics/assessments/exit_quiz.md  | 53 +++++++++++++++++++++++++++++--
+ module01_basics/instructor/DEMO_NOTES.md  | 10 ++++++
+ module01_basics/instructor/RUNBOOK.md     |  4 +--
+ 4 files changed, 67 insertions(+), 5 deletions(-)
+
+## Diff
+diff --git a/module01_basics/assessments/answer_key.md b/module01_basics/assessments/answer_key.md
+index 380bc02..3a8f646 100644
+--- a/module01_basics/assessments/answer_key.md
++++ b/module01_basics/assessments/answer_key.md
+@@ -8,34 +8,37 @@
+ |---:|---|---|
+ | 1 | **B**：可执行命令使用 `package main` 中的 `func main()` 作为入口。 | 选其他项说明学员仍在寻找 Java Class、注解或实例方法式入口。 |
+ | 2 | **B**：`:=` 可在函数体内声明局部变量并推断类型。 | 选其他项说明需要回收 Go 的名称/类型顺序、短声明作用域或未使用变量编译规则。 |
+ | 3 | **B**：Go 用 `for ready { ... }` 表达 while 式循环。 | 选其他项说明学员假设 Go 保留了 Java 的多种循环关键字。 |
+ | 4 | **B**：Go `switch` 默认在命中 case 结束后离开，只有显式 `fallthrough` 才贯穿。 | 选 A 或 C 说明 Java `switch` 的贯穿与 `break` 习惯仍在影响行为预测。 |
+ | 5 | **C**：`func Grade(score int) (string, error)` 把正常结果和可预期失败都写入契约。 | 选 A、B 或 D 说明需要对比空值哨兵、panic、Java 异常与 Go 显式 `error`。 |
+ | 6 | **B**：Array 赋值复制全部元素，修改 `b` 不改变 `a`。 | 选 A 说明学员把 Java 数组引用语义直接套用到了 Go Array。 |
+ | 7 | **C**：comma-ok 同时返回值和 key 是否存在。 | 选 A 说明学员还不理解 Map 缺失 key 会返回值类型零值。 |
+ | 8 | **B**：`len("Go你好")` 为 8 bytes，而这个字符串有 4 runes。 | 选 A 或 C 说明学员仍把字符数、UTF-16 code unit 或固定宽度编码当成 Go String 的长度。 |
+ 
+-## Exit Quiz 答案（14 题）
++## Exit Quiz 答案（核心 14 题 + 选做 3 题）
+ 
+ | 题号 | 答案 | 教学诊断（一句） |
+ |---:|---|---|
+ | 1 | **B**：Array 作为参数时按值复制，`change` 只修改形参副本。 | 选 A 说明学员还没有把“Go 只有值传递”应用到 Array 参数。 |
+ | 2 | **B**：`middle` 与 `scores` 共享底层数组的对应区域，因此修改反映为 `[60 100 90]`。 | 选 A 说明学员把 Slice 语义错当成了 Array 的深副本。 |
+ | 3 | **B**：`base` 容量已满，`append` 为 `grown` 分配新底层数组，所以后续修改不影响 `base`。 | 选 A 说明学员认为 Slice 之间的共享关系在 `append` 后必然永久保留。 |
+ | 4 | **A**：两次读取的值都是 0，但 comma-ok 用 `true` 和 `false` 区分存在性。 | 选 B、C 或 D 说明学员仍用 nil、异常或单一零值理解 Map 缺失 key。 |
+ | 5 | **B**：`"A你"` 占 4 个 UTF-8 bytes，`range` 却以 2 个 rune 迭代。 | 选 A 或 C 说明学员仍把 byte 索引与 Unicode code point 迭代混为同一种长度。 |
+ | 6 | **B**：修改同一对象的 `UpdateScore` 用指针接收者，只读且返回副本的 `Snapshot` 可用值接收者。 | 选 A、C 或 D 说明学员还不能从“是否修改调用者的值”推导接收者。 |
+ | 7 | **A**：`pass(60)` 为 true、`pass(59)` 为 false，因为闭包保留了对 `min` 的访问。 | 选其他项说明学员把外层函数返回误解为所有局部状态都立即不可访问。 |
+ | 8 | **C**：`defer` 注册的 `end` 在当前函数返回前执行，顺序为 start、operation、end。 | 选 A 说明学员把 `defer` 误解为声明处立即调用。 |
+ | 9 | **B**：失败明确显示 actual 80 和 want 80.5，应先检查整数除法发生在类型转换之前的最小假设。 | 选 A、C 或 D 说明学员尚不能把测试名和 actual/want 转成可验证的下一步。 |
+ | 10 | **B**：修改 `Find` 返回的值副本不能改变书内记录，再次查询仍为 90。 | 选 A 说明学员未能用可观察的二次查询验证返回副本的隔离性。 |
+ | 11 | **B**：基本类型变量声明后分别使用整数、布尔和字符串零值。 | 选 A、C 或 D 说明学员还没有建立 Go 的零值模型。 |
+ | 12 | **A**：多值 `case` 表示 OR；没有 `fallthrough` 时只执行当前分支，加上后才无条件进入下一个分支。 | 选 B、C 或 D 说明学员仍把 Go `switch` 当成 Java 的自动贯穿模型。 |
+ | 13 | **B**：`strings.Fields` 按连续空白分词，不产生空单词。 | 选 A、C 或 D 说明学员需要回收 String 和 `strings` 包的基础操作。 |
+ | 14 | **C**：行为测试应同时确认筛选内容和顺序，不能用改期望或弱断言绕过失败。 | 选 A、B 或 D 说明学员还没有把测试当成行为契约。 |
++| 15（选做） | **A**：省略的 ConstSpec 复用上一行完整表达式，所以 `d` 仍为 100；`e = iota` 使用当前声明行号 4。 | 选 B 表示没有理解省略声明复用完整表达式；选 C 表示误以为同一 const 块内 iota 被重置。 |
++| 16（选做） | **B**：`copy(dst, src)` 向目标 Slice 复制 `min(len(dst), len(src))` 个元素，返回 3，未覆盖位置保持零值。 | 错误选择说明学员未掌握 `copy(dst, src)` 的方向或 `min(len(dst), len(src))`。 |
++| 17（选做） | **C**：Map index 得到的 Struct value 不可寻址，不能直接给其字段赋值。 | 选 A 表示把 Map value 当成可寻址对象；选 B 表示不能区分编译错误与运行时 panic。 |
+ 
+ ## 讲师使用方式
+ 
+ - Entry 某题错误超过班级一半时，在对应 Demo 中增加一次“先预测，后运行”，不延长讲授。
+ - Exit 的错题作为下周 Code Review 开场题；优先回收最高频的两个行为误判。
+ - 如学员答对但无法解释可观察结果，在课堂 [Rubric](../instructor/RUBRIC.md) 的“解释与迁移”维度记录，不改 Quiz 答案。
+diff --git a/module01_basics/assessments/exit_quiz.md b/module01_basics/assessments/exit_quiz.md
+index 8a9506f..f8e5539 100644
+--- a/module01_basics/assessments/exit_quiz.md
++++ b/module01_basics/assessments/exit_quiz.md
+@@ -1,13 +1,13 @@
+-# Module 01 Exit Quiz（14 题）
++# Module 01 Exit Quiz（核心 14 题 + 选做 3 题）
+ 
+-用时 5 分钟，不查资料。每题都请根据可观察行为作答，不只选“听起来像 Go”的术语。
++用时 5 分钟，不查资料。课堂先完成核心题 1–14；15–17 为提前完成者或课后 Code Review 使用的选做题，不挤占 Task Manager 启动时间。每题都请根据可观察行为作答，不只选“听起来像 Go”的术语。
+ 
+ ## 1. Array 值语义
+ 
+ ```go
+ func change(a [2]int) { a[0] = 9 }
+ scores := [2]int{60, 80}
+ change(scores)
+ ```
+ 
+ 调用后 `scores` 是：
+@@ -193,10 +193,59 @@ words := strings.Fields("  Go\t语言 ")
+ - D. `nil`
+ 
+ ## 14. 学员补充测试
+ 
+ 为 `Filter` 增加一个回归测试时，哪个断言最有价值？
+ 
+ - A. 只断言函数没有 panic
+ - B. 只断言返回 Slice 非 nil
+ - C. 同时断言筛选结果和原输入中的相对顺序
+ - D. 修改期望值直到测试通过
++
++## 15. ConstSpec 与 iota（选做）
++
++```go
++const (
++	a = iota
++	b
++	c = 100
++	d
++	e = iota
++)
++```
++
++`a, b, c, d, e` 分别是什么？
++
++- A. `0, 1, 100, 100, 4`
++- B. `0, 1, 100, 3, 4`
++- C. `0, 1, 100, 100, 0`
++- D. `1, 2, 100, 100, 5`
++
++## 16. Slice copy（选做）
++
++```go
++src := []int{1, 2, 3}
++dst := make([]int, 5)
++n := copy(dst, src)
++```
++
++哪个结果正确？
++
++- A. `n=5, dst=[1 2 3 0 0]`
++- B. `n=3, dst=[1 2 3 0 0]`
++- C. `n=3, dst=[0 0 1 2 3]`
++- D. copy 会自动把 dst 长度改成 3
++
++## 17. Map Struct Value（选做）
++
++```go
++type Item struct{ Value int }
++items := map[string]Item{"one": {Value: 1}}
++items["one"].Value = 2
++```
++
++这段代码的结果是什么？
++
++- A. Value 被改为 2
++- B. 运行时 panic
++- C. 编译失败，因为 Map index 得到的 Struct value 不可寻址
++- D. 编译成功但赋值被静默忽略
+diff --git a/module01_basics/instructor/DEMO_NOTES.md b/module01_basics/instructor/DEMO_NOTES.md
+index 46ab47a..f93811b 100644
+--- a/module01_basics/instructor/DEMO_NOTES.md
++++ b/module01_basics/instructor/DEMO_NOTES.md
+@@ -214,10 +214,20 @@ go test -tags=exercise ./module01_basics/blocks/04_functions_testing/lab/starter
+ 
+ 预期 gofmt 和 Vet 通过，测试在 `Add` 的 `ErrNotImplemented` 行为处失败。该 RED 证明 Starter 和公开测试已对接，不需要现场“修好”。如因权限、依赖或编译失败，按 [Troubleshooting](../homework/task_manager/teacher/TROUBLESHOOTING.md) 处理环境问题。
+ 
+ 讲师答案的绿色对照只在课前或课后运行：
+ 
+ ```bash
+ make module01-homework-solution
+ ```
+ 
+ 不向学员投影 `teacher/solution`。
++
++## Exit Quiz 诊断（5 分钟）
++
++课堂计时内只收核心题 1–14。15–17 是提前完成者或下一次课 Code Review 的选做诊断，不占用 Task Manager 启动、`make grade` 或分支交付说明的时间。
++
++| 题号 | 正确答案 | 回收误解的讲师语言 |
++| --- | --- | --- |
++| 15（选做） | A | 选 B 时追问“省略的 ConstSpec 复用了哪一整行表达式？”；选 C 时重申 iota 在同一个 const 块内不重置。 |
++| 16（选做） | B | 让学员先指出 `copy(dst, src)` 中谁是目标，再计算 `min(len(dst), len(src))`；不要把返回值误当成目标长度。 |
++| 17（选做） | C | 选 A 时让学员区分 Map index 的 value 与可寻址变量；选 B 时先分类这是编译失败还是运行时 panic，再看编译器第一条诊断。 |
+diff --git a/module01_basics/instructor/RUNBOOK.md b/module01_basics/instructor/RUNBOOK.md
+index 70ab29a..65f7a1e 100644
+--- a/module01_basics/instructor/RUNBOOK.md
++++ b/module01_basics/instructor/RUNBOOK.md
+@@ -121,22 +121,22 @@ make module01-teaching-failures
+ - **目标：**在新的 Scorebook 问题中独立组合当天所学，不复制任何 Block solution。
+ - **讲师动作：**在 10、20、30、40 分钟节点只播报 [Scorebook Lab](../integrated_lab/scorebook/README.md) 当前检查点和停止规则；个别辅导时只询问“第一个失败断言是什么”。
+ - **学员动作（40 分钟动手）：**0–10 分钟做模型与 Add，10–20 分钟做 Find/UpdateScore，20–30 分钟做 Average，30–40 分钟做 CountByGrade 和全量测试。
+ - **可观察检查点：**每 10 分钟指定的具名测试输出可见；最终 `go test -tags=exercise ./module01_basics/integrated_lab/scorebook/starter` PASS，或学员保留了第一个未通过断言的完整输出。
+ - **常见延误：**无效 Add 也消耗 ID，返回值泄漏内部指针，或 Average 在转换 `float64` 之前先做整数除法。
+ - **可裁内容：**只可删除最后的全班 solution 讲解，并改为课后链接；不删任何一个 10 分钟编码检查点。
+ 
+ ## 15:40–16:00：Task Manager 作业启动、Exit Quiz
+ 
+ - **目标：**让学员知道一周作业的范围、预期 RED、唯一验收入口和分支交付方式，不在现场实现 Task Manager。
+-- **讲师动作：**15:40–15:44 演示作业目标行为；15:44–15:49 指导学员跑 `make grade`；15:49–15:54 说明一周里程碑、开发分支和 Gitee 手动验收；15:54–15:59 主持 Exit Quiz；15:59–16:00 收取离场票。
+-- **学员动作（10 分钟动手）：**在 `student_pack` 运行 `make grade` 5 分钟并标记预期失败阶段，然后完成 [Exit Quiz](../assessments/exit_quiz.md) 5 分钟。
++- **讲师动作：**15:40–15:44 演示作业目标行为；15:44–15:49 指导学员跑 `make grade`；15:49–15:54 说明一周里程碑、开发分支和 Gitee 手动验收；15:54–15:59 主持 Exit Quiz 核心题 1–14；15:59–16:00 收取离场票。第 15–17 题仅供提前完成者或课后 Code Review 使用，不挤占 Task Manager 启动时间。
++- **学员动作（10 分钟动手）：**在 `student_pack` 运行 `make grade` 5 分钟并标记预期失败阶段，然后完成 [Exit Quiz](../assessments/exit_quiz.md) 核心题 1–14（5 分钟）；15–17 为选做。
+ - **可观察检查点：**Starter 在 gofmt 和 Vet 后的测试步骤因 `ErrNotImplemented` 行为性失败，而不是编译、权限或依赖失败；每人交一个最不确定题号。
+ - **常见延误：**学员在仓库根目录运行作业 `make grade`，或讲师开始直播编写 `Add`。
+ - **可裁内容：**精确删除 CLI 所有命令的逐一现场操作和 Gitee UI 屏幕导览；保留 Starter RED、`make grade`、分支交付规则和 Exit Quiz。
+ 
+ ## 课后收尾
+ 
+ 1. 用 [answer key](../assessments/answer_key.md) 统计 Entry/Exit 题号，按诊断语言记录下次开场要回收的误解。
+ 2. 运行 `make module01-verify`，确认课堂 Solution 与 Task Manager 教师答案都经过验收。
+ 3. 发布时只复制 `homework/task_manager/student_pack/` 的内容，严格按 [发布检查清单](../homework/task_manager/teacher/RELEASE_CHECKLIST.md) 排除教师答案。
+ 4. 下一次课开场先安排 10 分钟 Task Manager 提交与 Code Review 反馈：展示两类匿名共性问题、让学员修正一处代码，并说明评分反馈；该活动属于下一次课，不计入本日 09:30–16:00 的 310 分钟。

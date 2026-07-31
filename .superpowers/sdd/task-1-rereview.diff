@@ -1,0 +1,270 @@
+# Review package: 86715a8..69853aa
+
+## Commits
+69853aa docs: correct module01 conversion teaching notes
+a3de6e3 feat: deepen module01 variables and constants teaching
+
+## Files changed
+ Makefile                                           |  5 ++-
+ module01_basics/blocks/01_go_basics/README.md      |  8 +++++
+ .../blocks/01_go_basics/demo/02_vars_types/main.go | 36 ++++++++++++++++++++++
+ module01_basics/instructor/DEMO_NOTES.md           |  9 ++++++
+ module01_basics/instructor/RUNBOOK.md              |  4 +--
+ .../instructor/scripts/verify_demo_contracts.sh    | 25 +++++++++++++++
+ 6 files changed, 84 insertions(+), 3 deletions(-)
+
+## Diff
+diff --git a/Makefile b/Makefile
+index 6cf00b3..a132d51 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,11 +1,11 @@
+-.PHONY: help fmt-check test-basic test-race run-basic-hello run-task-manager run-log-analyzer run-user-center run-blog-api run-compute-server run-compute-client ecommerce-up ecommerce-down module01-verify module01-lab-01 module01-lab-02 module01-lab-03 module01-lab-04 module01-integrated-lab module01-homework-solution
++.PHONY: help fmt-check test-basic test-race run-basic-hello run-task-manager run-log-analyzer run-user-center run-blog-api run-compute-server run-compute-client ecommerce-up ecommerce-down module01-verify module01-demo-contracts module01-lab-01 module01-lab-02 module01-lab-03 module01-lab-04 module01-integrated-lab module01-homework-solution
+ 
+ help:
+ 	@echo "Targets: fmt-check test-basic test-race module01-verify"
+ 
+ fmt-check:
+ 	@files="$$(gofmt -l $$(git ls-files '*.go'))"; \
+ 	if [ -n "$$files" ]; then echo "Go files need formatting:"; echo "$$files"; exit 1; fi
+ 
+ test-basic:
+ 	go test ./module01_basics/... ./module02_advanced/... ./module03_web_gin/01_net_basics ./module03_web_gin/07_testing_httptest ./module03_web_gin/project_user_center/internal/service ./module03_web_gin/project_user_center/internal/handler ./module04_gorm/project_blog_api/internal/service
+@@ -56,10 +56,13 @@ module01-integrated-lab:
+ 	go test ./module01_basics/integrated_lab/scorebook/solution
+ 
+ module01-homework-solution:
+ 	cd module01_basics/homework/task_manager/teacher/solution && ../../student_pack/scripts/grade.sh
+ 
+ module01-verify:
+ 	@test -z "$$(find module01_basics -type f -name '*.go' -exec gofmt -l {} \;)" || (echo "Module 01 存在未格式化 Go 文件" && exit 1)
+ 	go vet ./module01_basics/...
+ 	go test ./module01_basics/...
+ 	$(MAKE) module01-homework-solution
++
++module01-demo-contracts:
++	bash module01_basics/instructor/scripts/verify_demo_contracts.sh
+diff --git a/module01_basics/blocks/01_go_basics/README.md b/module01_basics/blocks/01_go_basics/README.md
+index dcb7099..973461c 100644
+--- a/module01_basics/blocks/01_go_basics/README.md
++++ b/module01_basics/blocks/01_go_basics/README.md
+@@ -45,20 +45,28 @@ go run ./module01_basics/blocks/01_go_basics/demo/05_strings_basics
+ 重点观察程序入口、类型推断、变量零值、String 基础操作、`for`、`range`、多值 `case`、`fallthrough`、`switch {}`、函数参数和多返回值。
+ 
+ ## 语言语义补充
+ 
+ ### 零值
+ 
+ Go 声明变量但没有提供初始值时，会自动使用该类型的零值：整数为 `0`，浮点数为 `0`，布尔值为 `false`，字符串为 `""`，Struct 的每个字段也使用各自的零值。
+ 
+ 复合类型还要区分“可直接使用”和“必须初始化”：nil Slice 可以读取长度并 `append`，nil Map 可以读取但不能写入。运行 `02_vars_types` 观察这些结果。
+ 
++### 变量与常量语义
++
++- `_` 是空白标识符，用于显式丢弃值，它不是可读取变量。
++- const 块中省略表达式会复用上一行完整 ConstSpec；`iota` 仍按声明行递增。
++- 每个新的 const 块都会让 `iota` 从 0 重新开始。
++- `type UserID int` 定义新类型；`type UserID = int` 声明别名。
++- 浮点数转整数会截去小数部分。
++
+ ### 控制流边界
+ 
+ - `for` 是 Go 唯一的循环关键字，可写成三段式、条件式或无限循环。
+ - `break` 结束当前循环，`continue` 跳过当前迭代。
+ - 一个 `case` 可以写多个值，例如 `case "admin", "owner"`。
+ - Go 的 `switch` 默认不会自动贯穿；`fallthrough` 必须显式写出，并且无条件进入紧邻的下一个 `case`。它在业务代码中通常不推荐使用。
+ - `switch {}` 是按顺序判断条件的简洁写法，适合成绩等级等互斥条件。
+ 
+ ### String 基础
+ 
+diff --git a/module01_basics/blocks/01_go_basics/demo/02_vars_types/main.go b/module01_basics/blocks/01_go_basics/demo/02_vars_types/main.go
+index e50d09c..68578e1 100644
+--- a/module01_basics/blocks/01_go_basics/demo/02_vars_types/main.go
++++ b/module01_basics/blocks/01_go_basics/demo/02_vars_types/main.go
+@@ -4,52 +4,88 @@ import (
+ 	"fmt"
+ 	"math"
+ )
+ 
+ type Config struct {
+ 	Port    int
+ 	Enabled bool
+ 	Name    string
+ }
+ 
++type UserID int
++type UserIDAlias = int
++
+ func main() {
+ 	// 1. Variable Declaration
+ 	var age int = 30
+ 	fmt.Println("Age:", age)
+ 
+ 	// Type Inference
+ 	name := "Gopher" // Short declaration (only inside functions)
+ 	fmt.Printf("Name: %s, Type: %T\n", name, name)
+ 
++	left, _, right := 1, 2, 3
++	fmt.Println("blank identifier:", left, right)
++
+ 	// 2. Constants & Iota
+ 	const pi = 3.14159
+ 	// pi = 3.14 // Error: cannot assign to pi
++	const message = "abc"
++	const messageLength = len(message)
++	fmt.Println("const expression length:", messageLength)
+ 
+ 	const (
+ 		StatusPending  = iota // 0
+ 		StatusActive          // 1
+ 		StatusInactive        // 2
+ 	)
+ 	fmt.Println("Status:", StatusPending, StatusActive, StatusInactive)
+ 
++	// 仅供参考，不想挨打请勿模仿：省略声明会复用上一行完整表达式。
++	const (
++		consA = iota // 0
++		consB        // 1，复用 = iota
++		consC        // 2，复用 = iota
++		consD = 250  // iota 仍递增到 3，但当前表达式为 250
++		consE        // 250，复用上一行完整表达式
++		consF = iota // 5，显式恢复使用当前行的 iota
++		consG        // 6，复用 = iota
++	)
++	fmt.Println("iota edge cases:", consA, consB, consC, consD, consE, consF, consG)
++
++	const (
++		resetA = iota
++		resetB
++	)
++	fmt.Println("iota reset:", resetA, resetB)
++
+ 	// 3. Basic Types
+ 	// Go has specific sized integers: int8, int16, int32, int64, uint...
+ 	var maxInt32 int32 = math.MaxInt32
+ 	var overflow int32 = maxInt32 + 1 // This wraps around in runtime if not constant, but let's just show types
+ 	fmt.Println("Max Int32:", maxInt32)
+ 	fmt.Println("Overflow example (be careful):", overflow)
+ 
+ 	// 4. Type Conversion (Explicit only!)
+ 	var i int = 42
+ 	var f float64 = float64(i)
+ 	fmt.Println("Float:", f)
+ 
++	var rawID int = 12
++	var userID UserID = UserID(rawID)
++	var aliasID UserIDAlias = rawID
++	fmt.Println("defined type conversion:", userID, "alias assignment:", aliasID)
++
++	floatValue := 1.9
++	truncated := int(floatValue)
++	fmt.Println("truncated float:", truncated)
++
+ 	// 5. Zero values: every declared variable starts with a useful default.
+ 	var count int
+ 	var ratio float64
+ 	var enabled bool
+ 	var label string
+ 	fmt.Printf("Zero values: int=%d float=%.1f bool=%t string=%q\n", count, ratio, enabled, label)
+ 
+ 	var cfg Config
+ 	fmt.Printf("Struct zero value: %#v\n", cfg)
+ 
+diff --git a/module01_basics/instructor/DEMO_NOTES.md b/module01_basics/instructor/DEMO_NOTES.md
+index b003906..1ba77cd 100644
+--- a/module01_basics/instructor/DEMO_NOTES.md
++++ b/module01_basics/instructor/DEMO_NOTES.md
+@@ -29,20 +29,29 @@ go run ./module01_basics/blocks/01_go_basics/demo/02_vars_types
+ go run ./module01_basics/blocks/01_go_basics/demo/03_control_funcs
+ ```
+ 
+ ### 投影提示
+ 
+ 1. 在执行前请学员指出 `package main`、`import` 和 `func main`，对比 Java 的 Class 入口。
+ 2. 在 `02_vars_types` 指出 `:=` 只能用在函数体内，整数类型转换必须显式。
+ 3. 在 `03_control_funcs` 先预测 `switch` 是否会贯穿，然后指出 Go 不需要默认 `break`。
+ 4. 把 `calculate` 的两个返回值迁移到 `Grade(score) (string, error)`：失败是接口的显式部分，不是隐藏的异常通道。
+ 
++| 暂停点 | 先问 | 预期结果 | 准确解释 | 常见误解 | 级别 |
++| --- | --- | --- | --- | --- | --- |
++| `left, _, right` | `_` 能否打印？ | 只能打印 1 和 3 | `_` 丢弃值，不绑定可读变量 | 把 `_` 当普通变量 | 核心 |
++| `const messageLength = len(message)` | `messageLength` 是运行时才计算的吗？ | 3 | `message` 是常量时，`len(message)` 是编译期常量 | 所有 `len` 调用都在运行时计算 | 核心 |
++| `consD/consE/consF` | E、F 分别是多少？ | 250、5 | E 复用 `= 250`；iota 未停止，F 使用当前行号 5 | “iota 被打断后重新从 0 开始” | 核心 |
++| 第二个 const 块 | resetA 是多少？ | 0 | 每个 const 块独立重置 iota | iota 在整个包连续计数 | 深挖 |
++| `UserID` / alias | 哪个需要转换？ | UserID 需要，alias 不需要 | 定义类型与别名语义不同 | 两种 type 写法完全一样 | 深挖 |
++| `floatValue := 1.9; int(floatValue)` | 输出 1 还是 2？ | 1 | 变量从浮点转整数会截断小数；`int(1.9)` 会编译失败，因为 1.9 不能精确表示为 int | 数值转换会自动舍入，或 `int(1.9)` 可直接编译 | 核心 |
++
+ ### 失败演示与救援
+ 
+ ```bash
+ go test -tags=exercise ./module01_basics/blocks/01_go_basics/lab/starter -run '^TestGrade$'
+ ```
+ 
+ 起始 Starter 应因返回等级不符合而失败。请学员只读出“测试名、实际值、期望值”；如 8 分钟仍无进展，给一级提示“先把输入分成有效与无效”，不投影 solution。
+ 
+ ### Block 1 内容扩展
+ 
+diff --git a/module01_basics/instructor/RUNBOOK.md b/module01_basics/instructor/RUNBOOK.md
+index cffc9ca..558b53f 100644
+--- a/module01_basics/instructor/RUNBOOK.md
++++ b/module01_basics/instructor/RUNBOOK.md
+@@ -48,25 +48,25 @@
+ - **讲师动作：**09:30–09:35 说明一日产出；09:35–09:40 投影 `go version`、`go env GOMOD` 和 `make module01-lab-01`；09:40–09:45 安静答 Quiz；09:45–09:50 按题号举手统计。
+ - **学员动作（10 分钟动手）：**独立运行三个环境命令 5 分钟，完成 [Entry Quiz](../assessments/entry_quiz.md) 5 分钟。
+ - **可观察检查点：**`GOMOD` 指向当前仓库且 Block 1 solution 测试 PASS；讲师记录每题错误人数。
+ - **常见延误：**学员不在仓库根目录、Go 不在 `PATH` 或 IDE 打开了错误目录。
+ - **可裁内容：**精确删除开场自我介绍和课程背景扩展；不删环境命令、Quiz 或错题统计。
+ 
+ ## 09:50–10:35：Block 1 — Go Basics
+ 
+ - **目标：**使用条件、函数、多返回值和显式 `error` 实现有边界校验的 `Grade`。
+ - **讲师动作：**09:50–10:05 按 [Demo Notes](DEMO_NOTES.md#block-1go-basics15-分钟) 展示程序入口、类型推断、`for`、`switch` 和 `(value, error)`；10:05–10:30 巡视结对实现；10:30–10:35 用一个边界失败做复盘。
+-- **内容扩展：**若班级基础较稳，在原有 Demo 中加入零值、String 基础、多值 `case` 和 `switch {}`；`fallthrough` 属于语义深挖，`goto` 只保留识别。
++- **内容扩展：**若班级基础较稳，在原有 Demo 中加入零值、String 基础、多值 `case` 和 `switch {}`；`fallthrough` 属于语义深挖，`goto` 只保留识别。用户补充的隐式 ConstSpec/iota Case 不可裁。
+ - **学员动作（25 分钟动手）：**在 `blocks/01_go_basics/lab/starter` 运行 RED，实现范围校验和 A–F 映射，重复运行全包测试。
+ - **可观察检查点：**`go test -tags=exercise ./module01_basics/blocks/01_go_basics/lab/starter` PASS，且学员能解释 60、90、-1 和 101 的路径。
+ - **常见延误：**从低到高写过宽分支，或返回临时文本错误而不是 `ErrScoreOutOfRange`。
+-- **可裁内容：**精确删除 `iota` 的扩展例子和 Bonus 表驱动测试讨论；保留错误返回与边界测试。
++- **可裁内容：**精确删除位运算、第二个 iota 重置块、类型别名和 Bonus 表驱动测试讨论；用户补充的隐式 ConstSpec/iota Case 不可裁，保留错误返回与边界测试。
+ 
+ ## 10:35–10:45：短休息
+ 
+ 准时停止投影和编码，10:45 直接从 Array 副本对比开始。休息不是可裁内容，不用它补 Block 1。
+ 
+ ## 10:45–12:00：Block 2 — Collections
+ 
+ - **目标：**通过中英文文本统计验证 Array 值语义、Slice 共享、Map comma-ok 与 UTF-8 byte/rune 行为。
+ - **讲师动作：**10:45–11:10 运行两个 Collections Demo 并先让学员预测输出；11:10–11:50 巡视 `Analyze`实现；11:50–12:00 对比一个中文字符的 byte 和 rune 计数。
+ - **内容扩展：**在两个原有 Demo 后按需运行 `06_slice_map_edges` 和 `07_string_utf8_edges`；Array range、nil Slice/Map、String 基础和 `range string` 属于核心，Map/String dark corner 属于穿插深挖。
+diff --git a/module01_basics/instructor/scripts/verify_demo_contracts.sh b/module01_basics/instructor/scripts/verify_demo_contracts.sh
+new file mode 100755
+index 0000000..1911d8f
+--- /dev/null
++++ b/module01_basics/instructor/scripts/verify_demo_contracts.sh
+@@ -0,0 +1,25 @@
++#!/usr/bin/env bash
++set -euo pipefail
++
++script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
++repo_root="$(cd "$script_dir/../../.." && pwd)"
++cd "$repo_root"
++
++assert_contains() {
++    local output="$1"
++    local expected="$2"
++    if ! grep -Fq "$expected" <<<"$output"; then
++        printf 'missing expected output: %s\n' "$expected" >&2
++        exit 1
++    fi
++}
++
++vars_output="$(go run ./module01_basics/blocks/01_go_basics/demo/02_vars_types)"
++assert_contains "$vars_output" 'blank identifier: 1 3'
++assert_contains "$vars_output" 'const expression length: 3'
++assert_contains "$vars_output" 'iota edge cases: 0 1 2 250 250 5 6'
++assert_contains "$vars_output" 'iota reset: 0 1'
++assert_contains "$vars_output" 'defined type conversion: 12 alias assignment: 12'
++assert_contains "$vars_output" 'truncated float: 1'
++
++printf 'module01 demo contracts: PASS\n'

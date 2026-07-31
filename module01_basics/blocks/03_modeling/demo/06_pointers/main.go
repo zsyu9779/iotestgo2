@@ -17,6 +17,7 @@ func main() {
 
 	// 通过指针修改
 	*ptr = 20
+	x = 20
 	fmt.Println("New value of x:", x)
 
 	// 2. nil 指针

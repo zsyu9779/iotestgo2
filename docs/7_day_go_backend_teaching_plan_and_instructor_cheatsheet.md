@@ -69,16 +69,20 @@
 
 | 时间 | 内容 |
 |---|---|
-| 09:30-10:30 | interface、隐式实现、空接口、类型断言、typed nil |
-| 10:30-11:30 | error、errors 包、错误包装、defer 执行机制 |
-| 11:30-12:30 | panic/recover、资源释放、错误处理最佳实践 |
-| 13:30-14:30 | goroutine、WaitGroup、channel、select |
-| 14:30-15:30 | context、Mutex/RWMutex/atomic、race detector |
-| 15:30-16:00 | testing、benchmark、并发日志分析器项目串联 |
+| 09:30-09:50 | 环境检查、Entry Quiz |
+| 09:50-10:40 | Block 1：interface、错误包装与 defer |
+| 10:40-10:50 | 短休息 |
+| 10:50-12:00 | Block 2：goroutine、WaitGroup、channel、select |
+| 12:00-13:00 | 午休 |
+| 13:00-14:05 | Block 3：context、Mutex/RWMutex/atomic、race detector |
+| 14:05-14:50 | Block 4：testing、benchmark 与 Reflection |
+| 14:50-15:00 | 短休息 |
+| 15:00-15:40 | 并发日志分析器综合 Lab |
+| 15:40-16:00 | 文件扫描器作业启动、Exit Quiz |
 
 #### 当天产出
 
-学员能够完成或理解一个并发日志分析器：多个 goroutine 处理任务，通过 channel 汇总结果，用 context 控制取消和超时。
+学员能够完成一个可取消、可测试、无数据竞态的并发日志分析器，并能独立启动并发文件扫描器作业。
 
 ### Day 3：Web 开发与 Gin
 

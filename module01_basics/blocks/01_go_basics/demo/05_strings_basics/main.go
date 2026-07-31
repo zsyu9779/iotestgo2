@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	text := " Go 语言 "
+	text := "         Go 语言 "
 	fmt.Println("concat:", text+" backend")
 	fmt.Println("trim:", strings.TrimSpace(text))
 	fmt.Println("contains Go:", strings.Contains(text, "Go"))

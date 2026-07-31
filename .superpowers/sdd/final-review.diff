@@ -1,0 +1,1521 @@
+# Review package: 86715a8..3f783f8
+
+## Commits
+3f783f8 test: complete module01 curriculum audit
+f4e24bc docs: clarify teaching failure exit status
+82f9fd3 docs: clarify module01 teaching verification
+55107df docs: turn module01 notes into complete instructor cheat sheet
+a7b2557 docs: extend module01 semantic assessments
+3ff7057 fix: exclude controlled failures from fmt check
+546e0f7 feat: add controlled failure lessons for module01
+b8c65b5 feat: clarify module01 pointer and receiver semantics
+5275c40 feat: add module01 collection edge cases
+b8083da feat: deepen module01 control flow and string teaching
+69853aa docs: correct module01 conversion teaching notes
+a3de6e3 feat: deepen module01 variables and constants teaching
+
+## Files changed
+ Makefile                                           |  21 ++-
+ module01_basics/README.md                          |  10 +-
+ module01_basics/assessments/answer_key.md          |   5 +-
+ module01_basics/assessments/exit_quiz.md           |  53 +++++++-
+ module01_basics/blocks/01_go_basics/README.md      |  15 ++-
+ .../blocks/01_go_basics/demo/02_vars_types/main.go |  36 +++++
+ .../01_go_basics/demo/03_control_funcs/main.go     |  32 +++--
+ .../01_go_basics/demo/05_strings_basics/main.go    |  15 +++
+ module01_basics/blocks/02_collections/README.md    |   6 +-
+ .../02_collections/demo/04_arrays_slices/main.go   |   5 +
+ .../02_collections/demo/05_maps_strings/main.go    |   5 +
+ module01_basics/blocks/03_modeling/README.md       |   4 +-
+ .../blocks/03_modeling/demo/06_pointers/main.go    |  12 +-
+ .../03_modeling/demo/09_copy_and_receivers/main.go |   7 +
+ module01_basics/instructor/DEMO_NOTES.md           | 149 +++++++++++++++++++--
+ module01_basics/instructor/RUBRIC.md               |   5 +
+ module01_basics/instructor/RUNBOOK.md              |  42 ++++--
+ .../instructor/scripts/verify_demo_contracts.sh    |  61 +++++++++
+ module01_basics/teaching_failures/README.md        |  24 ++++
+ .../compile_fail/defined_type_assignment/main.go   |   9 ++
+ .../compile_fail/final_fallthrough/main.go         |   8 ++
+ .../testdata/compile_fail/map_struct_field/main.go |  10 ++
+ .../testdata/compile_fail/no_new_variable/main.go  |   7 +
+ .../compile_fail/package_short_decl/main.go        |   5 +
+ .../testdata/compile_fail/slice_comparison/main.go |   7 +
+ .../testdata/runtime_fail/nil_map_write/main.go    |   6 +
+ .../testdata/runtime_fail/nil_pointer/main.go      |   6 +
+ module01_basics/teaching_failures/verify.sh        |  45 +++++++
+ 28 files changed, 562 insertions(+), 48 deletions(-)
+
+## Diff
+diff --git a/Makefile b/Makefile
+index 6cf00b3..5ec2e7d 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,18 +1,23 @@
+-.PHONY: help fmt-check test-basic test-race run-basic-hello run-task-manager run-log-analyzer run-user-center run-blog-api run-compute-server run-compute-client ecommerce-up ecommerce-down module01-verify module01-lab-01 module01-lab-02 module01-lab-03 module01-lab-04 module01-integrated-lab module01-homework-solution
++.PHONY: help fmt-check test-basic test-race run-basic-hello run-task-manager run-log-analyzer run-user-center run-blog-api run-compute-server run-compute-client ecommerce-up ecommerce-down module01-verify module01-demo-contracts module01-teaching-failures module01-audit module01-lab-01 module01-lab-02 module01-lab-03 module01-lab-04 module01-integrated-lab module01-homework-solution
+ 
+ help:
+ 	@echo "Targets: fmt-check test-basic test-race module01-verify"
+ 
+ fmt-check:
+-	@files="$$(gofmt -l $$(git ls-files '*.go'))"; \
+-	if [ -n "$$files" ]; then echo "Go files need formatting:"; echo "$$files"; exit 1; fi
++	@formatted_files="$$(mktemp)"; \
++	trap 'rm -f "$$formatted_files"' EXIT; \
++	if ! git ls-files -z -- '*.go' ':(exclude)module01_basics/teaching_failures/testdata/**' | xargs -0 gofmt -l > "$$formatted_files"; then \
++		echo "gofmt failed while checking tracked Go files" >&2; \
++		exit 1; \
++	fi; \
++	if [ -s "$$formatted_files" ]; then echo "Go files need formatting:"; cat "$$formatted_files"; exit 1; fi
+ 
+ test-basic:
+ 	go test ./module01_basics/... ./module02_advanced/... ./module03_web_gin/01_net_basics ./module03_web_gin/07_testing_httptest ./module03_web_gin/project_user_center/internal/service ./module03_web_gin/project_user_center/internal/handler ./module04_gorm/project_blog_api/internal/service
+ 
+ test-race:
+ 	go test -race ./module02_advanced/project_log_analyzer
+ 
+ run-basic-hello:
+ 	go run ./module01_basics/blocks/01_go_basics/demo/01_hello
+ 
+@@ -52,14 +57,22 @@ module01-lab-03:
+ module01-lab-04:
+ 	go test ./module01_basics/blocks/04_functions_testing/lab/solution
+ 
+ module01-integrated-lab:
+ 	go test ./module01_basics/integrated_lab/scorebook/solution
+ 
+ module01-homework-solution:
+ 	cd module01_basics/homework/task_manager/teacher/solution && ../../student_pack/scripts/grade.sh
+ 
+ module01-verify:
+-	@test -z "$$(find module01_basics -type f -name '*.go' -exec gofmt -l {} \;)" || (echo "Module 01 存在未格式化 Go 文件" && exit 1)
++	@test -z "$$(find module01_basics -path 'module01_basics/teaching_failures/testdata' -prune -o -type f -name '*.go' -exec gofmt -l {} \;)" || (echo "Module 01 存在未格式化 Go 文件" && exit 1)
+ 	go vet ./module01_basics/...
+ 	go test ./module01_basics/...
+ 	$(MAKE) module01-homework-solution
++
++module01-demo-contracts:
++	bash module01_basics/instructor/scripts/verify_demo_contracts.sh
++
++module01-teaching-failures:
++	bash module01_basics/teaching_failures/verify.sh
++
++module01-audit: module01-verify module01-demo-contracts module01-teaching-failures
+diff --git a/module01_basics/README.md b/module01_basics/README.md
+index 201766c..530e502 100644
+--- a/module01_basics/README.md
++++ b/module01_basics/README.md
+@@ -31,21 +31,23 @@ Module 01 面向已能阅读 Java 的学员，用四个连续 Block 建立 Go 
+ | 14:50–15:00 | 短休息 | — |
+ | 15:00–15:40 | Scorebook 综合 Lab | 组合集合、建模、方法和测试 |
+ | 15:40–16:00 | Task Manager 作业启动、Exit Quiz | 跑通 Starter、本地验收和 Git 提交流程 |
+ 
+ 授课时间为 09:30–12:00 和 13:00–16:00；午休不计入课堂。扣除两次 10 分钟短休息后，净教学与实操时间是 310 分钟。
+ 
+ ## 课前：确认反馈环境
+ 
+ 1. 在仓库根目录运行 `go version` 和 `go env GOMOD`，确认 Go 可用且 `GOMOD` 指向本仓库。
+ 2. 运行 `make module01-lab-01`，确认可编译并执行 Go 测试。
+-3. 在不查资料的情况下完成 [Entry Quiz](assessments/entry_quiz.md)；它用来调整课堂节奏，不计作业分。
++3. 运行 `make module01-demo-contracts`，确认正常 Demo 的关键教学输出符合约定，预期末行是 `module01 demo contracts: PASS`。
++4. 运行 `make module01-teaching-failures`。脚本会逐个确认隔离教学 Case 以非零状态结束且诊断匹配；整体验证成功时该命令返回 0，预期末行是 `module01 teaching failures: PASS`。
++5. 在不查资料的情况下完成 [Entry Quiz](assessments/entry_quiz.md)；它用来调整课堂节奏，不计作业分。
+ 
+ ## 课中：按 Block 完成 RED–GREEN–REFACTOR
+ 
+ 每个练习都从仓库根目录运行。带 `-tags=exercise` 的 Starter 命令是学员实操入口；课前的失败是预期 RED，完成实现后应变为 GREEN。Solution 命令用于讲师验收和对照。
+ 
+ | 阶段 | 导航 | Starter 练习命令 | Solution 验收命令 |
+ |---|---|---|---|
+ | Block 1：Go Basics | [Block](blocks/01_go_basics/README.md) · [Lab 指南](blocks/01_go_basics/lab/README.md) | `go test -tags=exercise ./module01_basics/blocks/01_go_basics/lab/starter` | `make module01-lab-01` |
+ | Block 2：Collections | [Block](blocks/02_collections/README.md) · [Lab 指南](blocks/02_collections/lab/README.md) | `go test -tags=exercise ./module01_basics/blocks/02_collections/lab/starter` | `make module01-lab-02` |
+ | Block 3：Modeling | [Block](blocks/03_modeling/README.md) · [Lab 指南](blocks/03_modeling/lab/README.md) | `go test -tags=exercise ./module01_basics/blocks/03_modeling/lab/starter` | `make module01-lab-03` |
+@@ -101,13 +103,17 @@ Bonus 不占用当天的 310 分钟核心课程：
+ - [range 变量、取地址与闭包陷阱](bonus/dark_corners/range/main.go)（Block 1/2 核心深挖入口）
+ - [Map 深层行为](bonus/dark_corners/map/main.go) 与 [String/UTF-8 深层行为](bonus/dark_corners/string/main.go)
+ - [函数配置模式](bonus/function_patterns/configuration_patterns.md)、[柯里化场景](bonus/function_patterns/curry_best_practice_test.go) 与 [Builder/Functional Options 对比](bonus/function_patterns/patterns_comparison_test.go)
+ 
+ ## 仓库级验收
+ 
+ 从仓库根目录运行：
+ 
+ ```bash
+ make module01-verify
++make module01-demo-contracts
++make module01-teaching-failures
++# 一次运行三类验收：正常工程、Demo 输出契约和受控失败。
++make module01-audit
+ ```
+ 
+-该命令检查 Module 01 的 gofmt，对根 Go Module 中的 Demo、课堂包和 Solution 执行 Vet 与测试，并通过统一脚本验证 Task Manager 教师答案。`student_pack` 是独立 Go Module，其故意未完成的测试不进入根验收。
++`module01-verify` 检查 Module 01 的 gofmt，对根 Go Module 中的 Demo、课堂包和 Solution 执行 Vet 与测试，并通过统一脚本验证 Task Manager 教师答案。`module01-demo-contracts` 断言正常 Demo 的关键教学输出，预期打印 `module01 demo contracts: PASS`；`module01-teaching-failures` 要求每个隔离 Case 非零退出且诊断匹配，全部匹配时聚合命令返回 0 并打印 `module01 teaching failures: PASS`；`module01-audit` 一次依次运行这三类验收，只有全部成功才结束。`student_pack` 是独立 Go Module，其故意未完成的测试不进入根验收；受控失败源码位于 `teaching_failures/testdata/`，也不进入正常 `go test ./module01_basics/...`。
+diff --git a/module01_basics/assessments/answer_key.md b/module01_basics/assessments/answer_key.md
+index 380bc02..3a8f646 100644
+--- a/module01_basics/assessments/answer_key.md
++++ b/module01_basics/assessments/answer_key.md
+@@ -8,34 +8,37 @@
+ |---:|---|---|
+ | 1 | **B**：可执行命令使用 `package main` 中的 `func main()` 作为入口。 | 选其他项说明学员仍在寻找 Java Class、注解或实例方法式入口。 |
+ | 2 | **B**：`:=` 可在函数体内声明局部变量并推断类型。 | 选其他项说明需要回收 Go 的名称/类型顺序、短声明作用域或未使用变量编译规则。 |
+ | 3 | **B**：Go 用 `for ready { ... }` 表达 while 式循环。 | 选其他项说明学员假设 Go 保留了 Java 的多种循环关键字。 |
+ | 4 | **B**：Go `switch` 默认在命中 case 结束后离开，只有显式 `fallthrough` 才贯穿。 | 选 A 或 C 说明 Java `switch` 的贯穿与 `break` 习惯仍在影响行为预测。 |
+ | 5 | **C**：`func Grade(score int) (string, error)` 把正常结果和可预期失败都写入契约。 | 选 A、B 或 D 说明需要对比空值哨兵、panic、Java 异常与 Go 显式 `error`。 |
+ | 6 | **B**：Array 赋值复制全部元素，修改 `b` 不改变 `a`。 | 选 A 说明学员把 Java 数组引用语义直接套用到了 Go Array。 |
+ | 7 | **C**：comma-ok 同时返回值和 key 是否存在。 | 选 A 说明学员还不理解 Map 缺失 key 会返回值类型零值。 |
+ | 8 | **B**：`len("Go你好")` 为 8 bytes，而这个字符串有 4 runes。 | 选 A 或 C 说明学员仍把字符数、UTF-16 code unit 或固定宽度编码当成 Go String 的长度。 |
+ 
+-## Exit Quiz 答案（14 题）
++## Exit Quiz 答案（核心 14 题 + 选做 3 题）
+ 
+ | 题号 | 答案 | 教学诊断（一句） |
+ |---:|---|---|
+ | 1 | **B**：Array 作为参数时按值复制，`change` 只修改形参副本。 | 选 A 说明学员还没有把“Go 只有值传递”应用到 Array 参数。 |
+ | 2 | **B**：`middle` 与 `scores` 共享底层数组的对应区域，因此修改反映为 `[60 100 90]`。 | 选 A 说明学员把 Slice 语义错当成了 Array 的深副本。 |
+ | 3 | **B**：`base` 容量已满，`append` 为 `grown` 分配新底层数组，所以后续修改不影响 `base`。 | 选 A 说明学员认为 Slice 之间的共享关系在 `append` 后必然永久保留。 |
+ | 4 | **A**：两次读取的值都是 0，但 comma-ok 用 `true` 和 `false` 区分存在性。 | 选 B、C 或 D 说明学员仍用 nil、异常或单一零值理解 Map 缺失 key。 |
+ | 5 | **B**：`"A你"` 占 4 个 UTF-8 bytes，`range` 却以 2 个 rune 迭代。 | 选 A 或 C 说明学员仍把 byte 索引与 Unicode code point 迭代混为同一种长度。 |
+ | 6 | **B**：修改同一对象的 `UpdateScore` 用指针接收者，只读且返回副本的 `Snapshot` 可用值接收者。 | 选 A、C 或 D 说明学员还不能从“是否修改调用者的值”推导接收者。 |
+ | 7 | **A**：`pass(60)` 为 true、`pass(59)` 为 false，因为闭包保留了对 `min` 的访问。 | 选其他项说明学员把外层函数返回误解为所有局部状态都立即不可访问。 |
+ | 8 | **C**：`defer` 注册的 `end` 在当前函数返回前执行，顺序为 start、operation、end。 | 选 A 说明学员把 `defer` 误解为声明处立即调用。 |
+ | 9 | **B**：失败明确显示 actual 80 和 want 80.5，应先检查整数除法发生在类型转换之前的最小假设。 | 选 A、C 或 D 说明学员尚不能把测试名和 actual/want 转成可验证的下一步。 |
+ | 10 | **B**：修改 `Find` 返回的值副本不能改变书内记录，再次查询仍为 90。 | 选 A 说明学员未能用可观察的二次查询验证返回副本的隔离性。 |
+ | 11 | **B**：基本类型变量声明后分别使用整数、布尔和字符串零值。 | 选 A、C 或 D 说明学员还没有建立 Go 的零值模型。 |
+ | 12 | **A**：多值 `case` 表示 OR；没有 `fallthrough` 时只执行当前分支，加上后才无条件进入下一个分支。 | 选 B、C 或 D 说明学员仍把 Go `switch` 当成 Java 的自动贯穿模型。 |
+ | 13 | **B**：`strings.Fields` 按连续空白分词，不产生空单词。 | 选 A、C 或 D 说明学员需要回收 String 和 `strings` 包的基础操作。 |
+ | 14 | **C**：行为测试应同时确认筛选内容和顺序，不能用改期望或弱断言绕过失败。 | 选 A、B 或 D 说明学员还没有把测试当成行为契约。 |
++| 15（选做） | **A**：省略的 ConstSpec 复用上一行完整表达式，所以 `d` 仍为 100；`e = iota` 使用当前声明行号 4。 | 选 B 表示没有理解省略声明复用完整表达式；选 C 表示误以为同一 const 块内 iota 被重置。 |
++| 16（选做） | **B**：`copy(dst, src)` 向目标 Slice 复制 `min(len(dst), len(src))` 个元素，返回 3，未覆盖位置保持零值。 | 错误选择说明学员未掌握 `copy(dst, src)` 的方向或 `min(len(dst), len(src))`。 |
++| 17（选做） | **C**：Map index 得到的 Struct value 不可寻址，不能直接给其字段赋值。 | 选 A 表示把 Map value 当成可寻址对象；选 B 表示不能区分编译错误与运行时 panic。 |
+ 
+ ## 讲师使用方式
+ 
+ - Entry 某题错误超过班级一半时，在对应 Demo 中增加一次“先预测，后运行”，不延长讲授。
+ - Exit 的错题作为下周 Code Review 开场题；优先回收最高频的两个行为误判。
+ - 如学员答对但无法解释可观察结果，在课堂 [Rubric](../instructor/RUBRIC.md) 的“解释与迁移”维度记录，不改 Quiz 答案。
+diff --git a/module01_basics/assessments/exit_quiz.md b/module01_basics/assessments/exit_quiz.md
+index 8a9506f..f8e5539 100644
+--- a/module01_basics/assessments/exit_quiz.md
++++ b/module01_basics/assessments/exit_quiz.md
+@@ -1,13 +1,13 @@
+-# Module 01 Exit Quiz（14 题）
++# Module 01 Exit Quiz（核心 14 题 + 选做 3 题）
+ 
+-用时 5 分钟，不查资料。每题都请根据可观察行为作答，不只选“听起来像 Go”的术语。
++用时 5 分钟，不查资料。课堂先完成核心题 1–14；15–17 为提前完成者或课后 Code Review 使用的选做题，不挤占 Task Manager 启动时间。每题都请根据可观察行为作答，不只选“听起来像 Go”的术语。
+ 
+ ## 1. Array 值语义
+ 
+ ```go
+ func change(a [2]int) { a[0] = 9 }
+ scores := [2]int{60, 80}
+ change(scores)
+ ```
+ 
+ 调用后 `scores` 是：
+@@ -193,10 +193,59 @@ words := strings.Fields("  Go\t语言 ")
+ - D. `nil`
+ 
+ ## 14. 学员补充测试
+ 
+ 为 `Filter` 增加一个回归测试时，哪个断言最有价值？
+ 
+ - A. 只断言函数没有 panic
+ - B. 只断言返回 Slice 非 nil
+ - C. 同时断言筛选结果和原输入中的相对顺序
+ - D. 修改期望值直到测试通过
++
++## 15. ConstSpec 与 iota（选做）
++
++```go
++const (
++	a = iota
++	b
++	c = 100
++	d
++	e = iota
++)
++```
++
++`a, b, c, d, e` 分别是什么？
++
++- A. `0, 1, 100, 100, 4`
++- B. `0, 1, 100, 3, 4`
++- C. `0, 1, 100, 100, 0`
++- D. `1, 2, 100, 100, 5`
++
++## 16. Slice copy（选做）
++
++```go
++src := []int{1, 2, 3}
++dst := make([]int, 5)
++n := copy(dst, src)
++```
++
++哪个结果正确？
++
++- A. `n=5, dst=[1 2 3 0 0]`
++- B. `n=3, dst=[1 2 3 0 0]`
++- C. `n=3, dst=[0 0 1 2 3]`
++- D. copy 会自动把 dst 长度改成 3
++
++## 17. Map Struct Value（选做）
++
++```go
++type Item struct{ Value int }
++items := map[string]Item{"one": {Value: 1}}
++items["one"].Value = 2
++```
++
++这段代码的结果是什么？
++
++- A. Value 被改为 2
++- B. 运行时 panic
++- C. 编译失败，因为 Map index 得到的 Struct value 不可寻址
++- D. 编译成功但赋值被静默忽略
+diff --git a/module01_basics/blocks/01_go_basics/README.md b/module01_basics/blocks/01_go_basics/README.md
+index dcb7099..f282e22 100644
+--- a/module01_basics/blocks/01_go_basics/README.md
++++ b/module01_basics/blocks/01_go_basics/README.md
+@@ -35,41 +35,50 @@ Go 允许忽略表达式周围的圆括号，但要求分支体使用花括号
+ 
+ 按顺序运行并讲解：
+ 
+ ```bash
+ go run ./module01_basics/blocks/01_go_basics/demo/01_hello
+ go run ./module01_basics/blocks/01_go_basics/demo/02_vars_types
+ go run ./module01_basics/blocks/01_go_basics/demo/03_control_funcs
+ go run ./module01_basics/blocks/01_go_basics/demo/05_strings_basics
+ ```
+ 
+-重点观察程序入口、类型推断、变量零值、String 基础操作、`for`、`range`、多值 `case`、`fallthrough`、`switch {}`、函数参数和多返回值。
++重点观察程序入口、类型推断、变量零值、String 基础操作和转换、`for`、`range`、多值 `case`、`fallthrough`、`switch {}`、函数参数和多返回值。
+ 
+ ## 语言语义补充
+ 
+ ### 零值
+ 
+ Go 声明变量但没有提供初始值时，会自动使用该类型的零值：整数为 `0`，浮点数为 `0`，布尔值为 `false`，字符串为 `""`，Struct 的每个字段也使用各自的零值。
+ 
+ 复合类型还要区分“可直接使用”和“必须初始化”：nil Slice 可以读取长度并 `append`，nil Map 可以读取但不能写入。运行 `02_vars_types` 观察这些结果。
+ 
++### 变量与常量语义
++
++- `_` 是空白标识符，用于显式丢弃值，它不是可读取变量。
++- const 块中省略表达式会复用上一行完整 ConstSpec；`iota` 仍按声明行递增。
++- 每个新的 const 块都会让 `iota` 从 0 重新开始。
++- `type UserID int` 定义新类型；`type UserID = int` 声明别名。
++- 浮点数转整数会截去小数部分。
++
+ ### 控制流边界
+ 
+ - `for` 是 Go 唯一的循环关键字，可写成三段式、条件式或无限循环。
+ - `break` 结束当前循环，`continue` 跳过当前迭代。
+-- 一个 `case` 可以写多个值，例如 `case "admin", "owner"`。
++- `if` 与 `switch` 都可在条件前初始化变量；初始化变量只在相应的 `if`/`else` 或 `switch` 作用域内。
++- 一个 `case` 可以写多个值，例如 `case "admin", "owner"`，逗号分隔值表示 OR。
+ - Go 的 `switch` 默认不会自动贯穿；`fallthrough` 必须显式写出，并且无条件进入紧邻的下一个 `case`。它在业务代码中通常不推荐使用。
+ - `switch {}` 是按顺序判断条件的简洁写法，适合成绩等级等互斥条件。
+ 
+ ### String 基础
+ 
+-String 是不可变的 UTF-8 字节序列。拼接、比较、`strings.Fields`、`strings.TrimSpace` 和大小写转换适合日常文本处理；下标和切片按 byte 工作，按字符遍历应使用 `range`，需要字符 Slice 时再转换为 `[]rune`。运行 `05_strings_basics` 对比 byte index 与 rune index。
++String 是不可变的 UTF-8 字节序列。拼接、比较、`strings.Fields`、`strings.TrimSpace` 和大小写转换适合日常文本处理；下标和切片按 byte 工作，按字符遍历应使用 `range`，需要字符 Slice 时再转换为 `[]rune`。String 与 `[]byte` 可以显式往返转换；用 `strconv.Atoi` 解析外部字符串时必须处理 `error`，不能用 `_` 丢弃失败。运行 `05_strings_basics` 对比 byte index、rune index、转换与错误路径。
+ 
+ ### 核心语义深挖
+ 
+ - [Range 变量与闭包陷阱](../../bonus/dark_corners/range/main.go)：放在基本 `for`/`range` 之后，先讲正常遍历，再讲取地址和闭包捕获的版本差异。
+ 
+ ## 学员任务
+ 
+ 进入 `lab/starter`，实现 `Grade(score int) (string, error)`。有效成绩应返回 A、B、C、D 或 F；无效成绩应返回 `ErrScoreOutOfRange`。完整规则见 [lab/README.md](lab/README.md)。
+ 
+ 先运行测试观察失败，再只写足以通过当前失败的代码。每次修改后重新运行测试。
+diff --git a/module01_basics/blocks/01_go_basics/demo/02_vars_types/main.go b/module01_basics/blocks/01_go_basics/demo/02_vars_types/main.go
+index e50d09c..68578e1 100644
+--- a/module01_basics/blocks/01_go_basics/demo/02_vars_types/main.go
++++ b/module01_basics/blocks/01_go_basics/demo/02_vars_types/main.go
+@@ -4,52 +4,88 @@ import (
+ 	"fmt"
+ 	"math"
+ )
+ 
+ type Config struct {
+ 	Port    int
+ 	Enabled bool
+ 	Name    string
+ }
+ 
++type UserID int
++type UserIDAlias = int
++
+ func main() {
+ 	// 1. Variable Declaration
+ 	var age int = 30
+ 	fmt.Println("Age:", age)
+ 
+ 	// Type Inference
+ 	name := "Gopher" // Short declaration (only inside functions)
+ 	fmt.Printf("Name: %s, Type: %T\n", name, name)
+ 
++	left, _, right := 1, 2, 3
++	fmt.Println("blank identifier:", left, right)
++
+ 	// 2. Constants & Iota
+ 	const pi = 3.14159
+ 	// pi = 3.14 // Error: cannot assign to pi
++	const message = "abc"
++	const messageLength = len(message)
++	fmt.Println("const expression length:", messageLength)
+ 
+ 	const (
+ 		StatusPending  = iota // 0
+ 		StatusActive          // 1
+ 		StatusInactive        // 2
+ 	)
+ 	fmt.Println("Status:", StatusPending, StatusActive, StatusInactive)
+ 
++	// 仅供参考，不想挨打请勿模仿：省略声明会复用上一行完整表达式。
++	const (
++		consA = iota // 0
++		consB        // 1，复用 = iota
++		consC        // 2，复用 = iota
++		consD = 250  // iota 仍递增到 3，但当前表达式为 250
++		consE        // 250，复用上一行完整表达式
++		consF = iota // 5，显式恢复使用当前行的 iota
++		consG        // 6，复用 = iota
++	)
++	fmt.Println("iota edge cases:", consA, consB, consC, consD, consE, consF, consG)
++
++	const (
++		resetA = iota
++		resetB
++	)
++	fmt.Println("iota reset:", resetA, resetB)
++
+ 	// 3. Basic Types
+ 	// Go has specific sized integers: int8, int16, int32, int64, uint...
+ 	var maxInt32 int32 = math.MaxInt32
+ 	var overflow int32 = maxInt32 + 1 // This wraps around in runtime if not constant, but let's just show types
+ 	fmt.Println("Max Int32:", maxInt32)
+ 	fmt.Println("Overflow example (be careful):", overflow)
+ 
+ 	// 4. Type Conversion (Explicit only!)
+ 	var i int = 42
+ 	var f float64 = float64(i)
+ 	fmt.Println("Float:", f)
+ 
++	var rawID int = 12
++	var userID UserID = UserID(rawID)
++	var aliasID UserIDAlias = rawID
++	fmt.Println("defined type conversion:", userID, "alias assignment:", aliasID)
++
++	floatValue := 1.9
++	truncated := int(floatValue)
++	fmt.Println("truncated float:", truncated)
++
+ 	// 5. Zero values: every declared variable starts with a useful default.
+ 	var count int
+ 	var ratio float64
+ 	var enabled bool
+ 	var label string
+ 	fmt.Printf("Zero values: int=%d float=%.1f bool=%t string=%q\n", count, ratio, enabled, label)
+ 
+ 	var cfg Config
+ 	fmt.Printf("Struct zero value: %#v\n", cfg)
+ 
+diff --git a/module01_basics/blocks/01_go_basics/demo/03_control_funcs/main.go b/module01_basics/blocks/01_go_basics/demo/03_control_funcs/main.go
+index 4d54ab0..5a86e91 100644
+--- a/module01_basics/blocks/01_go_basics/demo/03_control_funcs/main.go
++++ b/module01_basics/blocks/01_go_basics/demo/03_control_funcs/main.go
+@@ -1,56 +1,64 @@
+ package main
+ 
+ import "fmt"
+ 
+ func main() {
+ 	// 1. If with initialization
++	outerScore := 50
+ 	if score := 85; score >= 60 {
+ 		fmt.Println("Passed with score:", score)
+ 	}
++	fmt.Println("outer score:", outerScore)
+ 
+-	// 2. Switch (No break needed; a case may contain multiple values)
++	// 2. Switch initialization (No break needed; a case may contain multiple values)
+ 	role := "owner"
+-	switch role {
++	switch currentRole := role; currentRole {
+ 	case "admin", "owner":
+-		fmt.Println("Full access")
++		fmt.Println("switch init:", currentRole, "has full access")
+ 	case "user", "viewer":
+-		fmt.Println("Read only")
++		fmt.Println("switch init:", currentRole, "has read only access")
+ 	default:
+-		fmt.Println("Access denied")
++		fmt.Println("switch init:", currentRole, "is denied")
+ 	}
+ 
+ 	// fallthrough 不会自动发生，只会把执行继续交给紧邻的下一个 case。
+ 	switch role {
+ 	case "owner":
+ 		fmt.Println("Owner branch")
+ 		fallthrough
+ 	case "admin":
+ 		fmt.Println("Admin branch reached by fallthrough")
+ 	}
+ 
+ 	// 3. For loop (The only loop in Go)
+ 	// Java: for (int i = 0; i < 5; i++)
+-	for i := 0; i < 3; i++ {
++	for i := 0; i < 5; i++ {
+ 		if i == 1 {
+ 			continue
+ 		}
+-		fmt.Println("Loop:", i)
++		if i == 3 {
++			break
++		}
++		fmt.Println("loop body:", i)
+ 	}
+ 
+-	// While-like loop
+-	count := 0
+-	for count < 2 {
+-		fmt.Println("Count:", count)
+-		count++
++	attempts := 0
++	for {
++		attempts++
++		if attempts == 3 {
++			break
++		}
+ 	}
++	fmt.Println("infinite for stopped at:", attempts)
+ 
++	count := 2
+ 	switch {
+ 	case count == 0:
+ 		fmt.Println("Expressionless switch: empty")
+ 	case count < 3:
+ 		fmt.Println("Expressionless switch: small")
+ 	default:
+ 		fmt.Println("Expressionless switch: large")
+ 	}
+ 
+ 	// 4. Functions
+diff --git a/module01_basics/blocks/01_go_basics/demo/05_strings_basics/main.go b/module01_basics/blocks/01_go_basics/demo/05_strings_basics/main.go
+index 5dccd2c..4bedbc2 100644
+--- a/module01_basics/blocks/01_go_basics/demo/05_strings_basics/main.go
++++ b/module01_basics/blocks/01_go_basics/demo/05_strings_basics/main.go
+@@ -1,14 +1,15 @@
+ package main
+ 
+ import (
+ 	"fmt"
++	"strconv"
+ 	"strings"
+ )
+ 
+ func main() {
+ 	text := " Go 语言 "
+ 	fmt.Println("concat:", text+" backend")
+ 	fmt.Println("trim:", strings.TrimSpace(text))
+ 	fmt.Println("contains Go:", strings.Contains(text, "Go"))
+ 	fmt.Println("fields:", strings.Fields(text))
+ 	fmt.Println("lower:", strings.ToLower("Go Backend"))
+@@ -18,11 +19,25 @@ func main() {
+ 	fmt.Printf("byte at index 1=%d\n", text[1])
+ 
+ 	fmt.Println("range over string:")
+ 	for index, r := range text {
+ 		fmt.Printf("index=%d rune=%c code=%d\n", index, r, r)
+ 	}
+ 
+ 	// String indexes and slices use bytes; use range or []rune for characters.
+ 	runes := []rune(text)
+ 	fmt.Printf("runes=%v first-rune=%c\n", runes, runes[0])
++
++	bytes := []byte("Go语言")
++	roundTrip := string(bytes)
++	fmt.Println("bytes round trip:", roundTrip)
++
++	number, err := strconv.Atoi("42")
++	if err != nil {
++		fmt.Println("Atoi unexpected error:", err)
++	} else {
++		fmt.Println("Atoi success:", number)
++	}
++
++	_, err = strconv.Atoi("forty-two")
++	fmt.Println("Atoi error:", err != nil)
+ }
+diff --git a/module01_basics/blocks/02_collections/README.md b/module01_basics/blocks/02_collections/README.md
+index e9ad17e..2684c9a 100644
+--- a/module01_basics/blocks/02_collections/README.md
++++ b/module01_basics/blocks/02_collections/README.md
+@@ -1,19 +1,21 @@
+ # Block 2：Collections
+ 
+ ## 学习结果
+ 
+ 完成本区块后，你能够：
+ 
+ - 说明 Array 的值语义与 Slice 共享底层数组带来的行为差异。
+ - 使用 `len`、`cap` 和 `append`，并识别 Slice 扩容可能改变底层数组。
++- 使用 `copy(dst, src)`，说明复制方向、返回数量及目标 Slice 保留的零值位置。
+ - 初始化和读写 Map，使用 comma-ok 区分“不存在”与“零值”，并理解 Map 迭代无序。
++- 初始化嵌套 Map 的每一层后再写入内层 key。
+ - 区分 String 的 byte 数与 rune 数，正确统计中英文文本和词频。
+ 
+ ## 时间盒：75 分钟
+ 
+ - 讲师 Demo：25 分钟
+ - 学员结对实现：40 分钟
+ - 测试与复盘：10 分钟
+ 
+ ## 前置知识
+ 
+@@ -22,34 +24,34 @@
+ ## Java 对比
+ 
+ | Java | Go |
+ | --- | --- |
+ | 数组是引用类型 | Array 是值，赋值或传参会复制全部元素 |
+ | `ArrayList` 隐藏容量管理 | Slice 用 `len` 和 `cap` 暴露长度与容量，`append` 可能扩容 |
+ | `HashMap.get` 常与 `containsKey` 配合 | Map 查询可用 `value, ok := m[key]` 同时得到值和存在性 |
+ | 不应依赖 `HashMap` 迭代顺序 | Go Map 迭代顺序不保证 |
+ | `String.length()` 计算 UTF-16 code unit | `len(string)` 计算 UTF-8 字节，rune 计数需单独处理 |
+ 
+-Slice 不是“数组引用”的简单别名；它是描述底层数组一段区域的值。Map 读取不存在的 key 会得到值类型的零值，需要 comma-ok 才能判断 key 是否真实存在。
++Slice 不是“数组引用”的简单别名；它是描述底层数组一段区域的值。`copy(dst, src)` 的第一个参数是目标 Slice，返回实际复制数量（最多为两个长度中的较小值），不会自动扩展 `dst`。Map 读取不存在的 key 会得到值类型的零值，需要 comma-ok 才能判断 key 是否真实存在；嵌套 Map 必须逐层 `make` 后才能写入内层 key。
+ 
+ ## 讲师 Demo
+ 
+ 按顺序运行并讲解：
+ 
+ ```bash
+ go run ./module01_basics/blocks/02_collections/demo/04_arrays_slices
+ go run ./module01_basics/blocks/02_collections/demo/05_maps_strings
+ go run ./module01_basics/blocks/02_collections/demo/06_slice_map_edges
+ go run ./module01_basics/blocks/02_collections/demo/07_string_utf8_edges
+ ```
+ 
+-第一个 Demo 对比 Array 复制、Slice 分片和共享修改，并观察 `append` 前后的 `len` 与 `cap`。第二个 Demo 展示 Map 初始化、comma-ok、`delete`、String 不可变性以及 byte 与 rune 的差异。
++第一个 Demo 对比 Array 复制、Slice 分片和共享修改，并观察 `append` 前后的 `len` 与 `cap`，再用 `copy(dst, src)` 观察复制方向、数量和目标 Slice 的零值。第二个 Demo 展示 Map 初始化、comma-ok、`delete`、逐层初始化嵌套 Map、String 不可变性以及 byte 与 rune 的差异。
+ 
+ 新增 Demo 补充早期项目中的基础边界：Array 的 `range` 值副本、Slice 在容量充足或不足时的底层数组行为、nil Slice 与 nil Map 的区别、Map 中 Struct 值的写回、Map 遍历无序，以及 String 常用操作和 `range string` 的 byte offset/rune 关系。
+ 
+ ## 核心语义陷阱
+ 
+ - [Map 边界演示](../../bonus/dark_corners/map/main.go)：nil Map 能读不能写、Map 迭代顺序不保证、Map 中 Struct 值需要取出修改再写回，或改用指针值。
+ - [String/UTF-8 边界演示](../../bonus/dark_corners/string/main.go)：byte、rune、字符串遍历和字符串长度的差异。
+ 
+ 这两份材料现在是 Block 2 的课堂深挖入口，不再只是课后 Bonus。讲师至少应从每份材料中选择一个现象让学员预测输出；Go 版本相关的行为要先标明版本。
+ 
+diff --git a/module01_basics/blocks/02_collections/demo/04_arrays_slices/main.go b/module01_basics/blocks/02_collections/demo/04_arrays_slices/main.go
+index 5f1d602..e564d66 100644
+--- a/module01_basics/blocks/02_collections/demo/04_arrays_slices/main.go
++++ b/module01_basics/blocks/02_collections/demo/04_arrays_slices/main.go
+@@ -31,11 +31,16 @@ func main() {
+ 	fmt.Println("Original Slice after sub-slice mod:", slice) // [1 999 3 4 5]
+ 
+ 	// append may reuse the underlying array or allocate a new one; never rely on
+ 	// a particular growth factor when explaining this behavior.
+ 
+ 	// 3. Making Slices
+ 	// make([]type, len, cap)
+ 	dynamicSlice := make([]int, 0, 5)
+ 	dynamicSlice = append(dynamicSlice, 1)
+ 	fmt.Println("Dynamic Slice:", dynamicSlice)
++
++	source := []int{10, 20, 30}
++	destination := make([]int, 5)
++	copied := copy(destination, source)
++	fmt.Printf("copy count=%d dst=%v src=%v\n", copied, destination, source)
+ }
+diff --git a/module01_basics/blocks/02_collections/demo/05_maps_strings/main.go b/module01_basics/blocks/02_collections/demo/05_maps_strings/main.go
+index 90f38ff..730a70d 100644
+--- a/module01_basics/blocks/02_collections/demo/05_maps_strings/main.go
++++ b/module01_basics/blocks/02_collections/demo/05_maps_strings/main.go
+@@ -24,20 +24,25 @@ func main() {
+ 	fmt.Println("Map:", scores)
+ 
+ 	var nilScores map[string]int
+ 	fmt.Println("Nil map read:", nilScores["Alice"])
+ 	// nilScores["Alice"] = 1 // panic: assignment to entry in nil map
+ 
+ 	for name, score := range scores {
+ 		fmt.Println("Map iteration (order is not guaranteed):", name, score)
+ 	}
+ 
++	nested := make(map[int]map[int]string)
++	nested[1] = make(map[int]string)
++	nested[1][2] = "ready"
++	fmt.Println("nested map value:", nested[1][2])
++
+ 	// 2. Strings
+ 	// Strings are immutable byte sequences with their own distinct string type.
+ 	str := "Hello, 世界"
+ 	fmt.Println("Length (bytes):", len(str)) // 13 (Hello, = 7 + 世界 = 6)
+ 
+ 	// Rune (Unicode Code Point)
+ 	runes := []rune(str)
+ 	fmt.Println("Length (runes):", len(runes)) // 9
+ 	fmt.Printf("First char: %c\n", runes[0])
+ 	fmt.Printf("Last char: %c\n", runes[len(runes)-1])
+diff --git a/module01_basics/blocks/03_modeling/README.md b/module01_basics/blocks/03_modeling/README.md
+index 669ed52..098017b 100644
+--- a/module01_basics/blocks/03_modeling/README.md
++++ b/module01_basics/blocks/03_modeling/README.md
+@@ -23,34 +23,34 @@
+ 
+ | Java | Go |
+ | --- | --- |
+ | 对象变量通常保存引用 | Struct 变量默认保存值；`*Student` 才是指向该值的指针 |
+ | `new Student(...)` 调用构造方法 | 常用普通函数 `New(...)` 校验后返回 `*Student` |
+ | 字段与方法都定义在 Class 内 | Struct 声明字段，方法通过接收者与类型关联 |
+ | 实例方法通常能修改当前对象 | 值接收者操作副本；需要修改原值时使用指针接收者 |
+ | 常用异常报告构造参数非法 | Go 常返回约定的 `error`，调用方显式处理 |
+ | 防御性复制常返回新对象 | 小型 Struct 可以直接按值返回快照副本 |
+ 
+-Go 指针支持解引用和共享修改，但不支持指针算术。方法调用时 Go 在可寻址的值与指针之间提供便利转换；接收者的选择仍然表达重要语义：这个方法是观察值，还是修改同一个对象。
++Go 指针支持解引用和共享修改，但不支持指针算术。对 Struct 指针，`p.Field` 是 `(*p).Field` 的字段访问语法糖，两种写法操作同一字段，不会复制 Struct。方法调用时 Go 在可寻址的值与指针之间提供便利转换；接收者的选择仍然表达重要语义：这个方法是观察值，还是修改同一个对象。值接收者拿到 Struct 副本，所以即使在方法内给字段赋值，调用方的原值也不会改变。
+ 
+ ## 讲师 Demo
+ 
+ 按顺序运行并讲解：
+ 
+ ```bash
+ go run ./module01_basics/blocks/03_modeling/demo/06_pointers
+ go run ./module01_basics/blocks/03_modeling/demo/07_structs_methods
+ go run ./module01_basics/blocks/03_modeling/demo/08_struct_zero_values
+ go run ./module01_basics/blocks/03_modeling/demo/09_copy_and_receivers
+ ```
+ 
+-第一个 Demo 对比值传递与指针传递，观察解引用、共享修改和 nil 指针。第二个 Demo 展示 Struct、值接收者、指针接收者和嵌入，重点观察 `UpdateName` 为什么能够修改原对象。
++第一个 Demo 对比值传递与指针传递，观察解引用、共享修改、nil 指针，以及 `counter.Value` 与 `(*counter).Value` 操作同一字段。第二个 Demo 展示 Struct、值接收者、指针接收者和嵌入，先观察 `RenameCopy` 不会改变 `student.Name`，再观察 `Rename` 为什么能够修改原对象。
+ 
+ 新增 Demo 补充 Struct 零值、复合字面量、值复制、指针参数、Snapshot 隔离和组合语义。注意：指针参数与指针接收者是两个相关但不同的概念；Embedding 提升字段和方法，但不建立 Java 意义上的继承关系。
+ 
+ ## 学员任务
+ 
+ 进入 `lab/starter`，实现学生模型：`New` 负责建立满足不变量的 `Student`，`Rename` 和 `UpdateScore` 修改原对象，`Snapshot` 返回按值复制的当前状态。姓名需要去除首尾空白，ID 必须为正数，成绩必须位于 0–100（含两端）。完整接口、错误约定与接收者说明见 [lab/README.md](lab/README.md)。
+ 
+ 先运行测试观察失败，再围绕当前失败补充最小实现。完成后解释为什么两个修改方法使用指针接收者，而快照方法使用值接收者。
+ 
+ ## 验收命令
+diff --git a/module01_basics/blocks/03_modeling/demo/06_pointers/main.go b/module01_basics/blocks/03_modeling/demo/06_pointers/main.go
+index cdbd1ed..bfa46e4 100644
+--- a/module01_basics/blocks/03_modeling/demo/06_pointers/main.go
++++ b/module01_basics/blocks/03_modeling/demo/06_pointers/main.go
+@@ -1,35 +1,45 @@
+ package main
+ 
+ import "fmt"
+ 
++type Counter struct {
++	Value int
++}
++
+ func main() {
+ 	// 1. Basic Pointers
+ 	x := 10
+ 	ptr := &x // Address of x
+ 
+ 	fmt.Printf("Value of x: %d\n", x)
+ 	fmt.Printf("Address of x: %p\n", ptr)
+ 	fmt.Printf("Value via pointer: %d\n", *ptr)
+ 
+ 	// Modify via pointer
+ 	*ptr = 20
+ 	fmt.Println("New value of x:", x)
+ 
+ 	// 2. Nil Pointer
+ 	var nilPtr *int
+ 	if nilPtr == nil {
+ 		fmt.Println("Pointer is nil")
+ 	}
+ 	// *nilPtr = 1 // Panic: invalid memory address or nil pointer dereference
+ 
+-	// 3. Pointer parameter vs value parameter. Receiver semantics are shown in
++	// 3. Struct pointer field access automatically dereferences the pointer.
++	counter := &Counter{Value: 1}
++	counter.Value = 2
++	(*counter).Value = 3
++	fmt.Println("pointer field sugar:", counter.Value)
++
++	// 4. Pointer parameter vs value parameter. Receiver semantics are shown in
+ 	// the Structs and Methods demo; both cases still pass a value to a function.
+ 	val := 5
+ 	modifyValue(val)
+ 	fmt.Println("After value pass:", val) // 5
+ 
+ 	modifyPointer(&val)
+ 	fmt.Println("After pointer pass:", val) // 100
+ }
+ 
+ func modifyValue(n int) {
+diff --git a/module01_basics/blocks/03_modeling/demo/09_copy_and_receivers/main.go b/module01_basics/blocks/03_modeling/demo/09_copy_and_receivers/main.go
+index dc9379c..98b97f7 100644
+--- a/module01_basics/blocks/03_modeling/demo/09_copy_and_receivers/main.go
++++ b/module01_basics/blocks/03_modeling/demo/09_copy_and_receivers/main.go
+@@ -14,28 +14,35 @@ type Account struct {
+ type Student struct {
+ 	ID    int
+ 	Name  string
+ 	Score int
+ }
+ 
+ func (s Student) Label() string {
+ 	return fmt.Sprintf("%d:%s=%d", s.ID, s.Name, s.Score)
+ }
+ 
++func (s Student) RenameCopy(name string) {
++	s.Name = name
++}
++
+ func (s *Student) Rename(name string) {
+ 	s.Name = name
+ }
+ 
+ func main() {
+ 	student := Student{ID: 1, Name: "Alice", Score: 80}
+ 	fmt.Println("value receiver:", student.Label())
+ 
++	student.RenameCopy("Nobody")
++	fmt.Println("value receiver mutation keeps:", student.Name)
++
+ 	student.Rename("Bob")
+ 	fmt.Println("pointer receiver:", student.Label())
+ 
+ 	snapshot := student
+ 	snapshot.Score = 100
+ 	fmt.Printf("value snapshot: original=%d copy=%d\n", student.Score, snapshot.Score)
+ 
+ 	account := Account{Audit: Audit{CreatedBy: "teacher"}, ID: 7}
+ 	fmt.Printf("embedding promotes field access: id=%d created-by=%s\n", account.ID, account.CreatedBy)
+ 	// Embedding is composition and promotion, not Java-style inheritance.
+diff --git a/module01_basics/instructor/DEMO_NOTES.md b/module01_basics/instructor/DEMO_NOTES.md
+index b003906..9ddfe40 100644
+--- a/module01_basics/instructor/DEMO_NOTES.md
++++ b/module01_basics/instructor/DEMO_NOTES.md
+@@ -1,151 +1,272 @@
+ # Module 01 Demo Notes
+ 
+ 这份小抄只服务讲师现场 Demo。学员任务、检查点和裁剪决策以 [RUNBOOK](RUNBOOK.md) 为准。以下命令均从仓库根目录运行；Demo 时先问“你预测会发生什么？”，再执行。
+ 
+ ## 课前 15 分钟
+ 
+ ```bash
+ go version
+ go env GOMOD
+ make module01-verify
++make module01-demo-contracts
++make module01-teaching-failures
+ ```
+ 
+-预期 `module01-verify` 检查根 Go Module 中的 Module 01 代码，并进入 `teacher/solution` 调用与学员包相同的 `scripts/grade.sh`。它不运行独立 Go Module `student_pack` 中故意保留的 RED。
++预期 `module01-verify` 检查根 Go Module 中的 Module 01 代码，并进入 `teacher/solution` 调用与学员包相同的 `scripts/grade.sh`。它不运行独立 Go Module `student_pack` 中故意保留的 RED。`module01-demo-contracts` 验证正常 Demo 输出；`module01-teaching-failures` 逐个确认隔离教学 Case 非零退出且诊断匹配，全部匹配时聚合命令返回 0。
+ 
+ 打开下列页面，但不在学员投影画面中展示 `solution/` 或 [answer key](../assessments/answer_key.md)：
+ 
+ - [Block 1 Lab](../blocks/01_go_basics/lab/README.md)
+ - [Block 2 Lab](../blocks/02_collections/lab/README.md)
+ - [Block 3 Lab](../blocks/03_modeling/lab/README.md)
+ - [Block 4 Lab](../blocks/04_functions_testing/lab/README.md)
+ - [Scorebook Lab](../integrated_lab/scorebook/README.md)
+ - [Task Manager 学员说明](../homework/task_manager/student_pack/README.md)
+ 
+ ## Block 1：Go Basics（15 分钟）
+ 
+ ```bash
+ go run ./module01_basics/blocks/01_go_basics/demo/01_hello
+ go run ./module01_basics/blocks/01_go_basics/demo/02_vars_types
+ go run ./module01_basics/blocks/01_go_basics/demo/03_control_funcs
+ ```
+ 
++### 必须看到
++
++- `02_vars_types`：`iota edge cases: 0 1 2 250 250 5 6`、`iota reset: 0 1`，以及 `Zero values: int=0 float=0.0 bool=false string=""`。
++- `03_control_funcs`：`switch init: owner has full access`、`Owner branch` 和 `Admin branch reached by fallthrough`；循环体只出现 `loop body: 0` 与 `loop body: 2`。
++
+ ### 投影提示
+ 
+ 1. 在执行前请学员指出 `package main`、`import` 和 `func main`，对比 Java 的 Class 入口。
+ 2. 在 `02_vars_types` 指出 `:=` 只能用在函数体内，整数类型转换必须显式。
+ 3. 在 `03_control_funcs` 先预测 `switch` 是否会贯穿，然后指出 Go 不需要默认 `break`。
+ 4. 把 `calculate` 的两个返回值迁移到 `Grade(score) (string, error)`：失败是接口的显式部分，不是隐藏的异常通道。
+ 
++| 暂停点 | 先问 | 预期结果 | 准确解释 | 常见误解 | 级别 |
++| --- | --- | --- | --- | --- | --- |
++| `left, _, right` | `_` 能否打印？ | 只能打印 1 和 3 | `_` 丢弃值，不绑定可读变量 | 把 `_` 当普通变量 | 核心 |
++| `const messageLength = len(message)` | `messageLength` 是运行时才计算的吗？ | 3 | `message` 是常量时，`len(message)` 是编译期常量 | 所有 `len` 调用都在运行时计算 | 核心 |
++| `consD/consE/consF` | E、F 分别是多少？ | 250、5 | E 复用 `= 250`；iota 未停止，F 使用当前行号 5 | “iota 被打断后重新从 0 开始” | 核心 |
++| 第二个 const 块 | resetA 是多少？ | 0 | 每个 const 块独立重置 iota | iota 在整个包连续计数 | 深挖 |
++| `UserID` / alias | 哪个需要转换？ | UserID 需要，alias 不需要 | 定义类型与别名语义不同 | 两种 type 写法完全一样 | 深挖 |
++| `floatValue := 1.9; int(floatValue)` | 输出 1 还是 2？ | 1 | 变量从浮点转整数会截断小数；`int(1.9)` 会编译失败，因为 1.9 不能精确表示为 int | 数值转换会自动舍入，或 `int(1.9)` 可直接编译 | 核心 |
++| if 初始化 | if 外打印哪个 score？ | 外层仍为 50 | 初始化变量只在 if/else 作用域内，外层变量未改变 | 认为短声明修改了外层变量 | 核心 |
++| continue / break | 1 和 3 会不会进入循环体？ | 1 被跳过，3 终止循环 | continue 跳过本轮，break 结束当前循环 | 两者都只是跳过本轮 | 核心 |
++| 无限 for | 如何安全退出？ | attempts 到 3 时 break | `for {}` 是合法无限循环，需要显式退出条件 | Go 必须写 while | 核心 |
++| switch 初始化 | currentRole 在 switch 外可用吗？ | 不可用 | 初始化变量作用域属于 switch | 与普通赋值作用域相同 | 深挖 |
++| 多值 case | owner 匹配哪个分支？ | 第一个分支 | 逗号分隔值表示 OR | 一个 case 只能有一个值 | 核心 |
++| fallthrough | 下一 case 条件会重算吗？ | 不会 | 无条件进入紧邻 case，业务代码通常不建议使用 | 相当于继续匹配条件 | 深挖 |
++| Atoi 失败 | 错误能否忽略？ | err 非 nil | 外部输入解析属于可预期失败，应显式处理 | 转换失败自动得到 0 且安全 | 核心 |
++
++**一级提示：**让学员只预测当前一行输出。
++
++**二级提示：**指出当前操作的是值、地址、底层数组、Map key 或闭包捕获变量中的哪一个。
++
++**三级提示：**运行最小 Case，只解释 actual/want 或编译器第一条诊断，不直接展示 Solution。
++
++### 不得讲错
++
++- `iota` 始终按 ConstSpec 行递增；表达式省略与 `iota` 计数是两个维度。
++- String 下标和切片按 byte；`range` 解码 rune，index 仍是 byte offset。
++- nil Slice 可以 `append`；nil Map 可以读但不能写。
++
+ ### 失败演示与救援
+ 
+ ```bash
+ go test -tags=exercise ./module01_basics/blocks/01_go_basics/lab/starter -run '^TestGrade$'
+ ```
+ 
+ 起始 Starter 应因返回等级不符合而失败。请学员只读出“测试名、实际值、期望值”；如 8 分钟仍无进展，给一级提示“先把输入分成有效与无效”，不投影 solution。
+ 
++### 受控编译失败与 panic（按需，8 分钟内）
++
++```bash
++make module01-teaching-failures
++```
++
++课堂只选择三个核心 Case：同作用域无新变量的 `:=`、Map Struct 字段不可直接赋值、nil Map 写入 panic。逐一先让学员预测诊断或 panic，再展示 [受控失败 Case](../teaching_failures/README.md) 中的正确写法。其余 Case（包级短声明、定义类型赋值、Slice 比较、最后一个 case 的 `fallthrough`、nil 指针）仅按班级情况调用，不逐个占用课堂时间。每个 fixture 必须非零退出且诊断匹配；全部 fixture 都匹配时，`make module01-teaching-failures` 返回 0。路径、权限、依赖或工具链异常不是教学成功。
++
++**一级提示：**让学员只预测当前一条诊断或 panic。
++
++**二级提示：**指出当前操作的是声明位置、可寻址 Map value，还是 nil Map 写入。
++
++**三级提示：**展示正确写法的最小差异，只解释编译器第一条诊断或 panic；不修改失败 fixture，也不展示 Solution。
++
+ ### Block 1 内容扩展
+ 
+ 按班级节奏选择以下镜头，不要删除原有 `01_hello`、`02_vars_types` 和 `03_control_funcs`：
+ 
+ ```bash
+ go run ./module01_basics/blocks/01_go_basics/demo/05_strings_basics
+ ```
+ 
++**必须看到：**`"A你" bytes=4`；`range over string` 下恰好两次 rune 输出；`Atoi error: true`。
++
+ - **核心：**让学员预测 `var int/string/bool` 的零值，说明 nil Slice 可以 `append`，nil Map 只能读不能写。
+-- **核心：**展示 `strings.TrimSpace`、`Fields`、`ToLower`，再解释 String 下标是 byte、`range` 得到 rune。
+-- **核心：**让学员预测 `case "admin", "owner"`、`switch {}` 和 `continue/break` 的输出。
+-- **深挖：**实际运行 `fallthrough`，强调它不重新判断下一个 case，且业务代码通常不建议使用。
+-- **可裁：**标签和 `goto` 只口头说明存在，不在当天编码。
++- **核心：**展示 `strings.TrimSpace`、`Fields`、`ToLower`，再解释 String 下标是 byte、`range` 得到 rune；展示 String/`[]byte` 往返和 `Atoi` 的成功与错误路径。
++- **核心：**让学员预测 `case "admin", "owner"`、`switch {}`、`continue/break` 和无限 `for` 的输出；指出 if 初始化变量的作用域。
++- **深挖：**实际运行 `fallthrough`，强调它不重新判断下一个 case；说明 switch 初始化变量只属于 switch。
++- **可裁：**标签、`goto`、switch 初始化作用域细节和 String 转换成功路径只口头说明或按需演示，不在当天编码。
+ - **深挖入口：**在 `range` 基础示例后按需打开 [range dark corner](../bonus/dark_corners/range/main.go)，先说明其 Go 1.22+ 语义，再与 Go 1.16 作业环境区分。
+ 
+ ## Block 2：Collections（25 分钟）
+ 
+ ```bash
+ go run ./module01_basics/blocks/02_collections/demo/04_arrays_slices
+ go run ./module01_basics/blocks/02_collections/demo/05_maps_strings
+ go run ./module01_basics/blocks/02_collections/demo/06_slice_map_edges
+ go run ./module01_basics/blocks/02_collections/demo/07_string_utf8_edges
+ ```
+ 
++### 必须看到
++
++- `04_arrays_slices`：`Original Array: [1 2 3]`、`Original Slice after sub-slice mod: [1 999 3 4 5]`，以及 `copy count=3 dst=[10 20 30 0 0] src=[10 20 30]`。
++- `05_maps_strings`：nil Map 读取为 `0`、Map 遍历标注“不保证顺序”，以及 `nested map value: ready`。
++- `06_slice_map_edges`：`array after changing range value: [1 2 3]` 与 `shared slice: base=[9 2] view=[9 2 3] len=3 cap=4`；**救援：**先只预测修改的是 range 值副本还是共享的底层数组，再指出当前操作的对象。
++- `07_string_utf8_edges`：`text="A你" bytes=4 runes=2` 与 `byte-index=1 rune=你`；**救援：**让学员先标出 byte-index 是 1，再将它与 rune 个数 2 分开解释。
++
+ ### 投影提示
+ 
+ 1. 在修改 `arrCopy[0]` 和 `subSlice[0]` 前暂停，让学员分别预测原值是否改变：Array 赋值复制元素，Slice 描述符副本仍可共享底层数组。
+ 2. 在 `append` 前后同时读 `len` 和 `cap`；只说“可能换底层数组”，不承诺固定扩容倍数。
+ 3. 对 Map 提问：成绩 0 和不存在的学生如何区分？答案必须包含 comma-ok。
+ 4. 对 `"Hello, 世界"` 先收集 `len` 预测，再比较 13 bytes 与 9 runes。
+ 
++| 暂停点 | 先问 | 预期结果 | 准确解释 | 常见误解 | 级别 |
++| --- | --- | --- | --- | --- | --- |
++| `copy(destination, source)` | 返回值和剩余两个位置是什么？ | 3，剩余为 0 | 复制数量为 min(len(dst), len(src)) | copy 会自动扩展 dst | 核心 |
++| 嵌套 Map | 只 make 外层能否直接写内层？ | 不能，会 panic | 每层 Map 都要初始化 | 外层 make 会递归初始化 | 深挖 |
++
++**一级提示：**让学员只预测当前一行输出。
++
++**二级提示：**指出当前操作的是值、地址、底层数组、Map key 或闭包捕获变量中的哪一个。
++
++**三级提示：**运行最小 Case，只解释 actual/want 或编译器第一条诊断，不直接展示 Solution。
++
++### 不得讲错
++
++- `append` 可能复用也可能更换底层数组；不能承诺固定扩容倍数。
++- Map 遍历顺序不是稳定契约。
++
+ ### 失败演示与救援
+ 
+ ```bash
+ go test -tags=exercise ./module01_basics/blocks/02_collections/lab/starter -run '^TestAnalyze$'
+ ```
+ 
+ 把第一个失败字段当作当前任务，不同时修四个计数。如 Map 赋值 panic，询问 `Frequencies` 是 nil 还是已经 `make`；如 byte/rune 混淆，让学员单独打印 `len("你")` 和 `utf8.RuneCountInString("你")`。
+ 
+ ### Block 2 内容扩展
+ 
+ - **核心：**用 `06_slice_map_edges` 展示 Array 的 range 值副本、Slice 共享和容量变化、nil Slice/nil Map、comma-ok、Map Struct 写回。
++- **核心：**在 `04_arrays_slices` 用 `copy(destination, source)` 说明目标在前、返回复制数量和未覆盖位置保持零值。
+ - **核心：**用 `07_string_utf8_edges` 展示 `Contains`、`Split`、`Join`、`TrimSpace`、`Fields`、大小写转换和 `range string`。
+-- **深挖：**穿插 [Map dark corner](../bonus/dark_corners/map/main.go) 的 Map 顺序、nil Map、不可寻址值；穿插 [String dark corner](../bonus/dark_corners/string/main.go) 的 byte/rune 细节。
++- **深挖：**在 `05_maps_strings` 说明嵌套 Map 必须逐层初始化；穿插 [Map dark corner](../bonus/dark_corners/map/main.go) 的 Map 顺序、nil Map、不可寻址值；穿插 [String dark corner](../bonus/dark_corners/string/main.go) 的 byte/rune 细节。
+ - **可裁：**`unsafe.Pointer`、指针运算和复杂 Map 指针场景不进入核心课堂。
+ 
+ ## Block 3：Modeling（20 分钟）
+ 
+ ```bash
+ go run ./module01_basics/blocks/03_modeling/demo/06_pointers
+ go run ./module01_basics/blocks/03_modeling/demo/07_structs_methods
+ go run ./module01_basics/blocks/03_modeling/demo/08_struct_zero_values
+ go run ./module01_basics/blocks/03_modeling/demo/09_copy_and_receivers
+ ```
+ 
++### 必须看到
++
++- `06_pointers`：`After value pass: 5`、`After pointer pass: 100`、`pointer field sugar: 3`。
++- `09_copy_and_receivers`：`value receiver mutation keeps: Alice` 与 `pointer receiver: 1:Bob=80`。
++- `07_structs_methods`：`Updated: John Doe` 与 `Admin Name: Admin, Level: 1`；**救援：**先问更新发生在同一个对象还是副本，再把提升字段解释为组合提供的访问便利，不等同于继承。
++- `08_struct_zero_values`：`struct zero value: main.User{ID:0, Name:"", Enabled:false, Address:main.Address{City:""}}` 与 `after pointer parameter: shared value`；**救援：**让学员分别圈出 Struct 零值字段和指针参数修改的对象，再回到“传入的是地址值的副本”。
++
+ ### 投影提示
+ 
+ 1. 在 `modifyValue` 和 `modifyPointer` 前分别预测 `val`，用输出强调 Go 只有值传递；传入指针时复制的值是地址。
+ 2. 把 `User.String` 标为只读观察，把 `UpdateName` 标为修改同一对象，让学员选接收者。
+ 3. 将 Java 类的构造器对比为普通 `New(...)` 函数，强调校验成功后才创建有效状态。
+ 4. Embedding 只做“组合可以提升字段和方法”的一句展示，不说它等于继承。
+ 
++| 暂停点 | 先问 | 预期结果 | 准确解释 | 常见误解 | 级别 |
++| --- | --- | --- | --- | --- | --- |
++| `counter.Value` / `(*counter).Value` | 是否修改同一字段？ | 最终为 3 | Go 自动解引用字段访问 | `p.field` 会复制对象 | 深挖 |
++| `RenameCopy` | student.Name 会变吗？ | 仍为 Alice | 值接收者得到 Struct 副本 | 方法天然拥有 Java this 引用语义 | 核心 |
++| `Rename` | 为什么变为 Bob？ | 指针接收者修改同一对象 | 传入的仍是值，只是该值为地址 | Go 存在“引用传递” | 核心 |
++
++**一级提示：**让学员只预测当前一行输出。
++
++**二级提示：**指出当前操作的是值、地址、底层数组、Map key 或闭包捕获变量中的哪一个。
++
++**三级提示：**运行最小 Case，只解释 actual/want 或编译器第一条诊断，不直接展示 Solution。
++
++### 不得讲错
++
++- Go 所有参数传递都是值传递；传指针时复制的是地址值。
++- 值接收者操作副本；指针接收者用于修改同一对象，但仍是值传递。
++
+ ### 失败演示与救援
+ 
+ ```bash
+ go test -tags=exercise ./module01_basics/blocks/03_modeling/lab/starter -run '^TestStudentLifecycle$'
+ ```
+ 
+ 当修改丢失时，让学员圈出接收者是 `Student` 还是 `*Student`；当无效修改污染状态时，让其标出第一次赋值和第一次校验的顺序。救援只给“先校验，后赋值”，不代写方法。
+ 
+ ### Block 3 内容扩展
+ 
+ - **核心：**用 `08_struct_zero_values` 观察 Struct 零值、复合字面量、值复制、指针参数和 nil 指针检查。
+-- **核心：**用 `09_copy_and_receivers` 对比值接收者、指针接收者、快照隔离和 Embedding 的字段提升。
+-- **深挖：**强调 Embedding 是组合，不是继承；讲解指针参数和指针接收者都遵守值传递，但复制的值不同。
+-- **可裁：**匿名字段的复杂方法集、指针嵌入和反射不进入核心课堂。
++- **核心：**用 `09_copy_and_receivers` 对比 `RenameCopy` 的副本修改、指针接收者、快照隔离和 Embedding 的字段提升。
++- **深挖：**用 `06_pointers` 说明 `counter.Value` 是 `(*counter).Value` 的自动解引用语法糖；强调 Embedding 是组合，不是继承；讲解指针参数和指针接收者都遵守值传递，但复制的值不同。
++- **可裁：**自动解引用语法糖、匿名字段的复杂方法集、指针嵌入和反射不进入核心课堂。
+ 
+ ## Block 4：Functions & Testing（15 分钟）
+ 
+ 核心 Demo 保留函数值、闭包和 `defer`，并增加变参、命名函数类型、闭包状态和 defer 求值；柯里化、函数组合和并发继续移入可裁 Bonus。
+ 
+ ```bash
+ go run ./module01_basics/blocks/04_functions_testing/demo/09_advanced_functions
+ go run ./module01_basics/blocks/04_functions_testing/demo/10_function_forms
+ go run ./module01_basics/blocks/04_functions_testing/demo/11_defer_edges
+ go test ./module01_basics/blocks/04_functions_testing/lab/solution -run '^TestFilterWithClosure$'
+ ```
+ 
++### 必须看到
++
++- `10_function_forms`：`closure state: 11 12` 与 `independent closure state: 11`，证明两个 counter 状态独立。
++- `11_defer_edges`：LIFO 段先输出 `defer second registered` 再输出 `defer first registered`，普通参数读取 `1`，闭包读取 `2`。
++- `09_advanced_functions`：`75 passed: true`、`filtered: [60 75]`，以及 `start` 后才出现 `end`；**救援：**先让学员只预测谓词对 75 的结果和过滤后的顺序，再指出函数值是参数、`defer` 的 `end` 在当前函数返回时执行。
++
+ ### 投影提示
+ 
+ 1. 将 `func(int) bool` 直接与 Java `Predicate<Integer>` 对比：Go 的函数值不需要额外函数式接口。
+ 2. 让学员预测 `atLeast(60)` 返回的闭包为何能继续访问 `min`，再观察 `passed(75)`。
+ 3. 在 `defer` 注册处指向“现在声明意图，函数返回前执行”，不延伸 panic/recover。
+ 4. 用 `-run` 说明测试名是反馈接口；失败时先读测试名，再读 actual/want，最后回到最小行为。
+ 
++| 暂停点 | 先问 | 预期结果 | 准确解释 | 常见误解 | 级别 |
++| --- | --- | --- | --- | --- | --- |
++| 两个 counter | 第二个 counter 会接着第一个计数吗？ | 不会，独立输出 11 | 每次调用工厂函数各自捕获一份状态 | 所有闭包共享同一个局部变量 | 核心 |
++| defer LIFO | 哪个 defer 先执行？ | 后注册的先执行 | defer 栈按 LIFO 执行 | defer 按书写顺序执行 | 核心 |
++| 参数与闭包 | 为什么一个读 1、一个读 2？ | 普通参数 1，闭包 2 | 普通参数在注册时求值；闭包体在执行时读取 | 两者都在 defer 执行时才取值 | 核心 |
++
++**一级提示：**让学员只预测当前一行输出。
++
++**二级提示：**指出当前操作的是值、地址、底层数组、Map key 或闭包捕获变量中的哪一个。
++
++**三级提示：**运行最小 Case，只解释 actual/want 或编译器第一条诊断，不直接展示 Solution。
++
++### 不得讲错
++
++- defer 普通参数在注册时求值；闭包体读取发生在执行时。
++
+ ### 失败演示与救援
+ 
+ ```bash
+ go test -tags=exercise ./module01_basics/blocks/04_functions_testing/lab/starter -run '^TestFilterWithClosure$'
+ go test -tags=exercise ./module01_basics/blocks/04_functions_testing/lab/starter -run '^TestWithAuditRecordsEndAfterOperation$'
+ ```
+ 
+ 始终一次只运行一个具名测试。Filter 有多余零值时，检查是否先创建了 `len(values)` 长度再 `append`；audit 顺序错误时，让学员在纸上写出三个可观察事件，再移动 `defer`。
+ 
+ ### Block 4 内容扩展
+@@ -176,10 +297,20 @@ go test -tags=exercise ./module01_basics/blocks/04_functions_testing/lab/starter
+ 
+ 预期 gofmt 和 Vet 通过，测试在 `Add` 的 `ErrNotImplemented` 行为处失败。该 RED 证明 Starter 和公开测试已对接，不需要现场“修好”。如因权限、依赖或编译失败，按 [Troubleshooting](../homework/task_manager/teacher/TROUBLESHOOTING.md) 处理环境问题。
+ 
+ 讲师答案的绿色对照只在课前或课后运行：
+ 
+ ```bash
+ make module01-homework-solution
+ ```
+ 
+ 不向学员投影 `teacher/solution`。
++
++## Exit Quiz 诊断（5 分钟）
++
++课堂计时内只收核心题 1–14。15–17 是提前完成者或下一次课 Code Review 的选做诊断，不占用 Task Manager 启动、`make grade` 或分支交付说明的时间。
++
++| 题号 | 正确答案 | 回收误解的讲师语言 |
++| --- | --- | --- |
++| 15（选做） | A | 选 B 时追问“省略的 ConstSpec 复用了哪一整行表达式？”；选 C 时重申 iota 在同一个 const 块内不重置。 |
++| 16（选做） | B | 让学员先指出 `copy(dst, src)` 中谁是目标，再计算 `min(len(dst), len(src))`；不要把返回值误当成目标长度。 |
++| 17（选做） | C | 选 A 时让学员区分 Map index 的 value 与可寻址变量；选 B 时先分类这是编译失败还是运行时 panic，再看编译器第一条诊断。 |
+diff --git a/module01_basics/instructor/RUBRIC.md b/module01_basics/instructor/RUBRIC.md
+index 7fdd01e..752e24e 100644
+--- a/module01_basics/instructor/RUBRIC.md
++++ b/module01_basics/instructor/RUBRIC.md
+@@ -5,20 +5,25 @@
+ ## 每个 Lab 的 10 分量表
+ 
+ | 维度 | 2 分 | 1 分 | 0 分 |
+ |---|---|---|---|
+ | 契约行为 | 所有规定正常路径符合测试 | 主路径可用，仍有一个明确失败 | 主路径不可用或改了公开接口 |
+ | 边界与错误 | 边界、零值和约定错误全部正确 | 能解释边界，但有一处实现不符 | 忽略边界或用不相干方式规避错误 |
+ | 状态与副本隔离 | 失败不污染状态，返回值不泄漏内部可变状态 | 正常修改正确，但有一个隔离性问题 | 经常丢失修改或暴露内部状态 |
+ | 测试反馈循环 | 能展示 RED、读出 actual/want、用最小修改变 GREEN 并运行全包回归 | 最终会运行测试，但无法说明当前失败 | 不运行指定测试，或删除/弱化测试规避失败 |
+ | 解释与迁移 | 能用可观察行为解释选择，并给出一个新场景 | 能说出规则，但无法连到当前代码 | 只复述语法或复制答案，无法预测行为 |
+ 
++“解释与迁移”达到 2 分还必须有以下可观察证据：
++
++- 能区分“编译失败、运行时 panic、测试断言失败”三类反馈，并说明下一步动作。
++- 能先预测关键输出，再用语言规则解释结果，而不是只复述运行结果。
++
+ ## 各 Lab 的必看证据
+ 
+ | Lab | 契约与边界证据 | 解释证据 |
+ |---|---|---|
+ | Block 1 Grade | 0、60、90、100 分类正确，-1/101 返回 `ErrScoreOutOfRange` | 能说明为何从高边界向低边界判断 |
+ | Block 2 Textstats | 中英文 bytes/runes/words 和小写词频正确，空文本返回空 Map | 能区分 Slice 共享与 Array 副本，并解释 comma-ok |
+ | Block 3 Student | 姓名清理、0/100 边界、失败无修改和 Snapshot 隔离全部可观察 | 能根据“是否修改同一对象”选择接收者 |
+ | Block 4 Scores | `Filter` 顺序不变，`AtLeast(60)` 包含 60，audit 顺序为 start/operation/end | 能说明闭包捕获了什么，以及 `defer` 何时执行 |
+ | Scorebook | 连续 ID、返回副本、未知 ID、空平均值、小数平均值和等级边界全部通过 | 能把第一个失败断言连回某个不变量 |
+ 
+diff --git a/module01_basics/instructor/RUNBOOK.md b/module01_basics/instructor/RUNBOOK.md
+index cffc9ca..5c7ed9f 100644
+--- a/module01_basics/instructor/RUNBOOK.md
++++ b/module01_basics/instructor/RUNBOOK.md
+@@ -35,95 +35,117 @@
+ | Block 1 | 25 |
+ | Block 2 | 40 |
+ | Block 3 | 35 |
+ | Block 4 | 25 |
+ | Scorebook integrated lab | 40 |
+ | Homework kickoff and Exit Quiz | 10 |
+ | **Total** | **185 / 310 (59.7%)** |
+ 
+ `185 ÷ 310 = 0.59677…`，四舍五入为 59.7%。延误时先删除各段标明的可裁内容，不挪用这 185 分钟中的编码、测试和 Quiz 时间。
+ 
++## 不可裁内容与固定可裁顺序
++
++- **Block 1 不可裁：**隐式 ConstSpec/iota、多值 case、默认不贯穿、fallthrough 语义、零值、Atoi 错误路径。
++- **Block 2 不可裁：**Array/Slice 值与共享语义、copy、comma-ok、byte/rune。
++- **Block 3 不可裁：**Go 只有值传递、值/指针接收者、校验后修改、Snapshot 隔离。
++- **Block 4 不可裁：**函数值、闭包捕获、defer 顺序、读取失败测试。
++
++若需压缩，严格按以下可裁顺序逐项删除：位运算 → iota 重置块 → 类型别名 → switch 初始化作用域 → 嵌套 Map → 指针字段语法糖 → 多 defer 扩展。不得用删学员动手时间来容纳深挖内容。
++
++## 受控失败的验收规则
++
++课前运行：
++
++```bash
++make module01-demo-contracts
++make module01-teaching-failures
++```
++
++正常 Demo、Lab 和 `go test ./module01_basics/...` 必须保持 GREEN。编译失败和 panic 示例只允许位于 `teaching_failures/testdata/`，由独立命令验证。对每个教学 Case，fixture 只有非零退出且输出匹配约定诊断才算通过；全部 fixture 匹配时，聚合命令 `make module01-teaching-failures` 返回 0。路径错误、权限、依赖、Go 安装或其他环境问题都不是“预期失败”，应先按环境故障处理。
++
++课堂只使用三个核心失败：同作用域无新变量的 `:=`、Map Struct 字段不可直接赋值、nil Map 写入 panic。其余 Case 仅作按需小抄，避免挤占 Block 的学员动手时间。
++
+ ## 09:30–09:50：开场、环境检查、Entry Quiz
+ 
+ - **目标：**确认学员能在仓库根目录运行 Go，并识别班级最需要纠正的 Java-to-Go 默认假设。
+ - **讲师动作：**09:30–09:35 说明一日产出；09:35–09:40 投影 `go version`、`go env GOMOD` 和 `make module01-lab-01`；09:40–09:45 安静答 Quiz；09:45–09:50 按题号举手统计。
+ - **学员动作（10 分钟动手）：**独立运行三个环境命令 5 分钟，完成 [Entry Quiz](../assessments/entry_quiz.md) 5 分钟。
+ - **可观察检查点：**`GOMOD` 指向当前仓库且 Block 1 solution 测试 PASS；讲师记录每题错误人数。
+ - **常见延误：**学员不在仓库根目录、Go 不在 `PATH` 或 IDE 打开了错误目录。
+ - **可裁内容：**精确删除开场自我介绍和课程背景扩展；不删环境命令、Quiz 或错题统计。
+ 
+ ## 09:50–10:35：Block 1 — Go Basics
+ 
+ - **目标：**使用条件、函数、多返回值和显式 `error` 实现有边界校验的 `Grade`。
+ - **讲师动作：**09:50–10:05 按 [Demo Notes](DEMO_NOTES.md#block-1go-basics15-分钟) 展示程序入口、类型推断、`for`、`switch` 和 `(value, error)`；10:05–10:30 巡视结对实现；10:30–10:35 用一个边界失败做复盘。
+-- **内容扩展：**若班级基础较稳，在原有 Demo 中加入零值、String 基础、多值 `case` 和 `switch {}`；`fallthrough` 属于语义深挖，`goto` 只保留识别。
++- **内容扩展：**若班级基础较稳，在原有 Demo 中加入零值、String 基础与转换、if/switch 初始化作用域、多值 `case` 和 `switch {}`；必须讲清 Go 默认不贯穿及显式 `fallthrough` 的语义，`goto` 只保留识别。用户补充的隐式 ConstSpec/iota Case 不可裁。
+ - **学员动作（25 分钟动手）：**在 `blocks/01_go_basics/lab/starter` 运行 RED，实现范围校验和 A–F 映射，重复运行全包测试。
+ - **可观察检查点：**`go test -tags=exercise ./module01_basics/blocks/01_go_basics/lab/starter` PASS，且学员能解释 60、90、-1 和 101 的路径。
+ - **常见延误：**从低到高写过宽分支，或返回临时文本错误而不是 `ErrScoreOutOfRange`。
+-- **可裁内容：**精确删除 `iota` 的扩展例子和 Bonus 表驱动测试讨论；保留错误返回与边界测试。
++- **可裁内容：**只按本 Runbook 的固定可裁顺序处理；保留隐式 ConstSpec/iota、多值 `case`、默认不贯穿、`fallthrough` 语义、零值、Atoi 错误路径、错误返回与边界测试。
+ 
+ ## 10:35–10:45：短休息
+ 
+ 准时停止投影和编码，10:45 直接从 Array 副本对比开始。休息不是可裁内容，不用它补 Block 1。
+ 
+ ## 10:45–12:00：Block 2 — Collections
+ 
+-- **目标：**通过中英文文本统计验证 Array 值语义、Slice 共享、Map comma-ok 与 UTF-8 byte/rune 行为。
++- **目标：**通过中英文文本统计验证 Array 值语义、Slice 共享与 `copy`、Map comma-ok 与 UTF-8 byte/rune 行为。
+ - **讲师动作：**10:45–11:10 运行两个 Collections Demo 并先让学员预测输出；11:10–11:50 巡视 `Analyze`实现；11:50–12:00 对比一个中文字符的 byte 和 rune 计数。
+-- **内容扩展：**在两个原有 Demo 后按需运行 `06_slice_map_edges` 和 `07_string_utf8_edges`；Array range、nil Slice/Map、String 基础和 `range string` 属于核心，Map/String dark corner 属于穿插深挖。
++- **内容扩展：**在两个原有 Demo 后按需运行 `06_slice_map_edges` 和 `07_string_utf8_edges`；Array range、nil Slice/Map、`copy` 的方向和数量、String 基础和 `range string` 属于核心，嵌套 Map 初始化及 Map/String dark corner 属于穿插深挖。
+ - **学员动作（40 分钟动手）：**实现 `Analyze`，用 `strings.Fields`、`strings.ToLower` 和 `utf8.RuneCountInString` 完成计数，反复运行练习测试。
+ - **可观察检查点：**`go test -tags=exercise ./module01_basics/blocks/02_collections/lab/starter` PASS；`"Go go 你好"` 的结果为 12 bytes、8 runes、3 words 和 `go:2`。
+ - **常见延误：**把 `len(text)` 当作字符数，未初始化 Map，或自行删标点而改变了分词契约。
+-- **可裁内容：**精确删除 Slice 容量增长策略推演、Map 深层陷阱和 String benchmark；保留 Slice 共享、comma-ok 和 byte/rune。
++- **可裁内容：**只按本 Runbook 的固定可裁顺序处理；保留 Array/Slice 值与共享语义、`copy`、comma-ok 和 byte/rune。
+ 
+ ## 12:00–13:00：午休
+ 
+ 关闭上午问题停车场的现场讨论，只留下文字记录。13:00 按新的 65 分钟时间盒开始，不用午休补课。
+ 
+ ## 13:00–14:05：Block 3 — Modeling
+ 
+ - **目标：**用 Struct、构造函数惯例、指针接收者和值快照建立保持不变量的 `Student`。
+ - **讲师动作：**13:00–13:20 用值传递与指针修改 Demo 对比 Java 引用；13:20–13:55 巡视建模练习；13:55–14:05 用“修改 Snapshot”的测试复盘接收者选择。
+-- **内容扩展：**在两个原有 Demo 后按需运行 `08_struct_zero_values` 和 `09_copy_and_receivers`；Struct 零值、值复制和接收者选择属于核心，Embedding 作为组合语义深挖。
++- **内容扩展：**在两个原有 Demo 后按需运行 `08_struct_zero_values` 和 `09_copy_and_receivers`；Struct 零值、值复制以及 `RenameCopy`/`Rename` 的接收者选择属于核心，Embedding 和 `counter.Value` 的自动解引用语法糖作为深挖。
+ - **学员动作（35 分钟动手）：**实现 `New`、`Rename`、`UpdateScore` 和 `Snapshot`，先校验再修改状态，逐步使测试变绿。
+ - **可观察检查点：**`go test -tags=exercise ./module01_basics/blocks/03_modeling/lab/starter` PASS；修改 Snapshot 不影响原对象，失败的 Rename/Update 不改原状态。
+ - **常见延误：**修改方法使用值接收者，或先赋值再校验，导致变更丢失或无效状态泄漏。
+-- **可裁内容：**精确删除 Struct embedding 对比和 nil pointer 扩展讨论；保留 Go 只有值传递、接收者选择和校验前置。
++- **可裁内容：**只按本 Runbook 的固定可裁顺序处理；保留 Go 只有值传递、值/指针接收者、校验后修改和 Snapshot 隔离。
+ 
+ ## 14:05–14:50：Block 4 — Functions & Testing
+ 
+ - **目标：**把函数作为值传递，用闭包捕获配置，用 `defer` 安排可观察的收尾顺序，并能阅读具名测试失败。
+ - **讲师动作：**14:05–14:20 只演示函数值、闭包、`defer` 与 `-run`；14:20–14:45 让学员依次处理两个具名测试；14:45–14:50 对照三个 audit 事件。
+ - **内容扩展：**在原有 Demo 后按需运行 `10_function_forms` 和 `11_defer_edges`；变参、函数类型、闭包状态和 defer 求值属于核心，复杂函数式模式继续可裁。
+ - **学员动作（25 分钟动手）：**先使 `TestFilterWithClosure` 通过，再使 `TestWithAuditRecordsEndAfterOperation` 通过，最后运行全包测试。
+ - **可观察检查点：**`go test -tags=exercise ./module01_basics/blocks/04_functions_testing/lab/starter` PASS，audit 事件严格为 `start:average`、`operation`、`end:average`。
+ - **常见延误：**`Filter` 硬编码阈值，`AtLeast` 使用 `>`，或在 `operation` 之后才注册 `defer`。
+-- **可裁内容：**精确删除柯里化、函数组合、Functional Options 和多 `defer` LIFO 扩展；保留单一闭包、单一 `defer` 和失败输出阅读。
++- **可裁内容：**只按本 Runbook 的固定可裁顺序处理；保留函数值、闭包捕获、defer 顺序和读取失败测试。
+ 
+ ## 14:50–15:00：短休息
+ 
+ 准时停止。15:00 所有学员回到 Scorebook Starter；休息不是可裁内容，不用它补 Block 4。
+ 
+ ## 15:00–15:40：Scorebook 综合 Lab
+ 
+ - **目标：**在新的 Scorebook 问题中独立组合当天所学，不复制任何 Block solution。
+ - **讲师动作：**在 10、20、30、40 分钟节点只播报 [Scorebook Lab](../integrated_lab/scorebook/README.md) 当前检查点和停止规则；个别辅导时只询问“第一个失败断言是什么”。
+ - **学员动作（40 分钟动手）：**0–10 分钟做模型与 Add，10–20 分钟做 Find/UpdateScore，20–30 分钟做 Average，30–40 分钟做 CountByGrade 和全量测试。
+ - **可观察检查点：**每 10 分钟指定的具名测试输出可见；最终 `go test -tags=exercise ./module01_basics/integrated_lab/scorebook/starter` PASS，或学员保留了第一个未通过断言的完整输出。
+ - **常见延误：**无效 Add 也消耗 ID，返回值泄漏内部指针，或 Average 在转换 `float64` 之前先做整数除法。
+ - **可裁内容：**只可删除最后的全班 solution 讲解，并改为课后链接；不删任何一个 10 分钟编码检查点。
+ 
+ ## 15:40–16:00：Task Manager 作业启动、Exit Quiz
+ 
+ - **目标：**让学员知道一周作业的范围、预期 RED、唯一验收入口和分支交付方式，不在现场实现 Task Manager。
+-- **讲师动作：**15:40–15:44 演示作业目标行为；15:44–15:49 指导学员跑 `make grade`；15:49–15:54 说明一周里程碑、开发分支和 Gitee 手动验收；15:54–15:59 主持 Exit Quiz；15:59–16:00 收取离场票。
+-- **学员动作（10 分钟动手）：**在 `student_pack` 运行 `make grade` 5 分钟并标记预期失败阶段，然后完成 [Exit Quiz](../assessments/exit_quiz.md) 5 分钟。
++- **讲师动作：**15:40–15:44 演示作业目标行为；15:44–15:49 指导学员跑 `make grade`；15:49–15:54 说明一周里程碑、开发分支和 Gitee 手动验收；15:54–15:59 主持 Exit Quiz 核心题 1–14；15:59–16:00 收取离场票。第 15–17 题仅供提前完成者或课后 Code Review 使用，不挤占 Task Manager 启动时间。
++- **学员动作（10 分钟动手）：**在 `student_pack` 运行 `make grade` 5 分钟并标记预期失败阶段，然后完成 [Exit Quiz](../assessments/exit_quiz.md) 核心题 1–14（5 分钟）；15–17 为选做。
+ - **可观察检查点：**Starter 在 gofmt 和 Vet 后的测试步骤因 `ErrNotImplemented` 行为性失败，而不是编译、权限或依赖失败；每人交一个最不确定题号。
+ - **常见延误：**学员在仓库根目录运行作业 `make grade`，或讲师开始直播编写 `Add`。
+ - **可裁内容：**精确删除 CLI 所有命令的逐一现场操作和 Gitee UI 屏幕导览；保留 Starter RED、`make grade`、分支交付规则和 Exit Quiz。
+ 
+ ## 课后收尾
+ 
+ 1. 用 [answer key](../assessments/answer_key.md) 统计 Entry/Exit 题号，按诊断语言记录下次开场要回收的误解。
+ 2. 运行 `make module01-verify`，确认课堂 Solution 与 Task Manager 教师答案都经过验收。
+ 3. 发布时只复制 `homework/task_manager/student_pack/` 的内容，严格按 [发布检查清单](../homework/task_manager/teacher/RELEASE_CHECKLIST.md) 排除教师答案。
+ 4. 下一次课开场先安排 10 分钟 Task Manager 提交与 Code Review 反馈：展示两类匿名共性问题、让学员修正一处代码，并说明评分反馈；该活动属于下一次课，不计入本日 09:30–16:00 的 310 分钟。
+diff --git a/module01_basics/instructor/scripts/verify_demo_contracts.sh b/module01_basics/instructor/scripts/verify_demo_contracts.sh
+new file mode 100755
+index 0000000..f4fd2da
+--- /dev/null
++++ b/module01_basics/instructor/scripts/verify_demo_contracts.sh
+@@ -0,0 +1,61 @@
++#!/usr/bin/env bash
++set -euo pipefail
++
++script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
++repo_root="$(cd "$script_dir/../../.." && pwd)"
++cd "$repo_root"
++
++assert_contains() {
++    local output="$1"
++    local expected="$2"
++    if ! grep -Fq "$expected" <<<"$output"; then
++        printf 'missing expected output: %s\n' "$expected" >&2
++        exit 1
++    fi
++}
++
++assert_not_contains() {
++    local output="$1"
++    local unexpected="$2"
++    if grep -Fq "$unexpected" <<<"$output"; then
++        printf 'unexpected output: %s\n' "$unexpected" >&2
++        exit 1
++    fi
++}
++
++vars_output="$(go run ./module01_basics/blocks/01_go_basics/demo/02_vars_types)"
++assert_contains "$vars_output" 'blank identifier: 1 3'
++assert_contains "$vars_output" 'const expression length: 3'
++assert_contains "$vars_output" 'iota edge cases: 0 1 2 250 250 5 6'
++assert_contains "$vars_output" 'iota reset: 0 1'
++assert_contains "$vars_output" 'defined type conversion: 12 alias assignment: 12'
++assert_contains "$vars_output" 'truncated float: 1'
++
++control_output="$(go run ./module01_basics/blocks/01_go_basics/demo/03_control_funcs)"
++assert_contains "$control_output" 'outer score: 50'
++assert_contains "$control_output" 'switch init: owner has full access'
++assert_contains "$control_output" 'loop body: 0'
++assert_contains "$control_output" 'loop body: 2'
++assert_not_contains "$control_output" 'loop body: 1'
++assert_not_contains "$control_output" 'loop body: 3'
++assert_contains "$control_output" 'infinite for stopped at: 3'
++assert_contains "$control_output" 'Admin branch reached by fallthrough'
++
++string_output="$(go run ./module01_basics/blocks/01_go_basics/demo/05_strings_basics)"
++assert_contains "$string_output" 'bytes round trip: Go语言'
++assert_contains "$string_output" 'Atoi success: 42'
++assert_contains "$string_output" 'Atoi error: true'
++
++slice_output="$(go run ./module01_basics/blocks/02_collections/demo/04_arrays_slices)"
++assert_contains "$slice_output" 'copy count=3 dst=[10 20 30 0 0] src=[10 20 30]'
++
++map_output="$(go run ./module01_basics/blocks/02_collections/demo/05_maps_strings)"
++assert_contains "$map_output" 'nested map value: ready'
++
++pointer_output="$(go run ./module01_basics/blocks/03_modeling/demo/06_pointers)"
++assert_contains "$pointer_output" 'pointer field sugar: 3'
++
++receiver_output="$(go run ./module01_basics/blocks/03_modeling/demo/09_copy_and_receivers)"
++assert_contains "$receiver_output" 'value receiver mutation keeps: Alice'
++
++printf 'module01 demo contracts: PASS\n'
+diff --git a/module01_basics/teaching_failures/README.md b/module01_basics/teaching_failures/README.md
+new file mode 100644
+index 0000000..8fa0f5e
+--- /dev/null
++++ b/module01_basics/teaching_failures/README.md
+@@ -0,0 +1,24 @@
++# Module 01 受控失败教学 Case
++
++这些 Case 用来演示 Go 的编译诊断和运行时 panic。它们全部位于 `testdata/`，因此正常的 `go test ./module01_basics/...` 不会扫描或执行它们。不要把这些源码移入正常 Demo 或正常测试包。
++
++从仓库根目录运行：
++
++```bash
++make module01-teaching-failures
++```
++
++通过的定义不是命令成功退出：每个 Case 必须以非零状态失败，且输出匹配下表诊断。这样才能区分预期教学失败与环境、路径或工具链故障。
++
++| Case 路径 | 单独运行命令 | 预期诊断 | 正确写法 | 核心 |
++| --- | --- | --- | --- | --- |
++| `testdata/compile_fail/package_short_decl` | `go test ./module01_basics/teaching_failures/testdata/compile_fail/package_short_decl` | `outside function body` 或 `syntax error` | 在函数体中使用 `value := 1`，包级使用 `var value = 1` | 否 |
++| `testdata/compile_fail/no_new_variable` | `go test ./module01_basics/teaching_failures/testdata/compile_fail/no_new_variable` | `no new variables` | 已有变量改用 `value = 2` | 是 |
++| `testdata/compile_fail/defined_type_assignment` | `go test ./module01_basics/teaching_failures/testdata/compile_fail/defined_type_assignment` | `cannot use raw` | `var id UserID = UserID(raw)` | 否 |
++| `testdata/compile_fail/slice_comparison` | `go test ./module01_basics/teaching_failures/testdata/compile_fail/slice_comparison` | `slice can only be compared to nil` 或 `invalid operation` | 比较元素、使用 `slices.Equal`，或只与 `nil` 比较 | 否 |
++| `testdata/compile_fail/map_struct_field` | `go test ./module01_basics/teaching_failures/testdata/compile_fail/map_struct_field` | `cannot assign to struct field` | 取出值、修改后写回：`item := items["one"]; item.Value = 2; items["one"] = item` | 是 |
++| `testdata/compile_fail/final_fallthrough` | `go test ./module01_basics/teaching_failures/testdata/compile_fail/final_fallthrough` | `cannot fallthrough final case` | 删除最后一个 `fallthrough`，或添加可落入的后续 case | 否 |
++| `testdata/runtime_fail/nil_map_write` | `go run ./module01_basics/teaching_failures/testdata/runtime_fail/nil_map_write` | `assignment to entry in nil map` | `scores := make(map[string]int)` 后再写入 | 是 |
++| `testdata/runtime_fail/nil_pointer` | `go run ./module01_basics/teaching_failures/testdata/runtime_fail/nil_pointer` | `nil pointer dereference` 或 `invalid memory address` | 先分配并赋地址：`value := new(int); *value = 1` | 否 |
++
++课堂只投影三个核心 Case：同作用域无新变量的 `:=`、Map 的 Struct 字段不可直接赋值，以及 nil Map 写入 panic。其余 Case 是讲师根据班级情况调用的小抄，不逐个占用课堂时间。
+diff --git a/module01_basics/teaching_failures/testdata/compile_fail/defined_type_assignment/main.go b/module01_basics/teaching_failures/testdata/compile_fail/defined_type_assignment/main.go
+new file mode 100644
+index 0000000..433654e
+--- /dev/null
++++ b/module01_basics/teaching_failures/testdata/compile_fail/defined_type_assignment/main.go
+@@ -0,0 +1,9 @@
++package definedtypeassignment
++
++type UserID int
++
++func demonstrate() {
++	var raw int = 1
++	var id UserID = raw
++	_ = id
++}
+diff --git a/module01_basics/teaching_failures/testdata/compile_fail/final_fallthrough/main.go b/module01_basics/teaching_failures/testdata/compile_fail/final_fallthrough/main.go
+new file mode 100644
+index 0000000..589ed69
+--- /dev/null
++++ b/module01_basics/teaching_failures/testdata/compile_fail/final_fallthrough/main.go
+@@ -0,0 +1,8 @@
++package finalfallthrough
++
++func demonstrate(value int) {
++	switch value {
++	case 1:
++		fallthrough
++	}
++}
+diff --git a/module01_basics/teaching_failures/testdata/compile_fail/map_struct_field/main.go b/module01_basics/teaching_failures/testdata/compile_fail/map_struct_field/main.go
+new file mode 100644
+index 0000000..91daf58
+--- /dev/null
++++ b/module01_basics/teaching_failures/testdata/compile_fail/map_struct_field/main.go
+@@ -0,0 +1,10 @@
++package mapstructfield
++
++type Item struct {
++	Value int
++}
++
++func demonstrate() {
++	items := map[string]Item{"one": {Value: 1}}
++	items["one"].Value = 2
++}
+diff --git a/module01_basics/teaching_failures/testdata/compile_fail/no_new_variable/main.go b/module01_basics/teaching_failures/testdata/compile_fail/no_new_variable/main.go
+new file mode 100644
+index 0000000..4732f74
+--- /dev/null
++++ b/module01_basics/teaching_failures/testdata/compile_fail/no_new_variable/main.go
+@@ -0,0 +1,7 @@
++package nonewvariable
++
++func demonstrate() {
++	value := 1
++	value := 2
++	_ = value
++}
+diff --git a/module01_basics/teaching_failures/testdata/compile_fail/package_short_decl/main.go b/module01_basics/teaching_failures/testdata/compile_fail/package_short_decl/main.go
+new file mode 100644
+index 0000000..6e490ed
+--- /dev/null
++++ b/module01_basics/teaching_failures/testdata/compile_fail/package_short_decl/main.go
+@@ -0,0 +1,5 @@
++package packageshortdecl
++
++value := 1
++
++var _ = value
+diff --git a/module01_basics/teaching_failures/testdata/compile_fail/slice_comparison/main.go b/module01_basics/teaching_failures/testdata/compile_fail/slice_comparison/main.go
+new file mode 100644
+index 0000000..c428f7f
+--- /dev/null
++++ b/module01_basics/teaching_failures/testdata/compile_fail/slice_comparison/main.go
+@@ -0,0 +1,7 @@
++package slicecomparison
++
++func demonstrate() {
++	left := []int{1}
++	right := []int{1}
++	_ = left == right
++}
+diff --git a/module01_basics/teaching_failures/testdata/runtime_fail/nil_map_write/main.go b/module01_basics/teaching_failures/testdata/runtime_fail/nil_map_write/main.go
+new file mode 100644
+index 0000000..43021be
+--- /dev/null
++++ b/module01_basics/teaching_failures/testdata/runtime_fail/nil_map_write/main.go
+@@ -0,0 +1,6 @@
++package main
++
++func main() {
++	var scores map[string]int
++	scores["Alice"] = 95
++}
+diff --git a/module01_basics/teaching_failures/testdata/runtime_fail/nil_pointer/main.go b/module01_basics/teaching_failures/testdata/runtime_fail/nil_pointer/main.go
+new file mode 100644
+index 0000000..c295e41
+--- /dev/null
++++ b/module01_basics/teaching_failures/testdata/runtime_fail/nil_pointer/main.go
+@@ -0,0 +1,6 @@
++package main
++
++func main() {
++	var value *int
++	*value = 1
++}
+diff --git a/module01_basics/teaching_failures/verify.sh b/module01_basics/teaching_failures/verify.sh
+new file mode 100755
+index 0000000..d70d8d2
+--- /dev/null
++++ b/module01_basics/teaching_failures/verify.sh
+@@ -0,0 +1,45 @@
++#!/usr/bin/env bash
++set -euo pipefail
++
++script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
++repo_root="$(cd "$script_dir/../.." && pwd)"
++cd "$repo_root"
++
++expect_failure() {
++    local command_kind="$1"
++    local package_path="$2"
++    local expected_pattern="$3"
++    local output
++    local status
++
++    set +e
++    if [[ "$command_kind" == "test" ]]; then
++        output="$(go test "$package_path" 2>&1)"
++        status=$?
++    else
++        output="$(go run "$package_path" 2>&1)"
++        status=$?
++    fi
++    set -e
++
++    if [[ $status -eq 0 ]]; then
++        printf 'expected failure but command passed: %s %s\n' "$command_kind" "$package_path" >&2
++        exit 1
++    fi
++    if ! grep -Eq "$expected_pattern" <<<"$output"; then
++        printf 'failure diagnostic mismatch: %s\n%s\n' "$package_path" "$output" >&2
++        exit 1
++    fi
++    printf 'expected failure: %s\n' "$package_path"
++}
++
++expect_failure test ./module01_basics/teaching_failures/testdata/compile_fail/package_short_decl 'outside function body|syntax error'
++expect_failure test ./module01_basics/teaching_failures/testdata/compile_fail/no_new_variable 'no new variables'
++expect_failure test ./module01_basics/teaching_failures/testdata/compile_fail/defined_type_assignment 'cannot use raw'
++expect_failure test ./module01_basics/teaching_failures/testdata/compile_fail/slice_comparison 'slice can only be compared to nil|invalid operation.*left == right'
++expect_failure test ./module01_basics/teaching_failures/testdata/compile_fail/map_struct_field 'cannot assign to struct field'
++expect_failure test ./module01_basics/teaching_failures/testdata/compile_fail/final_fallthrough 'cannot fallthrough final case'
++expect_failure run ./module01_basics/teaching_failures/testdata/runtime_fail/nil_map_write 'assignment to entry in nil map'
++expect_failure run ./module01_basics/teaching_failures/testdata/runtime_fail/nil_pointer 'nil pointer dereference|invalid memory address'
++
++printf 'module01 teaching failures: PASS\n'

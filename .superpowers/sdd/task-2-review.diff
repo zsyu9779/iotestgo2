@@ -1,0 +1,319 @@
+# Review package: 69853aa..b8083da
+
+## Commits
+b8083da feat: deepen module01 control flow and string teaching
+
+## Files changed
+ module01_basics/blocks/01_go_basics/README.md      |  7 +++--
+ .../01_go_basics/demo/03_control_funcs/main.go     | 32 ++++++++++++++--------
+ .../01_go_basics/demo/05_strings_basics/main.go    | 15 ++++++++++
+ module01_basics/instructor/DEMO_NOTES.md           | 15 +++++++---
+ module01_basics/instructor/RUNBOOK.md              |  4 +--
+ .../instructor/scripts/verify_demo_contracts.sh    | 13 +++++++++
+ 6 files changed, 65 insertions(+), 21 deletions(-)
+
+## Diff
+diff --git a/module01_basics/blocks/01_go_basics/README.md b/module01_basics/blocks/01_go_basics/README.md
+index 973461c..f282e22 100644
+--- a/module01_basics/blocks/01_go_basics/README.md
++++ b/module01_basics/blocks/01_go_basics/README.md
+@@ -35,21 +35,21 @@ Go 允许忽略表达式周围的圆括号，但要求分支体使用花括号
+ 
+ 按顺序运行并讲解：
+ 
+ ```bash
+ go run ./module01_basics/blocks/01_go_basics/demo/01_hello
+ go run ./module01_basics/blocks/01_go_basics/demo/02_vars_types
+ go run ./module01_basics/blocks/01_go_basics/demo/03_control_funcs
+ go run ./module01_basics/blocks/01_go_basics/demo/05_strings_basics
+ ```
+ 
+-重点观察程序入口、类型推断、变量零值、String 基础操作、`for`、`range`、多值 `case`、`fallthrough`、`switch {}`、函数参数和多返回值。
++重点观察程序入口、类型推断、变量零值、String 基础操作和转换、`for`、`range`、多值 `case`、`fallthrough`、`switch {}`、函数参数和多返回值。
+ 
+ ## 语言语义补充
+ 
+ ### 零值
+ 
+ Go 声明变量但没有提供初始值时，会自动使用该类型的零值：整数为 `0`，浮点数为 `0`，布尔值为 `false`，字符串为 `""`，Struct 的每个字段也使用各自的零值。
+ 
+ 复合类型还要区分“可直接使用”和“必须初始化”：nil Slice 可以读取长度并 `append`，nil Map 可以读取但不能写入。运行 `02_vars_types` 观察这些结果。
+ 
+ ### 变量与常量语义
+@@ -57,27 +57,28 @@ Go 声明变量但没有提供初始值时，会自动使用该类型的零值
+ - `_` 是空白标识符，用于显式丢弃值，它不是可读取变量。
+ - const 块中省略表达式会复用上一行完整 ConstSpec；`iota` 仍按声明行递增。
+ - 每个新的 const 块都会让 `iota` 从 0 重新开始。
+ - `type UserID int` 定义新类型；`type UserID = int` 声明别名。
+ - 浮点数转整数会截去小数部分。
+ 
+ ### 控制流边界
+ 
+ - `for` 是 Go 唯一的循环关键字，可写成三段式、条件式或无限循环。
+ - `break` 结束当前循环，`continue` 跳过当前迭代。
+-- 一个 `case` 可以写多个值，例如 `case "admin", "owner"`。
++- `if` 与 `switch` 都可在条件前初始化变量；初始化变量只在相应的 `if`/`else` 或 `switch` 作用域内。
++- 一个 `case` 可以写多个值，例如 `case "admin", "owner"`，逗号分隔值表示 OR。
+ - Go 的 `switch` 默认不会自动贯穿；`fallthrough` 必须显式写出，并且无条件进入紧邻的下一个 `case`。它在业务代码中通常不推荐使用。
+ - `switch {}` 是按顺序判断条件的简洁写法，适合成绩等级等互斥条件。
+ 
+ ### String 基础
+ 
+-String 是不可变的 UTF-8 字节序列。拼接、比较、`strings.Fields`、`strings.TrimSpace` 和大小写转换适合日常文本处理；下标和切片按 byte 工作，按字符遍历应使用 `range`，需要字符 Slice 时再转换为 `[]rune`。运行 `05_strings_basics` 对比 byte index 与 rune index。
++String 是不可变的 UTF-8 字节序列。拼接、比较、`strings.Fields`、`strings.TrimSpace` 和大小写转换适合日常文本处理；下标和切片按 byte 工作，按字符遍历应使用 `range`，需要字符 Slice 时再转换为 `[]rune`。String 与 `[]byte` 可以显式往返转换；用 `strconv.Atoi` 解析外部字符串时必须处理 `error`，不能用 `_` 丢弃失败。运行 `05_strings_basics` 对比 byte index、rune index、转换与错误路径。
+ 
+ ### 核心语义深挖
+ 
+ - [Range 变量与闭包陷阱](../../bonus/dark_corners/range/main.go)：放在基本 `for`/`range` 之后，先讲正常遍历，再讲取地址和闭包捕获的版本差异。
+ 
+ ## 学员任务
+ 
+ 进入 `lab/starter`，实现 `Grade(score int) (string, error)`。有效成绩应返回 A、B、C、D 或 F；无效成绩应返回 `ErrScoreOutOfRange`。完整规则见 [lab/README.md](lab/README.md)。
+ 
+ 先运行测试观察失败，再只写足以通过当前失败的代码。每次修改后重新运行测试。
+diff --git a/module01_basics/blocks/01_go_basics/demo/03_control_funcs/main.go b/module01_basics/blocks/01_go_basics/demo/03_control_funcs/main.go
+index 4d54ab0..5a86e91 100644
+--- a/module01_basics/blocks/01_go_basics/demo/03_control_funcs/main.go
++++ b/module01_basics/blocks/01_go_basics/demo/03_control_funcs/main.go
+@@ -1,56 +1,64 @@
+ package main
+ 
+ import "fmt"
+ 
+ func main() {
+ 	// 1. If with initialization
++	outerScore := 50
+ 	if score := 85; score >= 60 {
+ 		fmt.Println("Passed with score:", score)
+ 	}
++	fmt.Println("outer score:", outerScore)
+ 
+-	// 2. Switch (No break needed; a case may contain multiple values)
++	// 2. Switch initialization (No break needed; a case may contain multiple values)
+ 	role := "owner"
+-	switch role {
++	switch currentRole := role; currentRole {
+ 	case "admin", "owner":
+-		fmt.Println("Full access")
++		fmt.Println("switch init:", currentRole, "has full access")
+ 	case "user", "viewer":
+-		fmt.Println("Read only")
++		fmt.Println("switch init:", currentRole, "has read only access")
+ 	default:
+-		fmt.Println("Access denied")
++		fmt.Println("switch init:", currentRole, "is denied")
+ 	}
+ 
+ 	// fallthrough 不会自动发生，只会把执行继续交给紧邻的下一个 case。
+ 	switch role {
+ 	case "owner":
+ 		fmt.Println("Owner branch")
+ 		fallthrough
+ 	case "admin":
+ 		fmt.Println("Admin branch reached by fallthrough")
+ 	}
+ 
+ 	// 3. For loop (The only loop in Go)
+ 	// Java: for (int i = 0; i < 5; i++)
+-	for i := 0; i < 3; i++ {
++	for i := 0; i < 5; i++ {
+ 		if i == 1 {
+ 			continue
+ 		}
+-		fmt.Println("Loop:", i)
++		if i == 3 {
++			break
++		}
++		fmt.Println("loop body:", i)
+ 	}
+ 
+-	// While-like loop
+-	count := 0
+-	for count < 2 {
+-		fmt.Println("Count:", count)
+-		count++
++	attempts := 0
++	for {
++		attempts++
++		if attempts == 3 {
++			break
++		}
+ 	}
++	fmt.Println("infinite for stopped at:", attempts)
+ 
++	count := 2
+ 	switch {
+ 	case count == 0:
+ 		fmt.Println("Expressionless switch: empty")
+ 	case count < 3:
+ 		fmt.Println("Expressionless switch: small")
+ 	default:
+ 		fmt.Println("Expressionless switch: large")
+ 	}
+ 
+ 	// 4. Functions
+diff --git a/module01_basics/blocks/01_go_basics/demo/05_strings_basics/main.go b/module01_basics/blocks/01_go_basics/demo/05_strings_basics/main.go
+index 5dccd2c..4bedbc2 100644
+--- a/module01_basics/blocks/01_go_basics/demo/05_strings_basics/main.go
++++ b/module01_basics/blocks/01_go_basics/demo/05_strings_basics/main.go
+@@ -1,14 +1,15 @@
+ package main
+ 
+ import (
+ 	"fmt"
++	"strconv"
+ 	"strings"
+ )
+ 
+ func main() {
+ 	text := " Go 语言 "
+ 	fmt.Println("concat:", text+" backend")
+ 	fmt.Println("trim:", strings.TrimSpace(text))
+ 	fmt.Println("contains Go:", strings.Contains(text, "Go"))
+ 	fmt.Println("fields:", strings.Fields(text))
+ 	fmt.Println("lower:", strings.ToLower("Go Backend"))
+@@ -18,11 +19,25 @@ func main() {
+ 	fmt.Printf("byte at index 1=%d\n", text[1])
+ 
+ 	fmt.Println("range over string:")
+ 	for index, r := range text {
+ 		fmt.Printf("index=%d rune=%c code=%d\n", index, r, r)
+ 	}
+ 
+ 	// String indexes and slices use bytes; use range or []rune for characters.
+ 	runes := []rune(text)
+ 	fmt.Printf("runes=%v first-rune=%c\n", runes, runes[0])
++
++	bytes := []byte("Go语言")
++	roundTrip := string(bytes)
++	fmt.Println("bytes round trip:", roundTrip)
++
++	number, err := strconv.Atoi("42")
++	if err != nil {
++		fmt.Println("Atoi unexpected error:", err)
++	} else {
++		fmt.Println("Atoi success:", number)
++	}
++
++	_, err = strconv.Atoi("forty-two")
++	fmt.Println("Atoi error:", err != nil)
+ }
+diff --git a/module01_basics/instructor/DEMO_NOTES.md b/module01_basics/instructor/DEMO_NOTES.md
+index 1ba77cd..f7d8636 100644
+--- a/module01_basics/instructor/DEMO_NOTES.md
++++ b/module01_basics/instructor/DEMO_NOTES.md
+@@ -37,42 +37,49 @@ go run ./module01_basics/blocks/01_go_basics/demo/03_control_funcs
+ 4. 把 `calculate` 的两个返回值迁移到 `Grade(score) (string, error)`：失败是接口的显式部分，不是隐藏的异常通道。
+ 
+ | 暂停点 | 先问 | 预期结果 | 准确解释 | 常见误解 | 级别 |
+ | --- | --- | --- | --- | --- | --- |
+ | `left, _, right` | `_` 能否打印？ | 只能打印 1 和 3 | `_` 丢弃值，不绑定可读变量 | 把 `_` 当普通变量 | 核心 |
+ | `const messageLength = len(message)` | `messageLength` 是运行时才计算的吗？ | 3 | `message` 是常量时，`len(message)` 是编译期常量 | 所有 `len` 调用都在运行时计算 | 核心 |
+ | `consD/consE/consF` | E、F 分别是多少？ | 250、5 | E 复用 `= 250`；iota 未停止，F 使用当前行号 5 | “iota 被打断后重新从 0 开始” | 核心 |
+ | 第二个 const 块 | resetA 是多少？ | 0 | 每个 const 块独立重置 iota | iota 在整个包连续计数 | 深挖 |
+ | `UserID` / alias | 哪个需要转换？ | UserID 需要，alias 不需要 | 定义类型与别名语义不同 | 两种 type 写法完全一样 | 深挖 |
+ | `floatValue := 1.9; int(floatValue)` | 输出 1 还是 2？ | 1 | 变量从浮点转整数会截断小数；`int(1.9)` 会编译失败，因为 1.9 不能精确表示为 int | 数值转换会自动舍入，或 `int(1.9)` 可直接编译 | 核心 |
++| if 初始化 | if 外打印哪个 score？ | 外层仍为 50 | 初始化变量只在 if/else 作用域内，外层变量未改变 | 认为短声明修改了外层变量 | 核心 |
++| continue / break | 1 和 3 会不会进入循环体？ | 1 被跳过，3 终止循环 | continue 跳过本轮，break 结束当前循环 | 两者都只是跳过本轮 | 核心 |
++| 无限 for | 如何安全退出？ | attempts 到 3 时 break | `for {}` 是合法无限循环，需要显式退出条件 | Go 必须写 while | 核心 |
++| switch 初始化 | currentRole 在 switch 外可用吗？ | 不可用 | 初始化变量作用域属于 switch | 与普通赋值作用域相同 | 深挖 |
++| 多值 case | owner 匹配哪个分支？ | 第一个分支 | 逗号分隔值表示 OR | 一个 case 只能有一个值 | 核心 |
++| fallthrough | 下一 case 条件会重算吗？ | 不会 | 无条件进入紧邻 case，业务代码通常不建议使用 | 相当于继续匹配条件 | 深挖 |
++| Atoi 失败 | 错误能否忽略？ | err 非 nil | 外部输入解析属于可预期失败，应显式处理 | 转换失败自动得到 0 且安全 | 核心 |
+ 
+ ### 失败演示与救援
+ 
+ ```bash
+ go test -tags=exercise ./module01_basics/blocks/01_go_basics/lab/starter -run '^TestGrade$'
+ ```
+ 
+ 起始 Starter 应因返回等级不符合而失败。请学员只读出“测试名、实际值、期望值”；如 8 分钟仍无进展，给一级提示“先把输入分成有效与无效”，不投影 solution。
+ 
+ ### Block 1 内容扩展
+ 
+ 按班级节奏选择以下镜头，不要删除原有 `01_hello`、`02_vars_types` 和 `03_control_funcs`：
+ 
+ ```bash
+ go run ./module01_basics/blocks/01_go_basics/demo/05_strings_basics
+ ```
+ 
+ - **核心：**让学员预测 `var int/string/bool` 的零值，说明 nil Slice 可以 `append`，nil Map 只能读不能写。
+-- **核心：**展示 `strings.TrimSpace`、`Fields`、`ToLower`，再解释 String 下标是 byte、`range` 得到 rune。
+-- **核心：**让学员预测 `case "admin", "owner"`、`switch {}` 和 `continue/break` 的输出。
+-- **深挖：**实际运行 `fallthrough`，强调它不重新判断下一个 case，且业务代码通常不建议使用。
+-- **可裁：**标签和 `goto` 只口头说明存在，不在当天编码。
++- **核心：**展示 `strings.TrimSpace`、`Fields`、`ToLower`，再解释 String 下标是 byte、`range` 得到 rune；展示 String/`[]byte` 往返和 `Atoi` 的成功与错误路径。
++- **核心：**让学员预测 `case "admin", "owner"`、`switch {}`、`continue/break` 和无限 `for` 的输出；指出 if 初始化变量的作用域。
++- **深挖：**实际运行 `fallthrough`，强调它不重新判断下一个 case；说明 switch 初始化变量只属于 switch。
++- **可裁：**标签、`goto`、switch 初始化作用域细节和 String 转换成功路径只口头说明或按需演示，不在当天编码。
+ - **深挖入口：**在 `range` 基础示例后按需打开 [range dark corner](../bonus/dark_corners/range/main.go)，先说明其 Go 1.22+ 语义，再与 Go 1.16 作业环境区分。
+ 
+ ## Block 2：Collections（25 分钟）
+ 
+ ```bash
+ go run ./module01_basics/blocks/02_collections/demo/04_arrays_slices
+ go run ./module01_basics/blocks/02_collections/demo/05_maps_strings
+ go run ./module01_basics/blocks/02_collections/demo/06_slice_map_edges
+ go run ./module01_basics/blocks/02_collections/demo/07_string_utf8_edges
+ ```
+diff --git a/module01_basics/instructor/RUNBOOK.md b/module01_basics/instructor/RUNBOOK.md
+index 558b53f..660b03b 100644
+--- a/module01_basics/instructor/RUNBOOK.md
++++ b/module01_basics/instructor/RUNBOOK.md
+@@ -48,25 +48,25 @@
+ - **讲师动作：**09:30–09:35 说明一日产出；09:35–09:40 投影 `go version`、`go env GOMOD` 和 `make module01-lab-01`；09:40–09:45 安静答 Quiz；09:45–09:50 按题号举手统计。
+ - **学员动作（10 分钟动手）：**独立运行三个环境命令 5 分钟，完成 [Entry Quiz](../assessments/entry_quiz.md) 5 分钟。
+ - **可观察检查点：**`GOMOD` 指向当前仓库且 Block 1 solution 测试 PASS；讲师记录每题错误人数。
+ - **常见延误：**学员不在仓库根目录、Go 不在 `PATH` 或 IDE 打开了错误目录。
+ - **可裁内容：**精确删除开场自我介绍和课程背景扩展；不删环境命令、Quiz 或错题统计。
+ 
+ ## 09:50–10:35：Block 1 — Go Basics
+ 
+ - **目标：**使用条件、函数、多返回值和显式 `error` 实现有边界校验的 `Grade`。
+ - **讲师动作：**09:50–10:05 按 [Demo Notes](DEMO_NOTES.md#block-1go-basics15-分钟) 展示程序入口、类型推断、`for`、`switch` 和 `(value, error)`；10:05–10:30 巡视结对实现；10:30–10:35 用一个边界失败做复盘。
+-- **内容扩展：**若班级基础较稳，在原有 Demo 中加入零值、String 基础、多值 `case` 和 `switch {}`；`fallthrough` 属于语义深挖，`goto` 只保留识别。用户补充的隐式 ConstSpec/iota Case 不可裁。
++- **内容扩展：**若班级基础较稳，在原有 Demo 中加入零值、String 基础与转换、if/switch 初始化作用域、多值 `case` 和 `switch {}`；`fallthrough` 属于语义深挖，`goto` 只保留识别。用户补充的隐式 ConstSpec/iota Case 不可裁。
+ - **学员动作（25 分钟动手）：**在 `blocks/01_go_basics/lab/starter` 运行 RED，实现范围校验和 A–F 映射，重复运行全包测试。
+ - **可观察检查点：**`go test -tags=exercise ./module01_basics/blocks/01_go_basics/lab/starter` PASS，且学员能解释 60、90、-1 和 101 的路径。
+ - **常见延误：**从低到高写过宽分支，或返回临时文本错误而不是 `ErrScoreOutOfRange`。
+-- **可裁内容：**精确删除位运算、第二个 iota 重置块、类型别名和 Bonus 表驱动测试讨论；用户补充的隐式 ConstSpec/iota Case 不可裁，保留错误返回与边界测试。
++- **可裁内容：**精确删除位运算、第二个 iota 重置块、类型别名、标签、`goto`、switch 初始化作用域细节、String 转换成功路径和 Bonus 表驱动测试讨论；用户补充的隐式 ConstSpec/iota Case 不可裁，保留 `break`/`continue`、多值 `case`、`fallthrough` 语义、Atoi 错误路径、错误返回与边界测试。
+ 
+ ## 10:35–10:45：短休息
+ 
+ 准时停止投影和编码，10:45 直接从 Array 副本对比开始。休息不是可裁内容，不用它补 Block 1。
+ 
+ ## 10:45–12:00：Block 2 — Collections
+ 
+ - **目标：**通过中英文文本统计验证 Array 值语义、Slice 共享、Map comma-ok 与 UTF-8 byte/rune 行为。
+ - **讲师动作：**10:45–11:10 运行两个 Collections Demo 并先让学员预测输出；11:10–11:50 巡视 `Analyze`实现；11:50–12:00 对比一个中文字符的 byte 和 rune 计数。
+ - **内容扩展：**在两个原有 Demo 后按需运行 `06_slice_map_edges` 和 `07_string_utf8_edges`；Array range、nil Slice/Map、String 基础和 `range string` 属于核心，Map/String dark corner 属于穿插深挖。
+diff --git a/module01_basics/instructor/scripts/verify_demo_contracts.sh b/module01_basics/instructor/scripts/verify_demo_contracts.sh
+index 1911d8f..001d19a 100755
+--- a/module01_basics/instructor/scripts/verify_demo_contracts.sh
++++ b/module01_basics/instructor/scripts/verify_demo_contracts.sh
+@@ -15,11 +15,24 @@ assert_contains() {
+ }
+ 
+ vars_output="$(go run ./module01_basics/blocks/01_go_basics/demo/02_vars_types)"
+ assert_contains "$vars_output" 'blank identifier: 1 3'
+ assert_contains "$vars_output" 'const expression length: 3'
+ assert_contains "$vars_output" 'iota edge cases: 0 1 2 250 250 5 6'
+ assert_contains "$vars_output" 'iota reset: 0 1'
+ assert_contains "$vars_output" 'defined type conversion: 12 alias assignment: 12'
+ assert_contains "$vars_output" 'truncated float: 1'
+ 
++control_output="$(go run ./module01_basics/blocks/01_go_basics/demo/03_control_funcs)"
++assert_contains "$control_output" 'outer score: 50'
++assert_contains "$control_output" 'switch init: owner has full access'
++assert_contains "$control_output" 'loop body: 0'
++assert_contains "$control_output" 'loop body: 2'
++assert_contains "$control_output" 'infinite for stopped at: 3'
++assert_contains "$control_output" 'Admin branch reached by fallthrough'
++
++string_output="$(go run ./module01_basics/blocks/01_go_basics/demo/05_strings_basics)"
++assert_contains "$string_output" 'bytes round trip: Go语言'
++assert_contains "$string_output" 'Atoi success: 42'
++assert_contains "$string_output" 'Atoi error: true'
++
+ printf 'module01 demo contracts: PASS\n'

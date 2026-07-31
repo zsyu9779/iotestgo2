@@ -1,9 +1,15 @@
 # Block 2 Lab
 
-运行公开测试：
+先运行 Starter 观察行为 RED：
 
 ```bash
-go test ./module02_advanced/blocks/02_goroutines_channels/lab
+go test -tags=exercise ./module02_advanced/blocks/02_goroutines_channels/lab/starter
 ```
 
-任务是用 worker、WaitGroup 和 channel 完成平方计算，并保持输出顺序。
+任务是用 worker、WaitGroup 和 Channel 完成平方计算，并保持输出顺序。
+
+教师参考实现：
+
+```bash
+go test ./module02_advanced/blocks/02_goroutines_channels/lab/solution
+```

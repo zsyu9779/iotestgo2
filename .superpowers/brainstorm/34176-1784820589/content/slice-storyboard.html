@@ -1,0 +1,53 @@
+<h2>Slice：两幕课堂动画脚本</h2>
+<p class="subtitle">每次“下一步”只改变一个事实；预测页会锁住继续按钮，讲师揭晓后才播放状态变化。</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">第一幕 · 两个 Slice，共享一个数组</div>
+    <div class="mockup-body">
+      <div class="placeholder" style="min-height:150px;text-align:left">
+        base := []int{1, 2, 3, 4}<br>
+        view := base[1:3]<br>
+        <mark>view[0] = 9</mark>
+      </div>
+      <ol>
+        <li>创建 <code>base</code>：Header 指向底层数组。</li>
+        <li>创建 <code>view</code>：新 Header 指向下标 1，显示各自 len/cap。</li>
+        <li><strong>预测：</strong>修改 <code>view[0]</code> 后，<code>base</code> 会变吗？</li>
+        <li>数值 2 翻转为 9，两条指针保持不动。</li>
+        <li>同时高亮 <code>base[1]</code> 与 <code>view[0]</code>。</li>
+        <li>定格结论：Header 是值，数组元素仍可共享。</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">第二幕 · append 是否需要“搬家”</div>
+    <div class="mockup-body">
+      <div class="placeholder" style="min-height:150px;text-align:left">
+        spare := make([]int, 2, 4)<br>
+        reused := append(spare, 3)<br><br>
+        full := make([]int, 2, 2)<br>
+        <mark>grown := append(full, 3)</mark>
+      </div>
+      <ol>
+        <li>并排建立“容量有余”和“容量已满”两条轨道。</li>
+        <li>有余轨道：新元素落入原数组空槽，Header 的 len 增加。</li>
+        <li><strong>预测：</strong>已满轨道还能写进原数组吗？</li>
+        <li>出现更大的新数组，已有元素逐个搬迁，新元素落位。</li>
+        <li><code>grown</code> 指向新数组；<code>full</code> 仍指向旧数组。</li>
+        <li>分别修改新旧数组，验证共享关系已经改变。</li>
+        <li>定格结论：是否共享取决于 append 是否重新分配。</li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:18px">
+  <h3>动画中的技术边界</h3>
+  <ul>
+    <li>Header 展示为教学模型：指针、len、cap；不声称用户代码可以依赖其内存布局。</li>
+    <li>新数组只标注“容量 ≥ 新长度”，不显示固定翻倍规则。</li>
+    <li>移动效果用于表达元素被复制到新存储区域，不暗示地址或垃圾回收发生的具体时刻。</li>
+  </ul>
+</div>

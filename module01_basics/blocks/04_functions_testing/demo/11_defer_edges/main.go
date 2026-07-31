@@ -32,10 +32,10 @@ func deferArgumentEvaluation() {
 }
 
 func main() {
-	fmt.Println("LIFO:")
-	deferLIFO()
-	fmt.Println("argument timing:")
-	deferArgumentEvaluation()
+	//fmt.Println("LIFO:")
+	//deferLIFO()
+	//fmt.Println("argument timing:")
+	//deferArgumentEvaluation()
 	arguments, closures := deferTimingValues()
 	fmt.Println("deferred arguments:", arguments)
 	fmt.Println("deferred closures:", closures)

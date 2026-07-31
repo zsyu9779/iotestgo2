@@ -1181,7 +1181,7 @@ D1/D2 的目标是建立语言和并发心智模型，不是让学生提前背�
 本文件不替代已有文档：
 
 - `docs/module01_basics_lesson_plan.md`：D1 正式授课主线。
-- `docs/module02_advanced_lesson_plan.md`：D2 正式授课主线。
+- `module02_advanced/instructor/RUNBOOK.md`：D2 正式授课主线。
 - `docs/go_darker_corners_supplements.md`：Go 暗角知识点和示例补充。
 
 本文件的作用是把“暗角知识点”组织成课堂可执行的教学剧本，帮助讲师决定什么时候让学生先撞到问题，以及如何用这个问题自然引出下一段知识。

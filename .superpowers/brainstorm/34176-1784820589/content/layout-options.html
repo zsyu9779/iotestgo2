@@ -1,0 +1,84 @@
+<h2>讲师逐步演示：哪种舞台布局更顺手？</h2>
+<p class="subtitle">三种布局都使用精简代码；区别在于课堂投屏时，学生的注意力被放在哪里。</p>
+
+<div class="cards">
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mock-nav">Slice 原理 · 第 3 / 7 步</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:12px">
+        <div class="placeholder" style="min-height:150px;text-align:left">
+          <strong>代码</strong><br><br>
+          base := []int{1,2,3}<br>
+          view := base[1:3]<br>
+          <mark>view[0] = 9</mark>
+        </div>
+        <div class="placeholder" style="min-height:150px">
+          Slice Header<br>
+          ptr → [ 1 ][ 9 ][ 3 ]<br>
+          len: 2　cap: 2
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:8px 12px">
+        <button class="mock-button">上一步</button>
+        <span>子切片和 base 指向同一数组</span>
+        <button class="mock-button">下一步</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A · 均衡双栏</h3>
+      <p>代码和内存各占一半，结构稳定；但复杂步骤中动画区域容易显得拥挤。</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mock-nav">Slice 原理　　共享 → append → 扩容</div>
+      <div style="display:grid;grid-template-columns:34% 66%;gap:12px;padding:12px">
+        <div class="placeholder" style="min-height:175px;text-align:left">
+          <strong>执行到这里</strong><br><br>
+          base := []int{1,2,3}<br>
+          view := base[1:3]<br>
+          <mark>view[0] = 9</mark>
+        </div>
+        <div class="placeholder" style="min-height:175px">
+          <strong>内存舞台</strong><br><br>
+          base ─────┐<br>
+          view ──┐　↓<br>
+         　　　[ 1 ][ 9 ][ 3 ]<br>
+         　　　底层数组
+        </div>
+      </div>
+      <div style="padding:8px 12px;text-align:center">
+        <strong>讲解提示：</strong> 修改的是数组元素；两个 Slice Header 仍然是独立的值。
+      </div>
+      <div style="display:flex;justify-content:center;gap:10px;padding:8px">
+        <button class="mock-button">◀</button>
+        <button class="mock-button">重播本步</button>
+        <button class="mock-button">下一步 ▶</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B · 动画舞台优先（推荐）</h3>
+      <p>代码只承担定位，内存/调用栈是主角；最适合讲师投屏后逐步讲解。</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mock-nav">Defer 原理 · 全流程故事板</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:12px">
+        <div class="placeholder" style="min-height:125px">① 执行函数<br><br>value = 1</div>
+        <div class="placeholder" style="min-height:125px">② 注册 defer<br><br>参数快照 1</div>
+        <div class="placeholder" style="min-height:125px">③ value = 2<br><br>准备 return</div>
+        <div class="placeholder" style="min-height:125px">④ LIFO 出栈<br><br>闭包读 2</div>
+      </div>
+      <div style="display:flex;justify-content:center;gap:10px;padding:10px">
+        <button class="mock-button">查看第 2 幕</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C · 故事板总览</h3>
+      <p>能快速回顾全过程，但首次讲解时屏幕同时出现的信息较多，动画冲击力较弱。</p>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,69 @@
+<h2>Defer：两幕课堂动画脚本</h2>
+<p class="subtitle">右侧舞台从“内存数组”切换为“函数帧 + 待执行调用”；代码高亮仍按实际执行顺序移动。</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">第一幕 · 注册顺序与执行顺序</div>
+    <div class="mockup-body">
+      <div class="placeholder" style="min-height:150px;text-align:left">
+        func work() {<br>
+        　defer print("A")<br>
+        　defer print("B")<br>
+        　print("work")<br>
+        }
+      </div>
+      <ol>
+        <li>进入 <code>work</code>，待执行区为空。</li>
+        <li>注册 A：A 卡片进入待执行区。</li>
+        <li>注册 B：B 卡片压到 A 上方。</li>
+        <li><strong>预测：</strong>函数结束时先输出 A 还是 B？</li>
+        <li>执行 <code>work</code>，随后出现“准备返回”关口。</li>
+        <li>B、A 依次弹出执行，再离开函数。</li>
+        <li>定格：后注册的调用先执行。</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">第二幕 · 参数快照与闭包读取</div>
+    <div class="mockup-body">
+      <div class="placeholder" style="min-height:150px;text-align:left">
+        value := 1<br>
+        defer print(value)<br>
+        defer func() { print(value) }()<br>
+        <mark>value = 2</mark>
+      </div>
+      <ol>
+        <li>创建变量格 <code>value = 1</code>。</li>
+        <li>注册普通调用：先求值参数，卡片保存 <code>arg = 1</code>。</li>
+        <li>注册闭包：卡片显示“执行时读取 value”。</li>
+        <li>赋值动画将变量格改为 <code>value = 2</code>。</li>
+        <li><strong>预测：</strong>两个调用分别会打印什么？</li>
+        <li>闭包先执行并读取 2；普通调用再输出保存的 1。</li>
+        <li>定格：注册时求参数，执行时运行函数体。</li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:18px">
+  <h3>页面如何表达“底层原理”</h3>
+  <div class="pros-cons">
+    <div class="pros">
+      <h4>语言语义层（主动画）</h4>
+      <ul>
+        <li><code>defer</code> 语句执行时，函数值和调用参数立即求值。</li>
+        <li>外围函数返回前，已注册调用按逆序执行。</li>
+        <li>闭包体真正执行时才读取它所访问的变量。</li>
+      </ul>
+    </div>
+    <div class="cons">
+      <h4>实现层（结尾注解）</h4>
+      <ul>
+        <li>“卡片栈”是解释语义的概念模型。</li>
+        <li>编译器可能使用开放编码、栈上记录或其他优化。</li>
+        <li>优化不能改变页面演示的可观察结果。</li>
+      </ul>
+    </div>
+  </div>
+</div>

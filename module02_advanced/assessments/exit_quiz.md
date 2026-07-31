@@ -7,3 +7,6 @@
 5. 什么时候应该优先使用 Mutex，而不是 RWMutex 或 sync.Map？
 6. Reflection 修改值时为什么通常需要传指针并检查 `CanSet`？
 7. 综合日志分析器中，为什么错误结果需要在消费者结束后再关闭？
+8. nil Channel 在 `select` 中有什么用途？
+9. `sync.Once` 保证什么，不保证什么？
+10. `CanInterface` 为什么对未导出字段重要？

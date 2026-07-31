@@ -3,11 +3,13 @@
 | 维度 | 分值 | 达标要求 |
 |---|---:|---|
 | 接口与错误 | 20 | 正确使用接口、错误包装和 defer |
-| Goroutine 与 Channel | 20 | 生命周期完整，关闭协议正确 |
+| Goroutine 与 Channel | 20 | 生命周期完整，关闭协议正确，能解释 nil/closed Channel |
 | Context 与并发安全 | 20 | 取消可响应，`-race` 无报告 |
-| Testing 与 Reflection | 15 | 有表格测试、边界测试和反射安全检查 |
+| Testing 与 Reflection | 15 | 有表格测试、边界测试和 `CanSet`/`CanInterface` 安全检查 |
 | 综合 Lab | 20 | 日志分析器通过全部阶段验收 |
 | 复盘与迁移 | 5 | 能说明 Java 对比和生产边界 |
 | **总分** | **100** | **60 分及格** |
 
 综合 Lab 出现 goroutine 泄漏、死锁、数据竞态或错误 channel 未关闭时，综合 Lab 最多得 10 分。
+
+形成性反馈必须引用可复现证据，例如具体测试、race 输出或 Context 超时结果，不使用“并发理解不足”这类无法追踪的表述。

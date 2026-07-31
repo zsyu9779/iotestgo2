@@ -1,0 +1,396 @@
+# Review package: b8c65b5..546e0f7
+
+## Commits
+546e0f7 feat: add controlled failure lessons for module01
+
+## Files changed
+ Makefile                                           |  9 ++++-
+ module01_basics/README.md                          |  9 ++++-
+ module01_basics/instructor/DEMO_NOTES.md           | 12 +++++-
+ module01_basics/instructor/RUNBOOK.md              | 13 +++++++
+ module01_basics/teaching_failures/README.md        | 24 ++++++++++++
+ .../compile_fail/defined_type_assignment/main.go   |  9 +++++
+ .../compile_fail/final_fallthrough/main.go         |  8 ++++
+ .../testdata/compile_fail/map_struct_field/main.go | 10 +++++
+ .../testdata/compile_fail/no_new_variable/main.go  |  7 ++++
+ .../compile_fail/package_short_decl/main.go        |  5 +++
+ .../testdata/compile_fail/slice_comparison/main.go |  7 ++++
+ .../testdata/runtime_fail/nil_map_write/main.go    |  6 +++
+ .../testdata/runtime_fail/nil_pointer/main.go      |  6 +++
+ module01_basics/teaching_failures/verify.sh        | 45 ++++++++++++++++++++++
+ 14 files changed, 165 insertions(+), 5 deletions(-)
+
+## Diff
+diff --git a/Makefile b/Makefile
+index a132d51..3c25c99 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,11 +1,11 @@
+-.PHONY: help fmt-check test-basic test-race run-basic-hello run-task-manager run-log-analyzer run-user-center run-blog-api run-compute-server run-compute-client ecommerce-up ecommerce-down module01-verify module01-demo-contracts module01-lab-01 module01-lab-02 module01-lab-03 module01-lab-04 module01-integrated-lab module01-homework-solution
++.PHONY: help fmt-check test-basic test-race run-basic-hello run-task-manager run-log-analyzer run-user-center run-blog-api run-compute-server run-compute-client ecommerce-up ecommerce-down module01-verify module01-demo-contracts module01-teaching-failures module01-audit module01-lab-01 module01-lab-02 module01-lab-03 module01-lab-04 module01-integrated-lab module01-homework-solution
+ 
+ help:
+ 	@echo "Targets: fmt-check test-basic test-race module01-verify"
+ 
+ fmt-check:
+ 	@files="$$(gofmt -l $$(git ls-files '*.go'))"; \
+ 	if [ -n "$$files" ]; then echo "Go files need formatting:"; echo "$$files"; exit 1; fi
+ 
+ test-basic:
+ 	go test ./module01_basics/... ./module02_advanced/... ./module03_web_gin/01_net_basics ./module03_web_gin/07_testing_httptest ./module03_web_gin/project_user_center/internal/service ./module03_web_gin/project_user_center/internal/handler ./module04_gorm/project_blog_api/internal/service
+@@ -52,17 +52,22 @@ module01-lab-03:
+ module01-lab-04:
+ 	go test ./module01_basics/blocks/04_functions_testing/lab/solution
+ 
+ module01-integrated-lab:
+ 	go test ./module01_basics/integrated_lab/scorebook/solution
+ 
+ module01-homework-solution:
+ 	cd module01_basics/homework/task_manager/teacher/solution && ../../student_pack/scripts/grade.sh
+ 
+ module01-verify:
+-	@test -z "$$(find module01_basics -type f -name '*.go' -exec gofmt -l {} \;)" || (echo "Module 01 存在未格式化 Go 文件" && exit 1)
++	@test -z "$$(find module01_basics -path 'module01_basics/teaching_failures/testdata' -prune -o -type f -name '*.go' -exec gofmt -l {} \;)" || (echo "Module 01 存在未格式化 Go 文件" && exit 1)
+ 	go vet ./module01_basics/...
+ 	go test ./module01_basics/...
+ 	$(MAKE) module01-homework-solution
+ 
+ module01-demo-contracts:
+ 	bash module01_basics/instructor/scripts/verify_demo_contracts.sh
++
++module01-teaching-failures:
++	bash module01_basics/teaching_failures/verify.sh
++
++module01-audit: module01-verify module01-demo-contracts module01-teaching-failures
+diff --git a/module01_basics/README.md b/module01_basics/README.md
+index 201766c..20b4033 100644
+--- a/module01_basics/README.md
++++ b/module01_basics/README.md
+@@ -31,21 +31,22 @@ Module 01 面向已能阅读 Java 的学员，用四个连续 Block 建立 Go 
+ | 14:50–15:00 | 短休息 | — |
+ | 15:00–15:40 | Scorebook 综合 Lab | 组合集合、建模、方法和测试 |
+ | 15:40–16:00 | Task Manager 作业启动、Exit Quiz | 跑通 Starter、本地验收和 Git 提交流程 |
+ 
+ 授课时间为 09:30–12:00 和 13:00–16:00；午休不计入课堂。扣除两次 10 分钟短休息后，净教学与实操时间是 310 分钟。
+ 
+ ## 课前：确认反馈环境
+ 
+ 1. 在仓库根目录运行 `go version` 和 `go env GOMOD`，确认 Go 可用且 `GOMOD` 指向本仓库。
+ 2. 运行 `make module01-lab-01`，确认可编译并执行 Go 测试。
+-3. 在不查资料的情况下完成 [Entry Quiz](assessments/entry_quiz.md)；它用来调整课堂节奏，不计作业分。
++3. 运行 `make module01-demo-contracts` 和 `make module01-teaching-failures`，确认正常 Demo 输出及受控失败诊断均符合约定。
++4. 在不查资料的情况下完成 [Entry Quiz](assessments/entry_quiz.md)；它用来调整课堂节奏，不计作业分。
+ 
+ ## 课中：按 Block 完成 RED–GREEN–REFACTOR
+ 
+ 每个练习都从仓库根目录运行。带 `-tags=exercise` 的 Starter 命令是学员实操入口；课前的失败是预期 RED，完成实现后应变为 GREEN。Solution 命令用于讲师验收和对照。
+ 
+ | 阶段 | 导航 | Starter 练习命令 | Solution 验收命令 |
+ |---|---|---|---|
+ | Block 1：Go Basics | [Block](blocks/01_go_basics/README.md) · [Lab 指南](blocks/01_go_basics/lab/README.md) | `go test -tags=exercise ./module01_basics/blocks/01_go_basics/lab/starter` | `make module01-lab-01` |
+ | Block 2：Collections | [Block](blocks/02_collections/README.md) · [Lab 指南](blocks/02_collections/lab/README.md) | `go test -tags=exercise ./module01_basics/blocks/02_collections/lab/starter` | `make module01-lab-02` |
+ | Block 3：Modeling | [Block](blocks/03_modeling/README.md) · [Lab 指南](blocks/03_modeling/lab/README.md) | `go test -tags=exercise ./module01_basics/blocks/03_modeling/lab/starter` | `make module01-lab-03` |
+@@ -101,13 +102,17 @@ Bonus 不占用当天的 310 分钟核心课程：
+ - [range 变量、取地址与闭包陷阱](bonus/dark_corners/range/main.go)（Block 1/2 核心深挖入口）
+ - [Map 深层行为](bonus/dark_corners/map/main.go) 与 [String/UTF-8 深层行为](bonus/dark_corners/string/main.go)
+ - [函数配置模式](bonus/function_patterns/configuration_patterns.md)、[柯里化场景](bonus/function_patterns/curry_best_practice_test.go) 与 [Builder/Functional Options 对比](bonus/function_patterns/patterns_comparison_test.go)
+ 
+ ## 仓库级验收
+ 
+ 从仓库根目录运行：
+ 
+ ```bash
+ make module01-verify
++make module01-demo-contracts
++make module01-teaching-failures
++# 一次运行三类验收：正常工程、Demo 输出契约和受控失败。
++make module01-audit
+ ```
+ 
+-该命令检查 Module 01 的 gofmt，对根 Go Module 中的 Demo、课堂包和 Solution 执行 Vet 与测试，并通过统一脚本验证 Task Manager 教师答案。`student_pack` 是独立 Go Module，其故意未完成的测试不进入根验收。
++`module01-verify` 检查 Module 01 的 gofmt，对根 Go Module 中的 Demo、课堂包和 Solution 执行 Vet 与测试，并通过统一脚本验证 Task Manager 教师答案。`module01-demo-contracts` 断言正常 Demo 的关键教学输出；`module01-teaching-failures` 要求每个隔离 Case 非零退出且诊断匹配。`student_pack` 是独立 Go Module，其故意未完成的测试不进入根验收；受控失败源码位于 `teaching_failures/testdata/`，也不进入正常 `go test ./module01_basics/...`。
+diff --git a/module01_basics/instructor/DEMO_NOTES.md b/module01_basics/instructor/DEMO_NOTES.md
+index 2fa3aa8..46ab47a 100644
+--- a/module01_basics/instructor/DEMO_NOTES.md
++++ b/module01_basics/instructor/DEMO_NOTES.md
+@@ -1,23 +1,25 @@
+ # Module 01 Demo Notes
+ 
+ 这份小抄只服务讲师现场 Demo。学员任务、检查点和裁剪决策以 [RUNBOOK](RUNBOOK.md) 为准。以下命令均从仓库根目录运行；Demo 时先问“你预测会发生什么？”，再执行。
+ 
+ ## 课前 15 分钟
+ 
+ ```bash
+ go version
+ go env GOMOD
+ make module01-verify
++make module01-demo-contracts
++make module01-teaching-failures
+ ```
+ 
+-预期 `module01-verify` 检查根 Go Module 中的 Module 01 代码，并进入 `teacher/solution` 调用与学员包相同的 `scripts/grade.sh`。它不运行独立 Go Module `student_pack` 中故意保留的 RED。
++预期 `module01-verify` 检查根 Go Module 中的 Module 01 代码，并进入 `teacher/solution` 调用与学员包相同的 `scripts/grade.sh`。它不运行独立 Go Module `student_pack` 中故意保留的 RED。`module01-demo-contracts` 验证正常 Demo 输出；`module01-teaching-failures` 则确认隔离教学 Case 按预期以匹配诊断失败。
+ 
+ 打开下列页面，但不在学员投影画面中展示 `solution/` 或 [answer key](../assessments/answer_key.md)：
+ 
+ - [Block 1 Lab](../blocks/01_go_basics/lab/README.md)
+ - [Block 2 Lab](../blocks/02_collections/lab/README.md)
+ - [Block 3 Lab](../blocks/03_modeling/lab/README.md)
+ - [Block 4 Lab](../blocks/04_functions_testing/lab/README.md)
+ - [Scorebook Lab](../integrated_lab/scorebook/README.md)
+ - [Task Manager 学员说明](../homework/task_manager/student_pack/README.md)
+ 
+@@ -53,20 +55,28 @@ go run ./module01_basics/blocks/01_go_basics/demo/03_control_funcs
+ | Atoi 失败 | 错误能否忽略？ | err 非 nil | 外部输入解析属于可预期失败，应显式处理 | 转换失败自动得到 0 且安全 | 核心 |
+ 
+ ### 失败演示与救援
+ 
+ ```bash
+ go test -tags=exercise ./module01_basics/blocks/01_go_basics/lab/starter -run '^TestGrade$'
+ ```
+ 
+ 起始 Starter 应因返回等级不符合而失败。请学员只读出“测试名、实际值、期望值”；如 8 分钟仍无进展，给一级提示“先把输入分成有效与无效”，不投影 solution。
+ 
++### 受控编译失败与 panic（按需，8 分钟内）
++
++```bash
++make module01-teaching-failures
++```
++
++课堂只选择三个核心 Case：同作用域无新变量的 `:=`、Map Struct 字段不可直接赋值、nil Map 写入 panic。逐一先让学员预测诊断或 panic，再展示 [受控失败 Case](../teaching_failures/README.md) 中的正确写法。其余 Case（包级短声明、定义类型赋值、Slice 比较、最后一个 case 的 `fallthrough`、nil 指针）仅按班级情况调用，不逐个占用课堂时间。命令非零且诊断匹配才是通过；路径、权限、依赖或工具链异常不是教学成功。
++
+ ### Block 1 内容扩展
+ 
+ 按班级节奏选择以下镜头，不要删除原有 `01_hello`、`02_vars_types` 和 `03_control_funcs`：
+ 
+ ```bash
+ go run ./module01_basics/blocks/01_go_basics/demo/05_strings_basics
+ ```
+ 
+ - **核心：**让学员预测 `var int/string/bool` 的零值，说明 nil Slice 可以 `append`，nil Map 只能读不能写。
+ - **核心：**展示 `strings.TrimSpace`、`Fields`、`ToLower`，再解释 String 下标是 byte、`range` 得到 rune；展示 String/`[]byte` 往返和 `Atoi` 的成功与错误路径。
+diff --git a/module01_basics/instructor/RUNBOOK.md b/module01_basics/instructor/RUNBOOK.md
+index 018829c..70ab29a 100644
+--- a/module01_basics/instructor/RUNBOOK.md
++++ b/module01_basics/instructor/RUNBOOK.md
+@@ -35,20 +35,33 @@
+ | Block 1 | 25 |
+ | Block 2 | 40 |
+ | Block 3 | 35 |
+ | Block 4 | 25 |
+ | Scorebook integrated lab | 40 |
+ | Homework kickoff and Exit Quiz | 10 |
+ | **Total** | **185 / 310 (59.7%)** |
+ 
+ `185 ÷ 310 = 0.59677…`，四舍五入为 59.7%。延误时先删除各段标明的可裁内容，不挪用这 185 分钟中的编码、测试和 Quiz 时间。
+ 
++## 受控失败的验收规则
++
++课前运行：
++
++```bash
++make module01-demo-contracts
++make module01-teaching-failures
++```
++
++正常 Demo、Lab 和 `go test ./module01_basics/...` 必须保持 GREEN。编译失败和 panic 示例只允许位于 `teaching_failures/testdata/`，由独立命令验证。对每个教学 Case，只有命令非零退出且输出匹配约定诊断才算通过；命令路径错误、权限、依赖、Go 安装或其他环境问题都不是“预期失败”，应先按环境故障处理。
++
++课堂只使用三个核心失败：同作用域无新变量的 `:=`、Map Struct 字段不可直接赋值、nil Map 写入 panic。其余 Case 仅作按需小抄，避免挤占 Block 的学员动手时间。
++
+ ## 09:30–09:50：开场、环境检查、Entry Quiz
+ 
+ - **目标：**确认学员能在仓库根目录运行 Go，并识别班级最需要纠正的 Java-to-Go 默认假设。
+ - **讲师动作：**09:30–09:35 说明一日产出；09:35–09:40 投影 `go version`、`go env GOMOD` 和 `make module01-lab-01`；09:40–09:45 安静答 Quiz；09:45–09:50 按题号举手统计。
+ - **学员动作（10 分钟动手）：**独立运行三个环境命令 5 分钟，完成 [Entry Quiz](../assessments/entry_quiz.md) 5 分钟。
+ - **可观察检查点：**`GOMOD` 指向当前仓库且 Block 1 solution 测试 PASS；讲师记录每题错误人数。
+ - **常见延误：**学员不在仓库根目录、Go 不在 `PATH` 或 IDE 打开了错误目录。
+ - **可裁内容：**精确删除开场自我介绍和课程背景扩展；不删环境命令、Quiz 或错题统计。
+ 
+ ## 09:50–10:35：Block 1 — Go Basics
+diff --git a/module01_basics/teaching_failures/README.md b/module01_basics/teaching_failures/README.md
+new file mode 100644
+index 0000000..8fa0f5e
+--- /dev/null
++++ b/module01_basics/teaching_failures/README.md
+@@ -0,0 +1,24 @@
++# Module 01 受控失败教学 Case
++
++这些 Case 用来演示 Go 的编译诊断和运行时 panic。它们全部位于 `testdata/`，因此正常的 `go test ./module01_basics/...` 不会扫描或执行它们。不要把这些源码移入正常 Demo 或正常测试包。
++
++从仓库根目录运行：
++
++```bash
++make module01-teaching-failures
++```
++
++通过的定义不是命令成功退出：每个 Case 必须以非零状态失败，且输出匹配下表诊断。这样才能区分预期教学失败与环境、路径或工具链故障。
++
++| Case 路径 | 单独运行命令 | 预期诊断 | 正确写法 | 核心 |
++| --- | --- | --- | --- | --- |
++| `testdata/compile_fail/package_short_decl` | `go test ./module01_basics/teaching_failures/testdata/compile_fail/package_short_decl` | `outside function body` 或 `syntax error` | 在函数体中使用 `value := 1`，包级使用 `var value = 1` | 否 |
++| `testdata/compile_fail/no_new_variable` | `go test ./module01_basics/teaching_failures/testdata/compile_fail/no_new_variable` | `no new variables` | 已有变量改用 `value = 2` | 是 |
++| `testdata/compile_fail/defined_type_assignment` | `go test ./module01_basics/teaching_failures/testdata/compile_fail/defined_type_assignment` | `cannot use raw` | `var id UserID = UserID(raw)` | 否 |
++| `testdata/compile_fail/slice_comparison` | `go test ./module01_basics/teaching_failures/testdata/compile_fail/slice_comparison` | `slice can only be compared to nil` 或 `invalid operation` | 比较元素、使用 `slices.Equal`，或只与 `nil` 比较 | 否 |
++| `testdata/compile_fail/map_struct_field` | `go test ./module01_basics/teaching_failures/testdata/compile_fail/map_struct_field` | `cannot assign to struct field` | 取出值、修改后写回：`item := items["one"]; item.Value = 2; items["one"] = item` | 是 |
++| `testdata/compile_fail/final_fallthrough` | `go test ./module01_basics/teaching_failures/testdata/compile_fail/final_fallthrough` | `cannot fallthrough final case` | 删除最后一个 `fallthrough`，或添加可落入的后续 case | 否 |
++| `testdata/runtime_fail/nil_map_write` | `go run ./module01_basics/teaching_failures/testdata/runtime_fail/nil_map_write` | `assignment to entry in nil map` | `scores := make(map[string]int)` 后再写入 | 是 |
++| `testdata/runtime_fail/nil_pointer` | `go run ./module01_basics/teaching_failures/testdata/runtime_fail/nil_pointer` | `nil pointer dereference` 或 `invalid memory address` | 先分配并赋地址：`value := new(int); *value = 1` | 否 |
++
++课堂只投影三个核心 Case：同作用域无新变量的 `:=`、Map 的 Struct 字段不可直接赋值，以及 nil Map 写入 panic。其余 Case 是讲师根据班级情况调用的小抄，不逐个占用课堂时间。
+diff --git a/module01_basics/teaching_failures/testdata/compile_fail/defined_type_assignment/main.go b/module01_basics/teaching_failures/testdata/compile_fail/defined_type_assignment/main.go
+new file mode 100644
+index 0000000..433654e
+--- /dev/null
++++ b/module01_basics/teaching_failures/testdata/compile_fail/defined_type_assignment/main.go
+@@ -0,0 +1,9 @@
++package definedtypeassignment
++
++type UserID int
++
++func demonstrate() {
++	var raw int = 1
++	var id UserID = raw
++	_ = id
++}
+diff --git a/module01_basics/teaching_failures/testdata/compile_fail/final_fallthrough/main.go b/module01_basics/teaching_failures/testdata/compile_fail/final_fallthrough/main.go
+new file mode 100644
+index 0000000..589ed69
+--- /dev/null
++++ b/module01_basics/teaching_failures/testdata/compile_fail/final_fallthrough/main.go
+@@ -0,0 +1,8 @@
++package finalfallthrough
++
++func demonstrate(value int) {
++	switch value {
++	case 1:
++		fallthrough
++	}
++}
+diff --git a/module01_basics/teaching_failures/testdata/compile_fail/map_struct_field/main.go b/module01_basics/teaching_failures/testdata/compile_fail/map_struct_field/main.go
+new file mode 100644
+index 0000000..91daf58
+--- /dev/null
++++ b/module01_basics/teaching_failures/testdata/compile_fail/map_struct_field/main.go
+@@ -0,0 +1,10 @@
++package mapstructfield
++
++type Item struct {
++	Value int
++}
++
++func demonstrate() {
++	items := map[string]Item{"one": {Value: 1}}
++	items["one"].Value = 2
++}
+diff --git a/module01_basics/teaching_failures/testdata/compile_fail/no_new_variable/main.go b/module01_basics/teaching_failures/testdata/compile_fail/no_new_variable/main.go
+new file mode 100644
+index 0000000..4732f74
+--- /dev/null
++++ b/module01_basics/teaching_failures/testdata/compile_fail/no_new_variable/main.go
+@@ -0,0 +1,7 @@
++package nonewvariable
++
++func demonstrate() {
++	value := 1
++	value := 2
++	_ = value
++}
+diff --git a/module01_basics/teaching_failures/testdata/compile_fail/package_short_decl/main.go b/module01_basics/teaching_failures/testdata/compile_fail/package_short_decl/main.go
+new file mode 100644
+index 0000000..6e490ed
+--- /dev/null
++++ b/module01_basics/teaching_failures/testdata/compile_fail/package_short_decl/main.go
+@@ -0,0 +1,5 @@
++package packageshortdecl
++
++value := 1
++
++var _ = value
+diff --git a/module01_basics/teaching_failures/testdata/compile_fail/slice_comparison/main.go b/module01_basics/teaching_failures/testdata/compile_fail/slice_comparison/main.go
+new file mode 100644
+index 0000000..c428f7f
+--- /dev/null
++++ b/module01_basics/teaching_failures/testdata/compile_fail/slice_comparison/main.go
+@@ -0,0 +1,7 @@
++package slicecomparison
++
++func demonstrate() {
++	left := []int{1}
++	right := []int{1}
++	_ = left == right
++}
+diff --git a/module01_basics/teaching_failures/testdata/runtime_fail/nil_map_write/main.go b/module01_basics/teaching_failures/testdata/runtime_fail/nil_map_write/main.go
+new file mode 100644
+index 0000000..43021be
+--- /dev/null
++++ b/module01_basics/teaching_failures/testdata/runtime_fail/nil_map_write/main.go
+@@ -0,0 +1,6 @@
++package main
++
++func main() {
++	var scores map[string]int
++	scores["Alice"] = 95
++}
+diff --git a/module01_basics/teaching_failures/testdata/runtime_fail/nil_pointer/main.go b/module01_basics/teaching_failures/testdata/runtime_fail/nil_pointer/main.go
+new file mode 100644
+index 0000000..c295e41
+--- /dev/null
++++ b/module01_basics/teaching_failures/testdata/runtime_fail/nil_pointer/main.go
+@@ -0,0 +1,6 @@
++package main
++
++func main() {
++	var value *int
++	*value = 1
++}
+diff --git a/module01_basics/teaching_failures/verify.sh b/module01_basics/teaching_failures/verify.sh
+new file mode 100755
+index 0000000..d70d8d2
+--- /dev/null
++++ b/module01_basics/teaching_failures/verify.sh
+@@ -0,0 +1,45 @@
++#!/usr/bin/env bash
++set -euo pipefail
++
++script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
++repo_root="$(cd "$script_dir/../.." && pwd)"
++cd "$repo_root"
++
++expect_failure() {
++    local command_kind="$1"
++    local package_path="$2"
++    local expected_pattern="$3"
++    local output
++    local status
++
++    set +e
++    if [[ "$command_kind" == "test" ]]; then
++        output="$(go test "$package_path" 2>&1)"
++        status=$?
++    else
++        output="$(go run "$package_path" 2>&1)"
++        status=$?
++    fi
++    set -e
++
++    if [[ $status -eq 0 ]]; then
++        printf 'expected failure but command passed: %s %s\n' "$command_kind" "$package_path" >&2
++        exit 1
++    fi
++    if ! grep -Eq "$expected_pattern" <<<"$output"; then
++        printf 'failure diagnostic mismatch: %s\n%s\n' "$package_path" "$output" >&2
++        exit 1
++    fi
++    printf 'expected failure: %s\n' "$package_path"
++}
++
++expect_failure test ./module01_basics/teaching_failures/testdata/compile_fail/package_short_decl 'outside function body|syntax error'
++expect_failure test ./module01_basics/teaching_failures/testdata/compile_fail/no_new_variable 'no new variables'
++expect_failure test ./module01_basics/teaching_failures/testdata/compile_fail/defined_type_assignment 'cannot use raw'
++expect_failure test ./module01_basics/teaching_failures/testdata/compile_fail/slice_comparison 'slice can only be compared to nil|invalid operation.*left == right'
++expect_failure test ./module01_basics/teaching_failures/testdata/compile_fail/map_struct_field 'cannot assign to struct field'
++expect_failure test ./module01_basics/teaching_failures/testdata/compile_fail/final_fallthrough 'cannot fallthrough final case'
++expect_failure run ./module01_basics/teaching_failures/testdata/runtime_fail/nil_map_write 'assignment to entry in nil map'
++expect_failure run ./module01_basics/teaching_failures/testdata/runtime_fail/nil_pointer 'nil pointer dereference|invalid memory address'
++
++printf 'module01 teaching failures: PASS\n'

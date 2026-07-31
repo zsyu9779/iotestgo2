@@ -1,0 +1,249 @@
+# Review package: 5275c40..b8c65b5
+
+## Commits
+b8c65b5 feat: clarify module01 pointer and receiver semantics
+
+## Files changed
+ module01_basics/blocks/03_modeling/README.md                 |  4 ++--
+ module01_basics/blocks/03_modeling/demo/06_pointers/main.go  | 12 +++++++++++-
+ .../blocks/03_modeling/demo/09_copy_and_receivers/main.go    |  7 +++++++
+ module01_basics/instructor/DEMO_NOTES.md                     | 12 +++++++++---
+ module01_basics/instructor/RUNBOOK.md                        |  4 ++--
+ module01_basics/instructor/scripts/verify_demo_contracts.sh  |  6 ++++++
+ 6 files changed, 37 insertions(+), 8 deletions(-)
+
+## Diff
+diff --git a/module01_basics/blocks/03_modeling/README.md b/module01_basics/blocks/03_modeling/README.md
+index 669ed52..098017b 100644
+--- a/module01_basics/blocks/03_modeling/README.md
++++ b/module01_basics/blocks/03_modeling/README.md
+@@ -23,34 +23,34 @@
+ 
+ | Java | Go |
+ | --- | --- |
+ | 对象变量通常保存引用 | Struct 变量默认保存值；`*Student` 才是指向该值的指针 |
+ | `new Student(...)` 调用构造方法 | 常用普通函数 `New(...)` 校验后返回 `*Student` |
+ | 字段与方法都定义在 Class 内 | Struct 声明字段，方法通过接收者与类型关联 |
+ | 实例方法通常能修改当前对象 | 值接收者操作副本；需要修改原值时使用指针接收者 |
+ | 常用异常报告构造参数非法 | Go 常返回约定的 `error`，调用方显式处理 |
+ | 防御性复制常返回新对象 | 小型 Struct 可以直接按值返回快照副本 |
+ 
+-Go 指针支持解引用和共享修改，但不支持指针算术。方法调用时 Go 在可寻址的值与指针之间提供便利转换；接收者的选择仍然表达重要语义：这个方法是观察值，还是修改同一个对象。
++Go 指针支持解引用和共享修改，但不支持指针算术。对 Struct 指针，`p.Field` 是 `(*p).Field` 的字段访问语法糖，两种写法操作同一字段，不会复制 Struct。方法调用时 Go 在可寻址的值与指针之间提供便利转换；接收者的选择仍然表达重要语义：这个方法是观察值，还是修改同一个对象。值接收者拿到 Struct 副本，所以即使在方法内给字段赋值，调用方的原值也不会改变。
+ 
+ ## 讲师 Demo
+ 
+ 按顺序运行并讲解：
+ 
+ ```bash
+ go run ./module01_basics/blocks/03_modeling/demo/06_pointers
+ go run ./module01_basics/blocks/03_modeling/demo/07_structs_methods
+ go run ./module01_basics/blocks/03_modeling/demo/08_struct_zero_values
+ go run ./module01_basics/blocks/03_modeling/demo/09_copy_and_receivers
+ ```
+ 
+-第一个 Demo 对比值传递与指针传递，观察解引用、共享修改和 nil 指针。第二个 Demo 展示 Struct、值接收者、指针接收者和嵌入，重点观察 `UpdateName` 为什么能够修改原对象。
++第一个 Demo 对比值传递与指针传递，观察解引用、共享修改、nil 指针，以及 `counter.Value` 与 `(*counter).Value` 操作同一字段。第二个 Demo 展示 Struct、值接收者、指针接收者和嵌入，先观察 `RenameCopy` 不会改变 `student.Name`，再观察 `Rename` 为什么能够修改原对象。
+ 
+ 新增 Demo 补充 Struct 零值、复合字面量、值复制、指针参数、Snapshot 隔离和组合语义。注意：指针参数与指针接收者是两个相关但不同的概念；Embedding 提升字段和方法，但不建立 Java 意义上的继承关系。
+ 
+ ## 学员任务
+ 
+ 进入 `lab/starter`，实现学生模型：`New` 负责建立满足不变量的 `Student`，`Rename` 和 `UpdateScore` 修改原对象，`Snapshot` 返回按值复制的当前状态。姓名需要去除首尾空白，ID 必须为正数，成绩必须位于 0–100（含两端）。完整接口、错误约定与接收者说明见 [lab/README.md](lab/README.md)。
+ 
+ 先运行测试观察失败，再围绕当前失败补充最小实现。完成后解释为什么两个修改方法使用指针接收者，而快照方法使用值接收者。
+ 
+ ## 验收命令
+diff --git a/module01_basics/blocks/03_modeling/demo/06_pointers/main.go b/module01_basics/blocks/03_modeling/demo/06_pointers/main.go
+index cdbd1ed..bfa46e4 100644
+--- a/module01_basics/blocks/03_modeling/demo/06_pointers/main.go
++++ b/module01_basics/blocks/03_modeling/demo/06_pointers/main.go
+@@ -1,35 +1,45 @@
+ package main
+ 
+ import "fmt"
+ 
++type Counter struct {
++	Value int
++}
++
+ func main() {
+ 	// 1. Basic Pointers
+ 	x := 10
+ 	ptr := &x // Address of x
+ 
+ 	fmt.Printf("Value of x: %d\n", x)
+ 	fmt.Printf("Address of x: %p\n", ptr)
+ 	fmt.Printf("Value via pointer: %d\n", *ptr)
+ 
+ 	// Modify via pointer
+ 	*ptr = 20
+ 	fmt.Println("New value of x:", x)
+ 
+ 	// 2. Nil Pointer
+ 	var nilPtr *int
+ 	if nilPtr == nil {
+ 		fmt.Println("Pointer is nil")
+ 	}
+ 	// *nilPtr = 1 // Panic: invalid memory address or nil pointer dereference
+ 
+-	// 3. Pointer parameter vs value parameter. Receiver semantics are shown in
++	// 3. Struct pointer field access automatically dereferences the pointer.
++	counter := &Counter{Value: 1}
++	counter.Value = 2
++	(*counter).Value = 3
++	fmt.Println("pointer field sugar:", counter.Value)
++
++	// 4. Pointer parameter vs value parameter. Receiver semantics are shown in
+ 	// the Structs and Methods demo; both cases still pass a value to a function.
+ 	val := 5
+ 	modifyValue(val)
+ 	fmt.Println("After value pass:", val) // 5
+ 
+ 	modifyPointer(&val)
+ 	fmt.Println("After pointer pass:", val) // 100
+ }
+ 
+ func modifyValue(n int) {
+diff --git a/module01_basics/blocks/03_modeling/demo/09_copy_and_receivers/main.go b/module01_basics/blocks/03_modeling/demo/09_copy_and_receivers/main.go
+index dc9379c..98b97f7 100644
+--- a/module01_basics/blocks/03_modeling/demo/09_copy_and_receivers/main.go
++++ b/module01_basics/blocks/03_modeling/demo/09_copy_and_receivers/main.go
+@@ -14,28 +14,35 @@ type Account struct {
+ type Student struct {
+ 	ID    int
+ 	Name  string
+ 	Score int
+ }
+ 
+ func (s Student) Label() string {
+ 	return fmt.Sprintf("%d:%s=%d", s.ID, s.Name, s.Score)
+ }
+ 
++func (s Student) RenameCopy(name string) {
++	s.Name = name
++}
++
+ func (s *Student) Rename(name string) {
+ 	s.Name = name
+ }
+ 
+ func main() {
+ 	student := Student{ID: 1, Name: "Alice", Score: 80}
+ 	fmt.Println("value receiver:", student.Label())
+ 
++	student.RenameCopy("Nobody")
++	fmt.Println("value receiver mutation keeps:", student.Name)
++
+ 	student.Rename("Bob")
+ 	fmt.Println("pointer receiver:", student.Label())
+ 
+ 	snapshot := student
+ 	snapshot.Score = 100
+ 	fmt.Printf("value snapshot: original=%d copy=%d\n", student.Score, snapshot.Score)
+ 
+ 	account := Account{Audit: Audit{CreatedBy: "teacher"}, ID: 7}
+ 	fmt.Printf("embedding promotes field access: id=%d created-by=%s\n", account.ID, account.CreatedBy)
+ 	// Embedding is composition and promotion, not Java-style inheritance.
+diff --git a/module01_basics/instructor/DEMO_NOTES.md b/module01_basics/instructor/DEMO_NOTES.md
+index ac2831b..2fa3aa8 100644
+--- a/module01_basics/instructor/DEMO_NOTES.md
++++ b/module01_basics/instructor/DEMO_NOTES.md
+@@ -121,34 +121,40 @@ go run ./module01_basics/blocks/03_modeling/demo/08_struct_zero_values
+ go run ./module01_basics/blocks/03_modeling/demo/09_copy_and_receivers
+ ```
+ 
+ ### 投影提示
+ 
+ 1. 在 `modifyValue` 和 `modifyPointer` 前分别预测 `val`，用输出强调 Go 只有值传递；传入指针时复制的值是地址。
+ 2. 把 `User.String` 标为只读观察，把 `UpdateName` 标为修改同一对象，让学员选接收者。
+ 3. 将 Java 类的构造器对比为普通 `New(...)` 函数，强调校验成功后才创建有效状态。
+ 4. Embedding 只做“组合可以提升字段和方法”的一句展示，不说它等于继承。
+ 
++| 暂停点 | 先问 | 预期结果 | 准确解释 | 常见误解 | 级别 |
++| --- | --- | --- | --- | --- | --- |
++| `counter.Value` / `(*counter).Value` | 是否修改同一字段？ | 最终为 3 | Go 自动解引用字段访问 | `p.field` 会复制对象 | 深挖 |
++| `RenameCopy` | student.Name 会变吗？ | 仍为 Alice | 值接收者得到 Struct 副本 | 方法天然拥有 Java this 引用语义 | 核心 |
++| `Rename` | 为什么变为 Bob？ | 指针接收者修改同一对象 | 传入的仍是值，只是该值为地址 | Go 存在“引用传递” | 核心 |
++
+ ### 失败演示与救援
+ 
+ ```bash
+ go test -tags=exercise ./module01_basics/blocks/03_modeling/lab/starter -run '^TestStudentLifecycle$'
+ ```
+ 
+ 当修改丢失时，让学员圈出接收者是 `Student` 还是 `*Student`；当无效修改污染状态时，让其标出第一次赋值和第一次校验的顺序。救援只给“先校验，后赋值”，不代写方法。
+ 
+ ### Block 3 内容扩展
+ 
+ - **核心：**用 `08_struct_zero_values` 观察 Struct 零值、复合字面量、值复制、指针参数和 nil 指针检查。
+-- **核心：**用 `09_copy_and_receivers` 对比值接收者、指针接收者、快照隔离和 Embedding 的字段提升。
+-- **深挖：**强调 Embedding 是组合，不是继承；讲解指针参数和指针接收者都遵守值传递，但复制的值不同。
+-- **可裁：**匿名字段的复杂方法集、指针嵌入和反射不进入核心课堂。
++- **核心：**用 `09_copy_and_receivers` 对比 `RenameCopy` 的副本修改、指针接收者、快照隔离和 Embedding 的字段提升。
++- **深挖：**用 `06_pointers` 说明 `counter.Value` 是 `(*counter).Value` 的自动解引用语法糖；强调 Embedding 是组合，不是继承；讲解指针参数和指针接收者都遵守值传递，但复制的值不同。
++- **可裁：**自动解引用语法糖、匿名字段的复杂方法集、指针嵌入和反射不进入核心课堂。
+ 
+ ## Block 4：Functions & Testing（15 分钟）
+ 
+ 核心 Demo 保留函数值、闭包和 `defer`，并增加变参、命名函数类型、闭包状态和 defer 求值；柯里化、函数组合和并发继续移入可裁 Bonus。
+ 
+ ```bash
+ go run ./module01_basics/blocks/04_functions_testing/demo/09_advanced_functions
+ go run ./module01_basics/blocks/04_functions_testing/demo/10_function_forms
+ go run ./module01_basics/blocks/04_functions_testing/demo/11_defer_edges
+ go test ./module01_basics/blocks/04_functions_testing/lab/solution -run '^TestFilterWithClosure$'
+diff --git a/module01_basics/instructor/RUNBOOK.md b/module01_basics/instructor/RUNBOOK.md
+index 0200186..018829c 100644
+--- a/module01_basics/instructor/RUNBOOK.md
++++ b/module01_basics/instructor/RUNBOOK.md
+@@ -76,25 +76,25 @@
+ - **可裁内容：**精确删除 Slice 容量增长策略推演、嵌套 Map 初始化、Map 深层陷阱和 String benchmark；保留 Slice 共享、`copy`、comma-ok 和 byte/rune。
+ 
+ ## 12:00–13:00：午休
+ 
+ 关闭上午问题停车场的现场讨论，只留下文字记录。13:00 按新的 65 分钟时间盒开始，不用午休补课。
+ 
+ ## 13:00–14:05：Block 3 — Modeling
+ 
+ - **目标：**用 Struct、构造函数惯例、指针接收者和值快照建立保持不变量的 `Student`。
+ - **讲师动作：**13:00–13:20 用值传递与指针修改 Demo 对比 Java 引用；13:20–13:55 巡视建模练习；13:55–14:05 用“修改 Snapshot”的测试复盘接收者选择。
+-- **内容扩展：**在两个原有 Demo 后按需运行 `08_struct_zero_values` 和 `09_copy_and_receivers`；Struct 零值、值复制和接收者选择属于核心，Embedding 作为组合语义深挖。
++- **内容扩展：**在两个原有 Demo 后按需运行 `08_struct_zero_values` 和 `09_copy_and_receivers`；Struct 零值、值复制以及 `RenameCopy`/`Rename` 的接收者选择属于核心，Embedding 和 `counter.Value` 的自动解引用语法糖作为深挖。
+ - **学员动作（35 分钟动手）：**实现 `New`、`Rename`、`UpdateScore` 和 `Snapshot`，先校验再修改状态，逐步使测试变绿。
+ - **可观察检查点：**`go test -tags=exercise ./module01_basics/blocks/03_modeling/lab/starter` PASS；修改 Snapshot 不影响原对象，失败的 Rename/Update 不改原状态。
+ - **常见延误：**修改方法使用值接收者，或先赋值再校验，导致变更丢失或无效状态泄漏。
+-- **可裁内容：**精确删除 Struct embedding 对比和 nil pointer 扩展讨论；保留 Go 只有值传递、接收者选择和校验前置。
++- **可裁内容：**精确删除 Struct embedding 对比、nil pointer 扩展讨论和自动解引用语法糖；保留 Go 只有值传递、值/指针接收者选择和校验前置。
+ 
+ ## 14:05–14:50：Block 4 — Functions & Testing
+ 
+ - **目标：**把函数作为值传递，用闭包捕获配置，用 `defer` 安排可观察的收尾顺序，并能阅读具名测试失败。
+ - **讲师动作：**14:05–14:20 只演示函数值、闭包、`defer` 与 `-run`；14:20–14:45 让学员依次处理两个具名测试；14:45–14:50 对照三个 audit 事件。
+ - **内容扩展：**在原有 Demo 后按需运行 `10_function_forms` 和 `11_defer_edges`；变参、函数类型、闭包状态和 defer 求值属于核心，复杂函数式模式继续可裁。
+ - **学员动作（25 分钟动手）：**先使 `TestFilterWithClosure` 通过，再使 `TestWithAuditRecordsEndAfterOperation` 通过，最后运行全包测试。
+ - **可观察检查点：**`go test -tags=exercise ./module01_basics/blocks/04_functions_testing/lab/starter` PASS，audit 事件严格为 `start:average`、`operation`、`end:average`。
+ - **常见延误：**`Filter` 硬编码阈值，`AtLeast` 使用 `>`，或在 `operation` 之后才注册 `defer`。
+ - **可裁内容：**精确删除柯里化、函数组合、Functional Options 和多 `defer` LIFO 扩展；保留单一闭包、单一 `defer` 和失败输出阅读。
+diff --git a/module01_basics/instructor/scripts/verify_demo_contracts.sh b/module01_basics/instructor/scripts/verify_demo_contracts.sh
+index 2074551..be469de 100755
+--- a/module01_basics/instructor/scripts/verify_demo_contracts.sh
++++ b/module01_basics/instructor/scripts/verify_demo_contracts.sh
+@@ -34,11 +34,17 @@ string_output="$(go run ./module01_basics/blocks/01_go_basics/demo/05_strings_ba
+ assert_contains "$string_output" 'bytes round trip: Go语言'
+ assert_contains "$string_output" 'Atoi success: 42'
+ assert_contains "$string_output" 'Atoi error: true'
+ 
+ slice_output="$(go run ./module01_basics/blocks/02_collections/demo/04_arrays_slices)"
+ assert_contains "$slice_output" 'copy count=3 dst=[10 20 30 0 0] src=[10 20 30]'
+ 
+ map_output="$(go run ./module01_basics/blocks/02_collections/demo/05_maps_strings)"
+ assert_contains "$map_output" 'nested map value: ready'
+ 
++pointer_output="$(go run ./module01_basics/blocks/03_modeling/demo/06_pointers)"
++assert_contains "$pointer_output" 'pointer field sugar: 3'
++
++receiver_output="$(go run ./module01_basics/blocks/03_modeling/demo/09_copy_and_receivers)"
++assert_contains "$receiver_output" 'value receiver mutation keeps: Alice'
++
+ printf 'module01 demo contracts: PASS\n'

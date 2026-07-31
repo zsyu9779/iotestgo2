@@ -54,7 +54,6 @@ func applyNamed(a, b int, combine Combiner) int {
 }
 
 // 指向函数值的指针是合法 Go 写法，但直接传递函数值更符合惯用写法。
-// 保留这个指针示例是为了说明旧项目中的语法，不把它称为独立的“函数指针”特性。
 func applyFunctionPointer(a, b int, combine *Combiner) int {
 	return (*combine)(a, b)
 }
@@ -89,7 +88,7 @@ func counter(start int) func() int {
 func main() {
 	result, err := addText("1", 2, 3)
 	fmt.Println("private multi-value return:", result, err)
-	ignored, _ := addText("2", 3)
+	ignored, _ := addText("2", 2)
 	fmt.Println("discarded error with blank identifier:", ignored)
 	result, err = PublicFunctionDemo()
 	fmt.Println("public function:", result, err)
@@ -102,6 +101,8 @@ func main() {
 	converted := Combiner(rawCombine)
 	fmt.Println("explicit function type conversion:", converted(3, 4))
 	fmt.Println("higher-order function:", apply(4, 5, add))
+	fmt.Println("aaa:", apply(1, 2, sub))
+
 	fmt.Println("function value pointer:", applyFunctionPointer(6, 7, &combine))
 	allocated := new(Combiner)
 	*allocated = add
@@ -118,4 +119,8 @@ func main() {
 	fmt.Println("closure state:", next(), next())
 	another := counter(10)
 	fmt.Println("independent closure state:", another())
+}
+
+func sub(a, b int) int {
+	return a - b
 }
