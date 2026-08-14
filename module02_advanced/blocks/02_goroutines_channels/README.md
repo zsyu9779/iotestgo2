@@ -2,11 +2,11 @@
 
 ## 学习结果
 
-完成后能够启动并等待 goroutine，设计 producer/consumer 通信协议，并正确关闭 channel。
+完成后能够解释 goroutine 与无缓冲 channel 的协作方式，追踪并动态组合 producer/filter 流水线，并识别这种教学实现的生命周期和性能边界。
 
 ## 时间盒
 
-70 分钟，其中学员动手不少于 40 分钟。
+70 分钟课堂精讲，不布置 Starter 或课后作业。
 
 ## 前置知识
 
@@ -23,34 +23,33 @@ go run ./module02_advanced/blocks/02_goroutines_channels/demo/03_goroutines
 go run ./module02_advanced/blocks/02_goroutines_channels/demo/04_channels
 ```
 
-## 学员任务
+## 精讲主线
 
-实现 `CollectSquares` worker pool，要求处理全部输入、保持结果顺序，并正确处理空输入和 worker 边界。
+1. `GenerateNatural` 启动一个 goroutine，按需产生 `2, 3, 4, ...`。
+2. 第一次从当前数据流取出的数字一定是素数。
+3. `PrimeFilter` 为该素数启动一个过滤 goroutine，并返回新的数据流。
+4. `ch = PrimeFilter(ch, prime)` 每执行一次，流水线就增长一级。
 
-## 验收命令
-
-```bash
-go test -tags=exercise ./module02_advanced/blocks/02_goroutines_channels/lab/starter
+```text
+GenerateNatural -> Filter(2) -> Filter(3) -> Filter(5) -> ... -> next prime
 ```
+
+无缓冲 channel 让下游消费速度反向约束上游，形成背压。这个示例展示的是 CSP 风格的动态并发流水线，不是欧拉线性筛，也不是面向大规模计算的高性能筛法。
 
 ## 常见错误
 
-- main 提前退出；
-- 接收方关闭 channel；
-- 向已关闭 channel 写入；
-- range channel 前没有关闭发送端。
-
-## 三级提示
-
-1. 先为每个 goroutine 增加 WaitGroup 计数。
-2. 让唯一发送方负责 close。
-3. 用完成信号测试所有 worker 已退出。
+- 把它误称为欧拉线性筛；
+- 忽略每发现一个素数就新增一个 goroutine 和 channel；
+- 误以为 goroutine 串成流水线后一定会获得并行加速；
+- 在长期运行的服务中照搬无限数据流，却没有取消和退出协议。
 
 ## 复盘问题
 
-- Channel 解决了通信问题，但是否自动解决了所有共享状态问题？
-- 无缓冲和有缓冲 channel 分别表达什么协作关系？
+- 为什么当前数据流的第一个数字一定是素数？
+- 数字 `49` 会经过哪些过滤器，最终在哪里被丢弃？
+- 无缓冲 channel 如何阻止生成器无限占用内存？
+- 为什么这个实现适合讲并发组合，却不适合计算超大范围素数？
 
 ## Bonus
 
-观察 nil Channel 动态禁用 case、多个就绪 case 的选择和 `default` 忙等风险。
+将无限生成器和过滤器增加 `context.Context` 取消协议，观察每一级 goroutine 如何退出。

@@ -25,7 +25,6 @@ go generate -n ./module02_advanced/bonus/generate
 ## 其他扩展
 
 - `bonus/os_interaction`：CommandContext 超时、退出码、信号和平台差异；
-- `bonus/file_io`：缓冲读写、Scanner token 上限、短写入和原子替换；
 - `bonus/runtime_control`：调度和 runtime；
 - `bonus/stdlib_utils`：正则、JSON、编码、哈希和时间；
 - `bonus/testing_tools`：pprof、DeepEqual 和性能暗角。

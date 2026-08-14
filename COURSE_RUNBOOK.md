@@ -25,7 +25,7 @@ go1.25.11
 
 ## 外部依赖
 
-- Module 04 需要 MySQL。
+- Module 04 需要本机 MySQL 8.0+，并显式配置 `MYSQL_DSN`；运行 `make module04-env-check` 检查版本、字符集和 DDL 权限。
 - Module 05 需要 `protoc`、`protoc-gen-go`、`protoc-gen-go-grpc`，Gateway 需要 `protoc-gen-grpc-gateway`。
 - Module 06 的电商综合项目需要 Docker Compose 启动 MySQL、Redis、Etcd、Prometheus、Grafana。
 
@@ -43,4 +43,4 @@ go1.25.11
 - `invalid go version`: 检查 Go 版本是否符合 `go.mod`。本课程完整验证要求 Go 1.25.x；如果本机仍是 Go 1.20.6，需要先升级 Go。
 - `connection refused`: 先确认对应 server 是否启动，端口是否被占用。
 - `protoc: command not found`: 使用课程安装页安装 `protoc` 和 Go 插件。
-- MySQL 连接失败：检查 Docker 容器、端口、DSN。
+- MySQL 连接失败：检查本机 MySQL 服务、端口、数据库是否已创建、账号权限和 `MYSQL_DSN`。

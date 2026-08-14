@@ -18,7 +18,7 @@ Module 04 GORM 事务之后。
 
 ## 课堂 Demo
 
-基于 `module04_gorm/project_blog_api/internal/service/post_service.go` 的事务风格，讲订单事务：
+基于 `module04_gorm/integrated_lab/blog_api/solution/internal/service/service.go` 的事务回调风格，讲订单事务：
 
 1. 创建订单主表
 2. 创建订单项

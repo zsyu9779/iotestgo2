@@ -48,7 +48,7 @@ func main() {
 	if errors.As(validationErr, &validation) {
 		fmt.Println("invalid field:", validation.Field)
 	}
-
+	//
 	if recovered := recoverAtBoundary(func() { panic("unexpected state") }); recovered != nil {
 		fmt.Println("recovered at boundary:", recovered)
 	}

@@ -31,6 +31,7 @@ func main() {
 	fmt.Println("=== 1. Inspecting Types and Values ===")
 	s := Student{Person: Person{ID: 1, Name: "Alice"}, Age: 20, Score: 90.5}
 	inspectStruct(s)
+	// be simple be stupid
 
 	fmt.Println("\n=== 2. Modifying Values via Reflection ===")
 	x := 100
@@ -48,7 +49,7 @@ func main() {
 	modifyValue(100, 200)
 }
 
-func inspectStruct(i any) {
+func inspectStruct(i interface{}) {
 	t := reflect.TypeOf(i)
 	v := reflect.ValueOf(i)
 

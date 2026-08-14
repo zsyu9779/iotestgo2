@@ -2,7 +2,7 @@
 
 ## 学习结果
 
-完成后能够使用隐式接口、类型断言和错误包装编写可读的边界代码，并理解 `recover` 必须由 `defer` 在边界处调用。
+完成后能够使用隐式接口、类型断言和错误包装编写可读的边界代码，使用 `io.Reader` / `io.Writer` 完成基础文件读写，并理解 `recover` 必须由 `defer` 在边界处调用。
 
 ## 时间盒
 
@@ -21,6 +21,7 @@ Go 接口描述行为，不需要 `implements`；错误通常是返回值，不�
 ```bash
 go run ./module02_advanced/blocks/01_interfaces_errors/demo/01_interfaces
 go run ./module02_advanced/blocks/01_interfaces_errors/demo/02_errors_defer
+go run ./module02_advanced/blocks/01_interfaces_errors/demo/03_file_io
 ```
 
 ## 学员任务

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
 )
@@ -23,5 +25,5 @@ func main() {
 		}
 		c.JSON(200, gin.H{"ok": true, "user": req.Username, "app": viper.GetString("app.name")})
 	})
-	r.Run(":8082")
+	r.Run(fmt.Sprintf(":%d", viper.GetInt("app.port")))
 }

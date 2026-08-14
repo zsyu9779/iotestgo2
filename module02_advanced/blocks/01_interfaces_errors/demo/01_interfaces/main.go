@@ -148,7 +148,7 @@ func main() {
 	default:
 		fmt.Println("Unknown type")
 	}
-
+	//
 	// 断言失败时 ok=false，结果是目标类型的零值，不会 panic。
 	number, numberOK := any.(int)
 	fmt.Printf("Failed assertion: value=%d, ok=%v\n", number, numberOK)

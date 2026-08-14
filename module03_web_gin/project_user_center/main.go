@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"iotestgo/module03_web_gin/project_user_center/internal/handler"
 	"iotestgo/module03_web_gin/project_user_center/internal/middleware"
 	"iotestgo/module03_web_gin/project_user_center/internal/repository"
@@ -16,9 +17,13 @@ func main() {
 	// 1. Config
 	viper.SetDefault("app.port", 8090)
 	viper.SetDefault("app.name", "user-center")
-
+	viper.SetConfigFile("/Users/zhangshiyu/iotestgo2/module03_web_gin/project_user_center/server.yaml")
+	err := viper.ReadInConfig() // 查找并读取配置文件
+	if err != nil {             // 处理读取配置文件的错误
+		panic(fmt.Errorf("Fatal error config file: %s \n", err))
+	}
 	// 2. Logger
-	logger, err := zap.NewProduction()
+	logger, err := zap.NewProduction() // logrus  log
 	if err != nil {
 		log.Fatalf("can't initialize zap logger: %v", err)
 	}

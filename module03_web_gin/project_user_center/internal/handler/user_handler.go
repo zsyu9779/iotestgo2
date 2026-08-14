@@ -39,6 +39,7 @@ func (h *UserHandler) Login(c *gin.Context) {
 		Username string `json:"username" binding:"required"`
 		Password string `json:"password" binding:"required"`
 	}
+	//request  req
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -53,7 +54,7 @@ func (h *UserHandler) Login(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
+	// response resp
 	c.JSON(http.StatusOK, gin.H{"token": token})
 }
 

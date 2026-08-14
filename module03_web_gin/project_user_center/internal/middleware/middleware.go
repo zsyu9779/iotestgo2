@@ -14,7 +14,6 @@ func Logger(logger *zap.Logger) gin.HandlerFunc {
 	sugar := logger.Sugar()
 	return func(c *gin.Context) {
 		start := time.Now()
-		c.Next()
 		sugar.Infow("req",
 			"method", c.Request.Method,
 			"path", c.Request.URL.Path,
@@ -50,4 +49,12 @@ func Auth() gin.HandlerFunc {
 
 		c.Next()
 	}
+}
+
+func Interceptor() gin.HandlerFunc {
+	return func(c *gin.Context) {}
+}
+
+func Limiter() gin.HandlerFunc {
+	return func(c *gin.Context) {}
 }

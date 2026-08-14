@@ -44,6 +44,8 @@ func (s *UserService) Login(username, password string) (string, error) {
 		}
 		return "", err
 	}
+	// DB  time (ctx context.Context) //timeout
+	// RPC time
 
 	if u.Password != password { // In production, compare hash
 		return "", ErrInvalidCredentials

@@ -5,9 +5,9 @@
 ## 授课边界
 
 - 面向已完成 Module 01、具备 Java 阅读经验的学员。
-- 核心课堂净时间为 310 分钟，学员动手时间不少于 155 分钟。
+- 核心课堂净时间为 310 分钟；Block 2 改为并发素数流水线精讲，不设置 Starter 或课后作业。
 - 允许 Demo 使用固定数据、Sleep 和内存对象；讲解时必须标注这是教学简化。
-- Reflection 保留在主流程；Embed、Generate、OS、文件 I/O、runtime 和标准库扩展进入 Bonus。
+- Reflection 和文件 I/O 保留在主流程；Embed、Generate、OS、runtime 和标准库扩展进入 Bonus。
 
 ## 学员动手预算
 
@@ -15,12 +15,12 @@
 |---|---:|
 | 环境与 Entry Quiz | 10 |
 | Block 1 | 25 |
-| Block 2 | 40 |
+| Block 2 | 0 |
 | Block 3 | 35 |
 | Block 4 | 25 |
 | 综合 Lab | 35 |
 | Homework 启动与 Exit Quiz | 10 |
-| **合计** | **180 / 310（58.1%）** |
+| **合计** | **140 / 310（45.2%）** |
 
 延误时先裁剪 Bonus 和扩展讲解，不压缩 Starter、综合 Lab、Quiz 或两次休息。
 
@@ -31,7 +31,7 @@
 | 09:30–09:50 | 环境检查、Entry Quiz | 能运行 Module 02 验收命令 |
 | 09:50–10:40 | Block 1：接口、错误与恢复边界 | 完成接口与错误链练习 |
 | 10:40–10:50 | 短休息 | — |
-| 10:50–12:00 | Block 2：Goroutine 与 Channel | 完成可关闭的 worker pipeline |
+| 10:50–12:00 | Block 2：Goroutine 与 Channel | 能追踪并解释动态素数过滤流水线 |
 | 12:00–13:00 | 午休 | — |
 | 13:00–14:05 | Block 3：Context 与并发安全 | 完成可取消且无竞态的计数器 |
 | 14:05–14:50 | Block 4：Testing 与 Reflection | 完成表格测试、Benchmark 和反射练习 |
@@ -41,7 +41,7 @@
 
 ## 讲授节奏
 
-每个 Block 均按以下顺序推进：
+除 Block 2 使用完整精讲 Demo 外，其余 Block 按以下顺序推进：
 
 1. 学习结果和 Java 对比；
 2. 最小 Demo；
@@ -51,7 +51,7 @@
 6. 常见错误复盘；
 7. 迁移问题。
 
-四个 Block 的 Starter 必须使用显式 `-tags=exercise` 运行；默认仓库测试只包含可运行 Demo 和教师 Solution。
+Block 1、3、4 的 Starter 必须使用显式 `-tags=exercise` 运行；Block 2 不再保留学生 Starter 和教师 Solution。
 
 ## 课堂验收
 
@@ -66,7 +66,7 @@ make module02-verify
 ## 分段讲授入口
 
 - 09:50：运行 Block 1 的接口与错误 Demo，25 分钟完成 `Shape` 和 `ParsePort` Starter。
-- 10:50：运行 Block 2 的 Goroutine 与 Channel Demo，40 分钟完成 `CollectSquares`。
+- 10:50：运行 Block 2 的并发素数筛 Demo，围绕过滤器链、背压、正确性和生命周期边界进行 70 分钟精讲。
 - 13:00：运行 Block 3 的 Context 与并发安全 Demo，35 分钟内用 `-race` 验证计数器。
 - 14:05：运行 Block 4 的测试与 Reflection Demo，25 分钟完成表格测试驱动的字段读取。
 - 15:00：严格按 [综合 Lab 六个检查点](../integrated_lab/log_analyzer/README.md)推进。

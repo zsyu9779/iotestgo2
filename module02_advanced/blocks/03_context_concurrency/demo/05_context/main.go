@@ -8,6 +8,7 @@ import (
 
 func main() {
 	// 1. 使用 WithCancel 传播取消信号。
+
 	ctx, cancel := context.WithCancel(context.Background())
 	go func(ctx context.Context) {
 		for {
@@ -31,11 +32,11 @@ func main() {
 	fmt.Println("\n--- Timeout Example ---")
 	ctx2, cancel2 := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel2()
-
 	select {
 	case <-time.After(2 * time.Second):
 		fmt.Println("Operation finished")
 	case <-ctx2.Done():
 		fmt.Println("Operation timed out:", ctx2.Err())
 	}
+
 }

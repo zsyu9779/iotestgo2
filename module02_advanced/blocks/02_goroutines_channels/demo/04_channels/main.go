@@ -28,6 +28,7 @@ func showBufferedCapacity() {
 	ch := make(chan string, 2)
 	ch <- "first"
 	ch <- "second"
+	//ch <- "third"
 	// 第三次发送会阻塞，直到有接收方；因此这里只发送两个值。
 	fmt.Printf("Buffered before receive: len=%d cap=%d\n", len(ch), cap(ch))
 	fmt.Println("Buffered values:", <-ch, <-ch)
@@ -78,21 +79,21 @@ func showNonBlockingSelect() {
 }
 
 func main() {
-	showUnbufferedHandoff()
-	showBufferedCapacity()
-
-	ch := make(chan int)
-	go producer(ch)
-
-	// 接收方读取到 channel 关闭；关闭责任仍由 producer 承担。
-	for val := range ch {
-		fmt.Println("Received from producer:", val)
-	}
-	showClosedChannel()
+	//showUnbufferedHandoff()
+	//showBufferedCapacity()
+	//
+	//ch := make(chan int)
+	//go producer(ch)
+	//
+	////接收方读取到 channel 关闭；关闭责任仍由 producer 承担。
+	//for val := range ch {
+	//	fmt.Println("Received from producer:", val)
+	//}
+	//showClosedChannel()
 	showNilChannelDisablesCase()
 	showMultipleReadyCases()
 	showNonBlockingSelect()
-
+	//
 	// 3. 使用 select 多路复用。
 	ch1 := make(chan string)
 	ch2 := make(chan string)
@@ -106,14 +107,23 @@ func main() {
 		ch2 <- "two"
 	}()
 
-	for i := 0; i < 2; i++ {
-		select {
-		case msg1 := <-ch1:
-			fmt.Println("Received from ch1:", msg1)
-		case msg2 := <-ch2:
-			fmt.Println("Received from ch2:", msg2)
-		case <-time.After(3 * time.Second):
-			fmt.Println("Timeout")
-		}
-	}
+	//for i := 0; i < 2; i++ {
+	//select {
+	//case msg1 := <-ch1:
+	//	fmt.Println("Received from ch1:", msg1)
+	//case msg2 := <-ch2:
+	//	fmt.Println("Received from ch2:", msg2)
+	//case <-time.After(3 * time.Second):
+	//	fmt.Println("Timeout")
+	//}
+	//}
+
+	//for {
+	//	select {
+	//	case msg1 := <-ch1:
+	//		fmt.Println("Received from ch1:", msg1)
+	//	case msg2 := <-ch2:
+	//		fmt.Println("Received from ch2:", msg2)
+	//	}
+	//}
 }

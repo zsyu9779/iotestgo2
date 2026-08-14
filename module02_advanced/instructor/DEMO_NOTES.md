@@ -6,13 +6,16 @@
 - 再单独说明 typed-nil：接口同时包含动态类型和动态值。
 - 使用 `go run ./module02_advanced/blocks/01_interfaces_errors/demo/02_errors_defer` 展示 `%w`、`errors.Is` 与 `errors.As`；让学员从少量结果反推错误链，而不是逐行阅读打印讲稿。
 - 强调 `panic/recover` 是边界兜底，不是业务错误处理机制；本 Block 不重复讲解 defer 的执行顺序与资源释放。
+- 使用 `go run ./module02_advanced/blocks/01_interfaces_errors/demo/03_file_io` 连接 `io.Reader` / `io.Writer`、缓冲读写和文件错误边界；输入与输出文件均在 `03_file_io/main.go` 同级目录，可直接打开对照。
 
 ## Block 2：Goroutine 与 Channel
 
 - 先演示主函数提前退出，再使用 WaitGroup 修复生命周期。
-- 让学员观察发送方关闭 channel、接收方使用 range 的完整协议。
-- 解释 nil channel、关闭 channel 写入和 select 超时的区别。
-- 强调多个就绪 case 的选择不确定；带 `default` 的循环必须避免忙等。
+- 运行 `go run ./module02_advanced/blocks/02_goroutines_channels/demo/04_channels`，从 `GenerateNatural` 开始逐级画出 `Filter(2) -> Filter(3) -> Filter(5)`。
+- 精讲 `prime := <-ch` 为什么得到素数，以及 `ch = PrimeFilter(ch, prime)` 如何动态扩展并发流水线。
+- 用 `25`、`27`、`29` 追踪不同数字经过过滤器的路径，解释无缓冲 channel 的同步和背压。
+- 明确这不是欧拉线性筛：每个数字可能经过多个过滤器；每发现一个素数还会新增一个 goroutine 和 channel。
+- 课堂版本依赖进程退出回收无限流水线；迁移到长期运行服务时必须增加取消和完整退出协议。
 
 ## Block 3：Context 与并发安全
 
